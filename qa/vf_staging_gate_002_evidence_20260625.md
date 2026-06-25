@@ -8,7 +8,7 @@ Escopo: corrigir bloqueios reais de staging sem declarar UAT liberado.
 
 - Repositorio local: `vistoria-facil-ia-staging`
 - Branch local: `main`
-- Remote configurado: `origin https://github.com/gustavorother/vistoria-facil-ia-e2e.git`
+- Remote configurado: `origin https://github.com/vistoriafacilia-bot/vistoria-facil-ia-e2e.git`
 - Commit local do gate: gerado no branch `main`; consultar `git log --oneline -2` para o hash atual.
 - Push remoto: nao executado. A tentativa de `git push origin main` foi bloqueada pelo revisor de seguranca por exportar codigo/documentos para GitHub sem aprovacao explicita adicional no momento da execucao.
 
@@ -51,8 +51,7 @@ Escopo: corrigir bloqueios reais de staging sem declarar UAT liberado.
 
 ## Push operacional
 
-Comando aprovado e executado apos safety check: `git push origin main`  
-Resultado: BLOCKED
+Primeira tentativa contra remote incorreto:
 
 ```text
 remote: Repository not found.
@@ -60,6 +59,37 @@ fatal: repository 'https://github.com/gustavorother/vistoria-facil-ia-e2e.git/' 
 ```
 
 Interpretacao: o remoto informado nao esta acessivel neste ambiente. Causas provaveis: repositorio ainda nao existe nessa URL, usuario/token GitHub sem acesso ao repositorio privado, ou credencial GitHub nao configurada para HTTPS.
+
+Correcao aplicada em 2026-06-25:
+
+```text
+git remote set-url origin https://github.com/vistoriafacilia-bot/vistoria-facil-ia-e2e.git
+git ls-remote origin
+git push origin main
+```
+
+Resultado: PASS para push.
+
+```text
+To https://github.com/vistoriafacilia-bot/vistoria-facil-ia-e2e.git
+ * [new branch]      main -> main
+```
+
+Branch remota confirmada:
+
+```text
+cdeb550de8cfae6d4a6c7ee38ebe03ee55f51098 refs/heads/main
+```
+
+GitHub Actions run gerado pelo push:
+
+- URL: `https://github.com/vistoriafacilia-bot/vistoria-facil-ia-e2e/actions/runs/28195631904`
+- Status: `completed`
+- Conclusion: `failure`
+- Job `gates-and-e2e`: `failure`
+- Passo falho: `Playwright E2E`
+- Job `deploy-staging-and-real-e2e`: `skipped`
+- Logs detalhados do job: bloqueados sem autenticacao API (`403`).
 
 ## Resultado Playwright local sem mocks
 
@@ -86,8 +116,9 @@ Artefatos gerados:
 
 Nao executado com sucesso nesta maquina porque ainda faltam credenciais operacionais:
 
-- GitHub push requer remoto existente/acessivel em `https://github.com/gustavorother/vistoria-facil-ia-e2e.git` e credencial/token GitHub valido.
-- Tentativa aprovada em 2026-06-25 retornou `Repository not found`; nenhuma etapa remota posterior foi executada.
+- GitHub Environment `staging` e secrets nao foram configurados nesta sessao: `gh` nao esta instalado e nao ha `GH_TOKEN`, `GITHUB_TOKEN` ou `GITHUB_PAT` no ambiente local.
+- Secrets locais tambem ausentes: `GCP_SERVICE_ACCOUNT_STAGING`, `FIREBASE_SERVICE_ACCOUNT_STAGING`, `GOOGLE_APPLICATION_CREDENTIALS`, `STAGING_E2E_EMAIL`, `STAGING_E2E_PASSWORD`.
+- O workflow remoto de deploy staging e E2E real exige `workflow_dispatch`; nao foi possivel disparar por API sem token GitHub.
 - Firebase/GCP deploy requer service account valida com permissoes para Firebase Hosting, Firestore Rules, Storage Rules, Cloud Run, Artifact Registry e Cloud Build.
 - Firebase Auth staging requer provider Email/Password habilitado e usuario tecnico criado.
 
@@ -102,8 +133,10 @@ Nao executado com sucesso nesta maquina porque ainda faltam credenciais operacio
 
 ## Bloqueios remanescentes
 
-- Push para GitHub remoto ainda nao comprovado: `Repository not found`/sem acesso ao remoto.
-- Workflow remoto ainda nao executado no GitHub Actions.
+- Push para GitHub remoto correto: PASS.
+- Workflow remoto de push executou, mas falhou no passo local `Playwright E2E`.
+- Workflow remoto manual `deploy-staging-and-real-e2e` ainda nao executado.
+- GitHub Environment `staging` e secrets reais ainda nao comprovados/configurados nesta sessao.
 - Deploy Firebase Hosting/Rules/Storage ainda nao comprovado em staging real.
 - Deploy Cloud Run ainda nao comprovado em staging real.
 - Seed/cleanup real ainda nao comprovados contra projeto Firebase real.
