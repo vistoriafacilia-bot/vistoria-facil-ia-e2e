@@ -1,0 +1,92 @@
+﻿{
+    "stage":  "SR-03A - Git Lock Recovery",
+    "generated_at":  "2026-06-25T16:59:56.9003145-03:00",
+    "processes_before":  [
+                             {
+                                 "pid":  10364,
+                                 "parent_pid":  16084,
+                                 "process_name":  "git.exe",
+                                 "creation_date":  "2026-06-25T16:59:47.7344300-03:00",
+                                 "age_minutes":  0.09,
+                                 "command_line_redacted":  "git.exe -c core.hooksPath=NUL -c core.fsmonitor=false rev-parse HEAD",
+                                 "classification":  "allowed_read_only_polling",
+                                 "classification_reason":  "allowed read-only polling command: rev-parse head"
+                             },
+                             {
+                                 "pid":  10008,
+                                 "parent_pid":  13188,
+                                 "process_name":  "git.exe",
+                                 "creation_date":  "2026-06-25T16:59:47.7410690-03:00",
+                                 "age_minutes":  0.09,
+                                 "command_line_redacted":  "git.exe -c core.hooksPath=NUL -c core.fsmonitor=false remote -v",
+                                 "classification":  "allowed_read_only_polling",
+                                 "classification_reason":  "allowed read-only polling command: remote -v"
+                             },
+                             {
+                                 "pid":  13072,
+                                 "parent_pid":  5128,
+                                 "process_name":  "git.exe",
+                                 "creation_date":  "2026-06-25T16:59:47.7457830-03:00",
+                                 "age_minutes":  0.09,
+                                 "command_line_redacted":  "git.exe config --null --get core.fsmonitor",
+                                 "classification":  "allowed_read_only_polling",
+                                 "classification_reason":  "allowed read-only polling command: config --null --get core.fsmonitor"
+                             },
+                             {
+                                 "pid":  18744,
+                                 "parent_pid":  2212,
+                                 "process_name":  "git.exe",
+                                 "creation_date":  "2026-06-25T16:59:52.7577560-03:00",
+                                 "age_minutes":  0.01,
+                                 "command_line_redacted":  "git.exe -c core.hooksPath=NUL -c core.fsmonitor=false status --porcelain",
+                                 "classification":  "allowed_read_only_polling",
+                                 "classification_reason":  "allowed read-only polling command: status --porcelain"
+                             }
+                         ],
+    "blocked_processes_before":  [
+
+                                 ],
+    "terminated_pids":  [
+                            10008,
+                            10364,
+                            13072,
+                            18744
+                        ],
+    "processes_after":  [
+
+                        ],
+    "git_operation_state":  [
+                                {
+                                    "path":  ".git\\MERGE_HEAD",
+                                    "exists":  false
+                                },
+                                {
+                                    "path":  ".git\\REBASE_HEAD",
+                                    "exists":  false
+                                },
+                                {
+                                    "path":  ".git\\CHERRY_PICK_HEAD",
+                                    "exists":  false
+                                },
+                                {
+                                    "path":  ".git\\BISECT_LOG",
+                                    "exists":  false
+                                },
+                                {
+                                    "path":  ".git\\rebase-merge",
+                                    "exists":  false
+                                },
+                                {
+                                    "path":  ".git\\rebase-apply",
+                                    "exists":  false
+                                }
+                            ],
+    "git_operation_in_progress":  false,
+    "index_lock":  {
+                       "existed_before":  false,
+                       "exists_after":  false,
+                       "action":  "not_present",
+                       "backup":  null
+                   },
+    "resolved":  true
+}

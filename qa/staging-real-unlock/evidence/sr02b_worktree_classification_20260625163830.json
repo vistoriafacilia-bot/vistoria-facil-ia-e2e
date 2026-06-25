@@ -1,0 +1,478 @@
+﻿{
+    "stage":  "SR-02B - Worktree Classification",
+    "generated_at":  "2026-06-25T16:39:00.4872381-03:00",
+    "status":  "passed",
+    "worktree":  "dirty",
+    "classifications":  [
+                            {
+                                "file":  ".gitignore",
+                                "git_status":  "M",
+                                "category":  "config_change",
+                                "can_commit":  true,
+                                "tracked":  true,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02_git_status_snapshot_20260625142700.txt",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02_git_status_snapshot_20260625143052.txt",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02_secret_scan_report_20260625142700.json",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02_secret_scan_report_20260625143052.json",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02_worktree_triage_report_20260625142700.json",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02_worktree_triage_report_20260625142700.md",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02_worktree_triage_report_20260625143052.json",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02_worktree_triage_report_20260625143052.md",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02a_git_lock_recovery_report_20260625161943.json",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02a_git_lock_recovery_report_20260625161943.md",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02a_git_lock_recovery_report_20260625162045.json",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02a_git_lock_recovery_report_20260625162045.md",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02a_git_process_snapshot_20260625161943.txt",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02a_git_status_after_recovery_20260625162045.txt",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02a_secret_scan_after_recovery_20260625162045.json",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02b_commit_report_20260625163355.json",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02b_commit_report_20260625163556.json",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02b_git_lock_recovery_report_20260625163355.json",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02b_git_lock_recovery_report_20260625163355.md",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02b_git_lock_recovery_report_20260625163556.json",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02b_git_lock_recovery_report_20260625163556.md",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02b_git_process_before_20260625163355.json",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02b_git_process_before_20260625163355.txt",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02b_git_process_before_20260625163556.json",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02b_git_process_before_20260625163556.txt",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02b_git_process_before_20260625163751.json",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02b_git_process_before_20260625163751.txt",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02b_git_process_before_20260625163830.json",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02b_git_process_before_20260625163830.txt",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02b_git_status_after_lock_recovery_20260625163355.txt",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02b_git_status_after_lock_recovery_20260625163556.txt",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02b_git_status_after_lock_recovery_20260625163751.txt",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02b_git_status_after_lock_recovery_20260625163830.txt",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02b_secret_scan_after_recovery_20260625163355.json",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02b_secret_scan_after_recovery_20260625163556.json",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02b_worktree_classification_20260625163355.json",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02b_worktree_classification_20260625163556.json",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/sr01_auth_e2e_strategy.md",
+                                "git_status":  "??",
+                                "category":  "sr01_doc",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/sr01_backend_deploy_decision.md",
+                                "git_status":  "??",
+                                "category":  "sr01_doc",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/sr01_blockers.md",
+                                "git_status":  "??",
+                                "category":  "sr01_doc",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/sr01_dor.md",
+                                "git_status":  "??",
+                                "category":  "sr01_doc",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/sr01_evidence_matrix.md",
+                                "git_status":  "??",
+                                "category":  "sr01_doc",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/sr01_manifest.json",
+                                "git_status":  "??",
+                                "category":  "sr01_doc",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/sr01_required_secrets_template.md",
+                                "git_status":  "??",
+                                "category":  "sr01_doc",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/sr01_staging_real_unlock_plan.md",
+                                "git_status":  "??",
+                                "category":  "sr01_doc",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/sr01_test_plan.md",
+                                "git_status":  "??",
+                                "category":  "sr01_doc",
+                                "can_commit":  true,
+                                "tracked":  false,
+                                "ignored":  false,
+                                "risk":  "low",
+                                "recommended_action":  "include_in_local_commit"
+                            }
+                        ]
+}

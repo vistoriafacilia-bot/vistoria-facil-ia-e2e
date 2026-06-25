@@ -1,0 +1,11 @@
+﻿{
+    "stage":  "SR-03 - Push",
+    "generated_at":  "2026-06-25T16:46:24.4445383-03:00",
+    "executed":  false,
+    "reason":  "remote mismatch: expected https://github.com/gustavorother/vistoria-facil-ia-e2e.git but found https://github.com/vistoriafacilia-bot/vistoria-facil-ia-e2e.git",
+    "local_hash":  "de0c4f7005b46eb8c57b4398dfe738b61ade19b1",
+    "remote_hash":  null,
+    "match":  false,
+    "no_deploy":  true,
+    "no_uat":  true
+}

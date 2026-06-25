@@ -1,0 +1,422 @@
+﻿{
+    "stage":  "SR-03 - GitHub Remote + Secrets Staging",
+    "generated_at":  "2026-06-25T16:47:21.1390634-03:00",
+    "status":  "blocked",
+    "worktree":  {
+                     "stage":  "SR-03 - Worktree Pre Push",
+                     "generated_at":  "2026-06-25T16:46:24.3769277-03:00",
+                     "lock_action":  "blocked_git_process_active",
+                     "lock_backup":  null,
+                     "sr02b_final_untracked":  [
+                                                   "qa/staging-real-unlock/evidence/sr02b_commit_report_20260625163830.json",
+                                                   "qa/staging-real-unlock/evidence/sr02b_git_lock_recovery_report_20260625163830.json",
+                                                   "qa/staging-real-unlock/evidence/sr02b_git_lock_recovery_report_20260625163830.md",
+                                                   "qa/staging-real-unlock/evidence/sr02b_secret_scan_after_recovery_20260625163830.json",
+                                                   "qa/staging-real-unlock/evidence/sr02b_worktree_classification_20260625163830.json"
+                                               ],
+                     "sr02b_final_decision":  "commit_as_sanitized_evidence",
+                     "sr02b_final_commit_created":  false,
+                     "sr02b_final_commit_hash":  null,
+                     "sr02b_final_commit_message":  "docs(staging): add SR-02B final evidence",
+                     "sr02b_final_secret_scan":  {
+                                                     "status":  "passed",
+                                                     "p0":  0,
+                                                     "findings_count":  233,
+                                                     "values_logged":  false
+                                                 },
+                     "worktree_status_after_decision":  "dirty",
+                     "classifications":  [
+                                             {
+                                                 "file":  "qa/staging-real-unlock/evidence/sr02b_commit_report_20260625163830.json",
+                                                 "git_status":  "??",
+                                                 "category":  "evidence_sanitized",
+                                                 "can_commit":  true,
+                                                 "risk":  "low",
+                                                 "recommended_action":  "commit_if_needed"
+                                             },
+                                             {
+                                                 "file":  "qa/staging-real-unlock/evidence/sr02b_git_lock_recovery_report_20260625163830.json",
+                                                 "git_status":  "??",
+                                                 "category":  "evidence_sanitized",
+                                                 "can_commit":  true,
+                                                 "risk":  "low",
+                                                 "recommended_action":  "commit_if_needed"
+                                             },
+                                             {
+                                                 "file":  "qa/staging-real-unlock/evidence/sr02b_git_lock_recovery_report_20260625163830.md",
+                                                 "git_status":  "??",
+                                                 "category":  "evidence_sanitized",
+                                                 "can_commit":  true,
+                                                 "risk":  "low",
+                                                 "recommended_action":  "commit_if_needed"
+                                             },
+                                             {
+                                                 "file":  "qa/staging-real-unlock/evidence/sr02b_secret_scan_after_recovery_20260625163830.json",
+                                                 "git_status":  "??",
+                                                 "category":  "evidence_sanitized",
+                                                 "can_commit":  true,
+                                                 "risk":  "low",
+                                                 "recommended_action":  "commit_if_needed"
+                                             },
+                                             {
+                                                 "file":  "qa/staging-real-unlock/evidence/sr02b_worktree_classification_20260625163830.json",
+                                                 "git_status":  "??",
+                                                 "category":  "evidence_sanitized",
+                                                 "can_commit":  true,
+                                                 "risk":  "low",
+                                                 "recommended_action":  "commit_if_needed"
+                                             },
+                                             {
+                                                 "file":  "qa/staging-real-unlock/evidence/sr03_git_remote_snapshot_20260625164622.txt",
+                                                 "git_status":  "??",
+                                                 "category":  "evidence_sanitized",
+                                                 "can_commit":  true,
+                                                 "risk":  "low",
+                                                 "recommended_action":  "commit_if_needed"
+                                             }
+                                         ],
+                     "secret_scan":  {
+                                         "status":  "passed",
+                                         "p0":  0,
+                                         "findings_count":  248,
+                                         "values_logged":  false
+                                     },
+                     "gitignore":  {
+                                       "status":  "adequate",
+                                       "checks":  [
+                                                      {
+                                                          "name":  ".env/.env.*",
+                                                          "ok":  true
+                                                      },
+                                                      {
+                                                          "name":  "service account json",
+                                                          "ok":  true
+                                                      },
+                                                      {
+                                                          "name":  "playwright/.auth",
+                                                          "ok":  true
+                                                      },
+                                                      {
+                                                          "name":  "storageState*.json",
+                                                          "ok":  true
+                                                      },
+                                                      {
+                                                          "name":  "test-results",
+                                                          "ok":  true
+                                                      },
+                                                      {
+                                                          "name":  "playwright-report",
+                                                          "ok":  true
+                                                      },
+                                                      {
+                                                          "name":  "node_modules",
+                                                          "ok":  true
+                                                      },
+                                                      {
+                                                          "name":  "dist/build",
+                                                          "ok":  true
+                                                      },
+                                                      {
+                                                          "name":  "sensitive evidence payloads",
+                                                          "ok":  true
+                                                      }
+                                                  ]
+                                   }
+                 },
+    "auth":  {
+                 "stage":  "SR-03 - Remote Auth",
+                 "generated_at":  "2026-06-25T16:46:24.3104401-03:00",
+                 "gh_installed":  false,
+                 "gh_version":  [
+
+                                ],
+                 "gh_authenticated":  false,
+                 "gh_auth_status_redacted":  [
+
+                                             ],
+                 "method":  "manual_install_required",
+                 "risk":  "gh_not_installed",
+                 "values_logged":  false
+             },
+    "push":  {
+                 "stage":  "SR-03 - Push",
+                 "generated_at":  "2026-06-25T16:46:24.4445383-03:00",
+                 "executed":  false,
+                 "reason":  "remote mismatch: expected https://github.com/gustavorother/vistoria-facil-ia-e2e.git but found https://github.com/vistoriafacilia-bot/vistoria-facil-ia-e2e.git",
+                 "local_hash":  "de0c4f7005b46eb8c57b4398dfe738b61ade19b1",
+                 "remote_hash":  null,
+                 "match":  false,
+                 "no_deploy":  true,
+                 "no_uat":  true
+             },
+    "github_environment":  {
+                               "stage":  "SR-03 - GitHub Environment",
+                               "generated_at":  "2026-06-25T16:46:24.4445383-03:00",
+                               "environment":  "staging",
+                               "verified_or_created":  false,
+                               "reason":  "gh CLI not installed",
+                               "manual_safe_instruction":  "Create/check GitHub environment staging in repository settings or with gh after authenticated local setup; do not paste tokens into chat.",
+                               "values_logged":  false
+                           },
+    "secrets":  {
+                    "stage":  "SR-03 - Secret Readiness",
+                    "generated_at":  "2026-06-25T16:46:24.4805582-03:00",
+                    "status":  "not_verified",
+                    "reason":  "gh CLI not installed",
+                    "secrets":  [
+                                    {
+                                        "name":  "FIREBASE_PROJECT_ID_STAGING",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "GOOGLE_APPLICATION_CREDENTIALS_JSON",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "GCP_PROJECT_ID",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "GCP_REGION",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "CLOUD_RUN_SERVICE_NAME",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "FIREBASE_HOSTING_SITE",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "VITE_FIREBASE_API_KEY_STAGING",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "VITE_FIREBASE_AUTH_DOMAIN_STAGING",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "VITE_FIREBASE_PROJECT_ID_STAGING",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "VITE_FIREBASE_STORAGE_BUCKET_STAGING",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "VITE_FIREBASE_MESSAGING_SENDER_ID_STAGING",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "VITE_FIREBASE_APP_ID_STAGING",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "VITE_API_BASE_URL_STAGING",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "VITE_E2E_MODE",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "E2E_TEST_USER_EMAIL",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "E2E_TEST_USER_PASSWORD",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "E2E_AUTH_STRATEGY",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "E2E_AUTH_ENABLED",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "SERVER_ENV",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "AI_PROVIDER",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "AI_API_KEY",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "FIREBASE_ADMIN_CREDENTIALS",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "STORAGE_BUCKET_STAGING",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "ALLOWED_ORIGINS_STAGING",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "MP_ACCESS_TOKEN_SANDBOX",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "MP_PUBLIC_KEY_SANDBOX",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "MP_WEBHOOK_SECRET",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "MP_SUCCESS_URL_STAGING",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "MP_FAILURE_URL_STAGING",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    },
+                                    {
+                                        "name":  "MP_PENDING_URL_STAGING",
+                                        "present":  null,
+                                        "source_method":  "not_checked_gh_unavailable_or_unauthenticated",
+                                        "value_logged":  false,
+                                        "risk":  "required_before_sr04"
+                                    }
+                                ],
+                    "values_logged":  false,
+                    "present_count":  0,
+                    "missing_count":  0,
+                    "unknown_count":  30
+                },
+    "index_lock":  {
+                       "exists":  true,
+                       "info":  {
+                                    "length":  0,
+                                    "last_write_time":  "2026-06-25T16:43:12.5993844-03:00"
+                                }
+                   },
+    "evidence":  {
+                     "remote_auth_report_md":  "C:\\Users\\gusta\\OneDrive\\Documentos\\Growth Agent - Vistoria Facil\\vistoria-facil-ia-staging\\qa\\staging-real-unlock\\evidence\\sr03_remote_auth_report_20260625164622.md",
+                     "remote_auth_report_json":  "C:\\Users\\gusta\\OneDrive\\Documentos\\Growth Agent - Vistoria Facil\\vistoria-facil-ia-staging\\qa\\staging-real-unlock\\evidence\\sr03_remote_auth_report_20260625164622.json",
+                     "worktree_pre_push_report":  "C:\\Users\\gusta\\OneDrive\\Documentos\\Growth Agent - Vistoria Facil\\vistoria-facil-ia-staging\\qa\\staging-real-unlock\\evidence\\sr03_worktree_pre_push_report_20260625164622.json",
+                     "push_report":  "C:\\Users\\gusta\\OneDrive\\Documentos\\Growth Agent - Vistoria Facil\\vistoria-facil-ia-staging\\qa\\staging-real-unlock\\evidence\\sr03_push_report_20260625164622.json",
+                     "github_environment_report":  "C:\\Users\\gusta\\OneDrive\\Documentos\\Growth Agent - Vistoria Facil\\vistoria-facil-ia-staging\\qa\\staging-real-unlock\\evidence\\sr03_github_environment_report_20260625164622.json",
+                     "secret_readiness_report":  "C:\\Users\\gusta\\OneDrive\\Documentos\\Growth Agent - Vistoria Facil\\vistoria-facil-ia-staging\\qa\\staging-real-unlock\\evidence\\sr03_secret_readiness_report_20260625164622.json",
+                     "git_remote_snapshot":  "C:\\Users\\gusta\\OneDrive\\Documentos\\Growth Agent - Vistoria Facil\\vistoria-facil-ia-staging\\qa\\staging-real-unlock\\evidence\\sr03_git_remote_snapshot_20260625164622.txt",
+                     "final_report_md":  "C:\\Users\\gusta\\OneDrive\\Documentos\\Growth Agent - Vistoria Facil\\vistoria-facil-ia-staging\\qa\\staging-real-unlock\\evidence\\sr03_final_report_20260625164720.md",
+                     "final_report_json":  "C:\\Users\\gusta\\OneDrive\\Documentos\\Growth Agent - Vistoria Facil\\vistoria-facil-ia-staging\\qa\\staging-real-unlock\\evidence\\sr03_final_report_20260625164720.json"
+                 },
+    "values_exposed":  false,
+    "no_push":  true,
+    "no_deploy":  true,
+    "no_uat":  true,
+    "p0":  0,
+    "p1":  10,
+    "p1_reasons":  [
+                       "git index.lock present after blocked SR-03",
+                       "GitHub CLI not authenticated",
+                       "GitHub CLI not installed",
+                       "GitHub environment staging not verified/created",
+                       "push not executed",
+                       "remote hash not validated",
+                       "remote mismatch versus expected SR-03 target",
+                       "SR-02B final evidence not committed due git lock/process state",
+                       "staging secrets not verified",
+                       "worktree dirty before push"
+                   ],
+    "p2":  0,
+    "decision":  "blocked",
+    "next_step":  "Confirm intended GitHub remote, install/authenticate GitHub CLI or configure Git Credential Manager safely, resolve git index.lock/worktree, then rerun SR-03 before any push."
+}

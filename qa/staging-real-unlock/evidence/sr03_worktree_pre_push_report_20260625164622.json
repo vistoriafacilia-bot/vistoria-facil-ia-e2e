@@ -1,0 +1,121 @@
+﻿{
+    "stage":  "SR-03 - Worktree Pre Push",
+    "generated_at":  "2026-06-25T16:46:24.3769277-03:00",
+    "lock_action":  "blocked_git_process_active",
+    "lock_backup":  null,
+    "sr02b_final_untracked":  [
+                                  "qa/staging-real-unlock/evidence/sr02b_commit_report_20260625163830.json",
+                                  "qa/staging-real-unlock/evidence/sr02b_git_lock_recovery_report_20260625163830.json",
+                                  "qa/staging-real-unlock/evidence/sr02b_git_lock_recovery_report_20260625163830.md",
+                                  "qa/staging-real-unlock/evidence/sr02b_secret_scan_after_recovery_20260625163830.json",
+                                  "qa/staging-real-unlock/evidence/sr02b_worktree_classification_20260625163830.json"
+                              ],
+    "sr02b_final_decision":  "commit_as_sanitized_evidence",
+    "sr02b_final_commit_created":  false,
+    "sr02b_final_commit_hash":  null,
+    "sr02b_final_commit_message":  "docs(staging): add SR-02B final evidence",
+    "sr02b_final_secret_scan":  {
+                                    "status":  "passed",
+                                    "p0":  0,
+                                    "findings_count":  233,
+                                    "values_logged":  false
+                                },
+    "worktree_status_after_decision":  "dirty",
+    "classifications":  [
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02b_commit_report_20260625163830.json",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "risk":  "low",
+                                "recommended_action":  "commit_if_needed"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02b_git_lock_recovery_report_20260625163830.json",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "risk":  "low",
+                                "recommended_action":  "commit_if_needed"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02b_git_lock_recovery_report_20260625163830.md",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "risk":  "low",
+                                "recommended_action":  "commit_if_needed"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02b_secret_scan_after_recovery_20260625163830.json",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "risk":  "low",
+                                "recommended_action":  "commit_if_needed"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02b_worktree_classification_20260625163830.json",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "risk":  "low",
+                                "recommended_action":  "commit_if_needed"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr03_git_remote_snapshot_20260625164622.txt",
+                                "git_status":  "??",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "risk":  "low",
+                                "recommended_action":  "commit_if_needed"
+                            }
+                        ],
+    "secret_scan":  {
+                        "status":  "passed",
+                        "p0":  0,
+                        "findings_count":  248,
+                        "values_logged":  false
+                    },
+    "gitignore":  {
+                      "status":  "adequate",
+                      "checks":  [
+                                     {
+                                         "name":  ".env/.env.*",
+                                         "ok":  true
+                                     },
+                                     {
+                                         "name":  "service account json",
+                                         "ok":  true
+                                     },
+                                     {
+                                         "name":  "playwright/.auth",
+                                         "ok":  true
+                                     },
+                                     {
+                                         "name":  "storageState*.json",
+                                         "ok":  true
+                                     },
+                                     {
+                                         "name":  "test-results",
+                                         "ok":  true
+                                     },
+                                     {
+                                         "name":  "playwright-report",
+                                         "ok":  true
+                                     },
+                                     {
+                                         "name":  "node_modules",
+                                         "ok":  true
+                                     },
+                                     {
+                                         "name":  "dist/build",
+                                         "ok":  true
+                                     },
+                                     {
+                                         "name":  "sensitive evidence payloads",
+                                         "ok":  true
+                                     }
+                                 ]
+                  }
+}

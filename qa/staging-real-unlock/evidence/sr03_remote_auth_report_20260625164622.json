@@ -1,0 +1,15 @@
+﻿{
+    "stage":  "SR-03 - Remote Auth",
+    "generated_at":  "2026-06-25T16:46:24.3104401-03:00",
+    "gh_installed":  false,
+    "gh_version":  [
+
+                   ],
+    "gh_authenticated":  false,
+    "gh_auth_status_redacted":  [
+
+                                ],
+    "method":  "manual_install_required",
+    "risk":  "gh_not_installed",
+    "values_logged":  false
+}

@@ -1,0 +1,9 @@
+﻿{
+    "stage":  "SR-03 - GitHub Environment",
+    "generated_at":  "2026-06-25T16:46:24.4445383-03:00",
+    "environment":  "staging",
+    "verified_or_created":  false,
+    "reason":  "gh CLI not installed",
+    "manual_safe_instruction":  "Create/check GitHub environment staging in repository settings or with gh after authenticated local setup; do not paste tokens into chat.",
+    "values_logged":  false
+}

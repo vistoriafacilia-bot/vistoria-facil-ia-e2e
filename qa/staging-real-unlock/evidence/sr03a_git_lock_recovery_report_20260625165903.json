@@ -1,0 +1,191 @@
+﻿{
+    "stage":  "SR-03A - Git Lock Recovery",
+    "generated_at":  "2026-06-25T16:59:06.9277234-03:00",
+    "processes_before":  [
+                             {
+                                 "pid":  1352,
+                                 "parent_pid":  20452,
+                                 "process_name":  "git.exe",
+                                 "creation_date":  "2026-06-25T16:57:48.8726910-03:00",
+                                 "age_minutes":  1.24,
+                                 "command_line_redacted":  "git.exe -c core.hooksPath=NUL -c core.fsmonitor=false rev-parse HEAD",
+                                 "classification":  "allowed_read_only_polling",
+                                 "classification_reason":  "allowed read-only polling command: rev-parse head"
+                             },
+                             {
+                                 "pid":  7728,
+                                 "parent_pid":  17900,
+                                 "process_name":  "git.exe",
+                                 "creation_date":  "2026-06-25T16:57:48.8784390-03:00",
+                                 "age_minutes":  1.24,
+                                 "command_line_redacted":  "git.exe -c core.hooksPath=NUL -c core.fsmonitor=false remote -v",
+                                 "classification":  "allowed_read_only_polling",
+                                 "classification_reason":  "allowed read-only polling command: remote -v"
+                             },
+                             {
+                                 "pid":  21028,
+                                 "parent_pid":  23836,
+                                 "process_name":  "git.exe",
+                                 "creation_date":  "2026-06-25T16:57:48.8844800-03:00",
+                                 "age_minutes":  1.24,
+                                 "command_line_redacted":  "git.exe config --null --get core.fsmonitor",
+                                 "classification":  "allowed_read_only_polling",
+                                 "classification_reason":  "allowed read-only polling command: config --null --get core.fsmonitor"
+                             },
+                             {
+                                 "pid":  5960,
+                                 "parent_pid":  21160,
+                                 "process_name":  "git.exe",
+                                 "creation_date":  "2026-06-25T16:58:05.5268630-03:00",
+                                 "age_minutes":  0.96,
+                                 "command_line_redacted":  "git.exe -c core.hooksPath=NUL -c core.fsmonitor=false rev-parse HEAD",
+                                 "classification":  "allowed_read_only_polling",
+                                 "classification_reason":  "allowed read-only polling command: rev-parse head"
+                             },
+                             {
+                                 "pid":  1960,
+                                 "parent_pid":  5644,
+                                 "process_name":  "git.exe",
+                                 "creation_date":  "2026-06-25T16:58:05.5388500-03:00",
+                                 "age_minutes":  0.96,
+                                 "command_line_redacted":  "git.exe -c core.hooksPath=NUL -c core.fsmonitor=false remote -v",
+                                 "classification":  "allowed_read_only_polling",
+                                 "classification_reason":  "allowed read-only polling command: remote -v"
+                             },
+                             {
+                                 "pid":  17628,
+                                 "parent_pid":  12420,
+                                 "process_name":  "git.exe",
+                                 "creation_date":  "2026-06-25T16:58:05.5451220-03:00",
+                                 "age_minutes":  0.96,
+                                 "command_line_redacted":  "git.exe config --null --get core.fsmonitor",
+                                 "classification":  "allowed_read_only_polling",
+                                 "classification_reason":  "allowed read-only polling command: config --null --get core.fsmonitor"
+                             },
+                             {
+                                 "pid":  21604,
+                                 "parent_pid":  23352,
+                                 "process_name":  "git.exe",
+                                 "creation_date":  "2026-06-25T16:58:20.4591930-03:00",
+                                 "age_minutes":  0.72,
+                                 "command_line_redacted":  "git.exe -c core.hooksPath=NUL -c core.fsmonitor=false rev-parse HEAD",
+                                 "classification":  "allowed_read_only_polling",
+                                 "classification_reason":  "allowed read-only polling command: rev-parse head"
+                             },
+                             {
+                                 "pid":  21424,
+                                 "parent_pid":  5240,
+                                 "process_name":  "git.exe",
+                                 "creation_date":  "2026-06-25T16:58:20.4722180-03:00",
+                                 "age_minutes":  0.72,
+                                 "command_line_redacted":  "git.exe -c core.hooksPath=NUL -c core.fsmonitor=false remote -v",
+                                 "classification":  "allowed_read_only_polling",
+                                 "classification_reason":  "allowed read-only polling command: remote -v"
+                             },
+                             {
+                                 "pid":  788,
+                                 "parent_pid":  4456,
+                                 "process_name":  "git.exe",
+                                 "creation_date":  "2026-06-25T16:58:20.4791810-03:00",
+                                 "age_minutes":  0.72,
+                                 "command_line_redacted":  "git.exe config --null --get core.fsmonitor",
+                                 "classification":  "allowed_read_only_polling",
+                                 "classification_reason":  "allowed read-only polling command: config --null --get core.fsmonitor"
+                             },
+                             {
+                                 "pid":  2796,
+                                 "parent_pid":  5936,
+                                 "process_name":  "git.exe",
+                                 "creation_date":  "2026-06-25T16:58:53.0597150-03:00",
+                                 "age_minutes":  0.17,
+                                 "command_line_redacted":  "git.exe -c core.hooksPath=NUL -c core.fsmonitor=false rev-parse HEAD",
+                                 "classification":  "allowed_read_only_polling",
+                                 "classification_reason":  "allowed read-only polling command: rev-parse head"
+                             },
+                             {
+                                 "pid":  16044,
+                                 "parent_pid":  4924,
+                                 "process_name":  "git.exe",
+                                 "creation_date":  "2026-06-25T16:58:53.0659560-03:00",
+                                 "age_minutes":  0.17,
+                                 "command_line_redacted":  "git.exe -c core.hooksPath=NUL -c core.fsmonitor=false remote -v",
+                                 "classification":  "allowed_read_only_polling",
+                                 "classification_reason":  "allowed read-only polling command: remote -v"
+                             },
+                             {
+                                 "pid":  16668,
+                                 "parent_pid":  17472,
+                                 "process_name":  "git.exe",
+                                 "creation_date":  "2026-06-25T16:58:53.0775590-03:00",
+                                 "age_minutes":  0.17,
+                                 "command_line_redacted":  "git.exe config --null --get core.fsmonitor",
+                                 "classification":  "allowed_read_only_polling",
+                                 "classification_reason":  "allowed read-only polling command: config --null --get core.fsmonitor"
+                             },
+                             {
+                                 "pid":  4580,
+                                 "parent_pid":  2504,
+                                 "process_name":  "git.exe",
+                                 "creation_date":  "2026-06-25T16:58:58.0926830-03:00",
+                                 "age_minutes":  0.09,
+                                 "command_line_redacted":  "git.exe -c core.hooksPath=NUL -c core.fsmonitor=false status --porcelain",
+                                 "classification":  "allowed_read_only_polling",
+                                 "classification_reason":  "allowed read-only polling command: status --porcelain"
+                             }
+                         ],
+    "blocked_processes_before":  [
+
+                                 ],
+    "terminated_pids":  [
+                            788,
+                            1352,
+                            1960,
+                            2796,
+                            4580,
+                            5960,
+                            7728,
+                            16044,
+                            16668,
+                            17628,
+                            21028,
+                            21424,
+                            21604
+                        ],
+    "processes_after":  [
+
+                        ],
+    "git_operation_state":  [
+                                {
+                                    "path":  ".git\\MERGE_HEAD",
+                                    "exists":  false
+                                },
+                                {
+                                    "path":  ".git\\REBASE_HEAD",
+                                    "exists":  false
+                                },
+                                {
+                                    "path":  ".git\\CHERRY_PICK_HEAD",
+                                    "exists":  false
+                                },
+                                {
+                                    "path":  ".git\\BISECT_LOG",
+                                    "exists":  false
+                                },
+                                {
+                                    "path":  ".git\\rebase-merge",
+                                    "exists":  false
+                                },
+                                {
+                                    "path":  ".git\\rebase-apply",
+                                    "exists":  false
+                                }
+                            ],
+    "git_operation_in_progress":  false,
+    "index_lock":  {
+                       "existed_before":  false,
+                       "exists_after":  false,
+                       "action":  "not_present",
+                       "backup":  null
+                   },
+    "resolved":  true
+}

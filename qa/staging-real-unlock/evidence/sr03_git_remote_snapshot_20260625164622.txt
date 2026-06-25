@@ -1,0 +1,16 @@
+﻿timestamp=20260625164622
+branch=main
+head_before=de0c4f7005b46eb8c57b4398dfe738b61ade19b1
+lock_action=blocked_git_process_active
+lock_backup=
+
+[remote -v]
+origin	https://github.com/vistoriafacilia-bot/vistoria-facil-ia-e2e.git (fetch)
+origin	https://github.com/vistoriafacilia-bot/vistoria-facil-ia-e2e.git (push)
+
+[log --oneline -5]
+de0c4f7 Record staging gate operational push evidence
+bb91923 chore(staging): add SR-01 unlock plan and staging readiness docs
+cdeb550 Implement staging real deploy and E2E gate
+7d2b7fa Clarify staging evidence commit references
+13b7d80 Add real staging CI and evidence gates
