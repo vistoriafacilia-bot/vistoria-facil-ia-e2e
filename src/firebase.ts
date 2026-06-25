@@ -2,6 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
   GoogleAuthProvider, 
+  signInWithEmailAndPassword,
   signInWithPopup, 
   signOut,
   onAuthStateChanged,
@@ -47,6 +48,16 @@ export async function loginWithGoogle() {
     return result.user;
   } catch (error) {
     console.error('Google Sign-In Error:', error);
+    throw error;
+  }
+}
+
+export async function loginWithEmailPassword(email: string, password: string) {
+  try {
+    const result = await signInWithEmailAndPassword(auth, email, password);
+    return result.user;
+  } catch (error) {
+    console.error('Email/Password Sign-In Error:', error);
     throw error;
   }
 }
@@ -109,4 +120,3 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
   console.error('Firestore Error: ', JSON.stringify(errInfo));
   throw new Error(JSON.stringify(errInfo));
 }
-

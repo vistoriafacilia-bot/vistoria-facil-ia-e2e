@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { db, auth, OperationType, handleFirestoreError } from '../firebase';
+import { db, auth, storage, OperationType, handleFirestoreError } from '../firebase';
 import { 
   collection, 
   getDocs, 
@@ -11,6 +11,7 @@ import {
   query, 
   where 
 } from 'firebase/firestore';
+import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { Property, Inspection, Room, Photo, AiAnalysis, ReviewedStatus, Entitlement } from '../types';
 import { safeCreateAuditEvent } from '../lib/auditEvents';
 import { 
@@ -438,9 +439,30 @@ export default function InspectionWizard({
 
         // Create new photo item
         const photoId = doc(collection(db, 'inspections', activeInspection.id, 'photos')).id;
+        const photoStoragePath = `inspection-photos/${auth.currentUser.uid}/${activeInspection.id}/${photoId}.jpg`;
+        let photoDownloadUrl = '';
 
         const roomNameVal = selectedRoom.name;
         const defaultCaption = `Foto registrada na ${roomNameVal}`;
+
+        try {
+          const imageBlob = await fetch(compressedBase64).then(response => response.blob());
+          const storageRef = ref(storage, photoStoragePath);
+          await uploadBytes(storageRef, imageBlob, {
+            contentType: 'image/jpeg',
+            customMetadata: {
+              userId: auth.currentUser.uid,
+              inspectionId: activeInspection.id,
+              roomId: selectedRoom.id,
+              photoId
+            }
+          });
+          photoDownloadUrl = await getDownloadURL(storageRef);
+        } catch (storageErr: any) {
+          console.error('Erro ao enviar foto ao Firebase Storage:', storageErr);
+          setUploadError(`Erro ao enviar a foto ${currentIdx} para o Storage real: ${storageErr?.message || String(storageErr)}`);
+          continue;
+        }
 
         const newPhoto: Photo = {
           id: photoId,
@@ -448,9 +470,9 @@ export default function InspectionWizard({
           roomId: selectedRoom.id,
           roomName: roomNameVal,
           userId: auth.currentUser.uid,
-          url: compressedBase64,
+          url: photoDownloadUrl,
           imageUrl: compressedBase64,
-          storagePath: `inspections/${activeInspection.id}/photos/${photoId}`,
+          storagePath: photoStoragePath,
           caption: defaultCaption,
           displayTitle: defaultCaption,
           description: 'Aguardando processamento de análise de IA...',
@@ -707,7 +729,7 @@ export default function InspectionWizard({
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          imageBase64: photo.url,
+          imageBase64: photo.imageUrl || photo.url,
           roomName: retryRoomName
         })
       });
@@ -770,6 +792,13 @@ export default function InspectionWizard({
   const handleDeletePhoto = async (photoId: string) => {
     if (!activeInspection) return;
     try {
+      const photo = photos.find(item => item.id === photoId);
+      if (photo?.storagePath) {
+        await deleteObject(ref(storage, photo.storagePath)).catch(storageErr => {
+          console.warn('Nao foi possivel remover a foto do Storage; o cleanup de staging tentara novamente:', storageErr);
+        });
+      }
+
       await deleteDoc(doc(db, 'inspections', activeInspection.id, 'photos', photoId)).catch(err => 
         handleFirestoreError(err, OperationType.DELETE, `inspections/${activeInspection.id}/photos/${photoId}`)
       );

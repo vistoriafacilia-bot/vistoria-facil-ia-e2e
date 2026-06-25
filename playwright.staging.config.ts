@@ -30,6 +30,7 @@ export default defineConfig({
         env: {
           ...process.env,
           DISABLE_HMR: 'true',
+          VITE_STAGING_E2E_AUTH: 'true',
         },
       }
     : undefined,

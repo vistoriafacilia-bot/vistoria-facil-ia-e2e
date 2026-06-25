@@ -547,6 +547,7 @@ export default function PropertyManager({ onSelectPropertyForInspection, onViewH
             properties.map((property) => (
               <div 
                 key={property.id} 
+                data-testid={`property-card-${property.id}`}
                 className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden flex flex-col justify-between hover:border-slate-200 transition-colors"
               >
                 <div className="p-5 space-y-4">
@@ -613,6 +614,7 @@ export default function PropertyManager({ onSelectPropertyForInspection, onViewH
                   <button
                     type="button"
                     onClick={() => onViewHistory(property)}
+                    data-testid={`property-history-${property.id}`}
                     className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-indigo-600 transition-colors cursor-pointer"
                   >
                     <FolderOpen className="w-4 h-4" />
@@ -622,6 +624,7 @@ export default function PropertyManager({ onSelectPropertyForInspection, onViewH
                   <button
                     type="button"
                     onClick={() => onSelectPropertyForInspection(property)}
+                    data-testid={`property-start-${property.id}`}
                     className="flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-3.5 py-2 rounded-lg shadow-sm transition-all active:scale-98 cursor-pointer h-9"
                   >
                     <ClipboardPlus className="w-4 h-4" />

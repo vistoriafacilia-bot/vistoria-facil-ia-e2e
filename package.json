@@ -22,6 +22,8 @@
     "e2e:report": "playwright show-report",
     "qa:local-e2e": "npm run lint && npm run test:ci && npm run build && npm run e2e:local",
     "qa:staging-real": "npm run lint && npm run test:ci && npm run build && npm run e2e:staging",
+    "seed:staging:e2e": "node scripts/staging-e2e-data.mjs seed",
+    "cleanup:staging:e2e": "node scripts/staging-e2e-data.mjs cleanup",
     "deploy:staging:firebase": "firebase deploy --non-interactive --project \"$FIREBASE_PROJECT_ID_STAGING\" --only hosting,firestore:rules,storage"
   },
   "dependencies": {

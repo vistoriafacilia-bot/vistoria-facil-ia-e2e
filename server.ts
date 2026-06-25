@@ -11,7 +11,7 @@ import { APP_VERSION, APP_VERSION_METADATA } from './src/lib/appVersion';
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT || 3000);
 
 // Set payload size limits for image base64 transfer
 app.use(express.json({ limit: '50mb' }));

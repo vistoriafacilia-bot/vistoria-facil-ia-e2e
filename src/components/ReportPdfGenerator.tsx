@@ -317,9 +317,13 @@ export default function ReportPdfGenerator({ property, inspection, onBack, entit
 
           // Print image box
           try {
-            // Check if photo url is Base64
-            if (photo.url && photo.url.startsWith('data:image')) {
-              docPdf.addImage(photo.url, 'JPEG', 20, currentY, 40, 30, undefined, 'FAST');
+            const imageSource = photo.url?.startsWith('data:image')
+              ? photo.url
+              : photo.imageUrl?.startsWith('data:image')
+              ? photo.imageUrl
+              : '';
+            if (imageSource) {
+              docPdf.addImage(imageSource, 'JPEG', 20, currentY, 40, 30, undefined, 'FAST');
             }
           } catch (e) {
             console.error('Error rendering image in PDF:', e);

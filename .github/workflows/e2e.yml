@@ -68,16 +68,26 @@ jobs:
   deploy-staging-and-real-e2e:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     needs: gates-and-e2e
     environment: staging
+    permissions:
+      contents: read
+      id-token: write
     env:
       FIREBASE_PROJECT_ID_STAGING: ${{ secrets.FIREBASE_PROJECT_ID_STAGING }}
       FIRESTORE_DATABASE_ID: ${{ secrets.FIRESTORE_DATABASE_ID }}
       FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+      FIREBASE_STORAGE_BUCKET: ${{ secrets.FIREBASE_STORAGE_BUCKET }}
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY_STAGING }}
       MERCADOPAGO_ACCESS_TOKEN: ${{ secrets.MERCADOPAGO_ACCESS_TOKEN_STAGING }}
       STAGING_BASE_URL: ${{ secrets.STAGING_BASE_URL }}
+      STAGING_E2E_EMAIL: ${{ secrets.STAGING_E2E_EMAIL }}
+      STAGING_E2E_PASSWORD: ${{ secrets.STAGING_E2E_PASSWORD }}
+      STAGING_TEST_RUN_ID: gha-${{ github.run_id }}-${{ github.run_attempt }}
+      CLOUD_RUN_REGION: ${{ vars.CLOUD_RUN_REGION || 'southamerica-east1' }}
+      CLOUD_RUN_SERVICE: ${{ vars.CLOUD_RUN_SERVICE || 'vistoria-facil-api-staging' }}
+      VITE_STAGING_E2E_AUTH: "true"
 
     steps:
       - name: Checkout
@@ -98,21 +108,56 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
-      - name: Configure Firebase service account
-        shell: bash
-        run: |
-          test -n '${{ secrets.FIREBASE_SERVICE_ACCOUNT_STAGING }}'
-          printf '%s' '${{ secrets.FIREBASE_SERVICE_ACCOUNT_STAGING }}' > "$RUNNER_TEMP/firebase-service-account.json"
-          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-service-account.json" >> "$GITHUB_ENV"
+      - name: Authenticate Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_STAGING || secrets.FIREBASE_SERVICE_ACCOUNT_STAGING }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
 
       - name: Build staging
         run: npm run build
 
+      - name: Prepare deploy logs
+        run: mkdir -p qa/deploy-logs
+
+      - name: Deploy Cloud Run staging API
+        shell: bash
+        run: |
+          set -o pipefail
+          gcloud run deploy "$CLOUD_RUN_SERVICE" \
+            --source . \
+            --project "$FIREBASE_PROJECT_ID_STAGING" \
+            --region "$CLOUD_RUN_REGION" \
+            --allow-unauthenticated \
+            --set-env-vars "NODE_ENV=production,FIREBASE_PROJECT_ID=$FIREBASE_PROJECT_ID_STAGING,FIRESTORE_DATABASE_ID=$FIRESTORE_DATABASE_ID,FIREBASE_API_KEY=$FIREBASE_API_KEY,GEMINI_API_KEY=$GEMINI_API_KEY,MERCADOPAGO_ACCESS_TOKEN=$MERCADOPAGO_ACCESS_TOKEN,APP_URL=$STAGING_BASE_URL" \
+            2>&1 | tee qa/deploy-logs/cloud-run-deploy.log
+
       - name: Deploy Firebase staging rules and hosting
-        run: npm run deploy:staging:firebase
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run deploy:staging:firebase 2>&1 | tee qa/deploy-logs/firebase-deploy.log
+
+      - name: Seed real staging data
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run seed:staging:e2e 2>&1 | tee qa/deploy-logs/staging-seed.log
 
       - name: Run real staging E2E without E2E mocks
-        run: npm run e2e:staging
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run e2e:staging 2>&1 | tee qa/deploy-logs/staging-e2e.log
+
+      - name: Cleanup real staging data
+        if: always()
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run cleanup:staging:e2e 2>&1 | tee qa/deploy-logs/staging-cleanup.log
 
       - name: Upload staging Playwright report
         if: always()
@@ -128,4 +173,12 @@ jobs:
         with:
           name: staging-e2e-results
           path: test-results/
+          retention-days: 14
+
+      - name: Upload staging deploy logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-deploy-logs
+          path: qa/deploy-logs/
           retention-days: 14

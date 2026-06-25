@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { auth, loginWithGoogle, db, OperationType, handleFirestoreError } from './firebase';
+import { auth, loginWithEmailPassword, loginWithGoogle, db, OperationType, handleFirestoreError } from './firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
 import { Property, Inspection, Entitlement } from './types';
@@ -17,6 +17,11 @@ import { safeCreateAuditEvent } from './lib/auditEvents';
 export default function App() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const isStagingE2EAuthEnabled = import.meta.env.VITE_STAGING_E2E_AUTH === 'true';
+  const [stagingAuthEmail, setStagingAuthEmail] = useState('');
+  const [stagingAuthPassword, setStagingAuthPassword] = useState('');
+  const [stagingAuthSubmitting, setStagingAuthSubmitting] = useState(false);
+  const [stagingAuthError, setStagingAuthError] = useState<string | null>(null);
 
   // Entitlement states
   const [entitlement, setEntitlement] = useState<Entitlement | null>(null);
@@ -172,6 +177,21 @@ export default function App() {
     setCurrentView('pdf_generator');
   };
 
+  const handleStagingEmailLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setStagingAuthSubmitting(true);
+    setStagingAuthError(null);
+
+    try {
+      await loginWithEmailPassword(stagingAuthEmail.trim(), stagingAuthPassword);
+    } catch (error) {
+      console.error('Staging E2E email/password login failed:', error);
+      setStagingAuthError('Falha no login tecnico de staging. Verifique usuario, senha e provider Email/Password.');
+    } finally {
+      setStagingAuthSubmitting(false);
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6">
@@ -248,6 +268,58 @@ export default function App() {
             </svg>
             Entrar com o Google
           </button>
+
+          {isStagingE2EAuthEnabled && (
+            <form
+              onSubmit={handleStagingEmailLogin}
+              data-testid="staging-email-auth-form"
+              className="border-t border-slate-800 pt-5 space-y-3 text-left"
+            >
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                Acesso tecnico staging E2E
+              </p>
+              <div className="space-y-1.5">
+                <label htmlFor="staging-e2e-email" className="block text-[11px] font-semibold text-slate-300">
+                  Email tecnico E2E
+                </label>
+                <input
+                  id="staging-e2e-email"
+                  type="email"
+                  autoComplete="username"
+                  required
+                  value={stagingAuthEmail}
+                  onChange={(event) => setStagingAuthEmail(event.target.value)}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label htmlFor="staging-e2e-password" className="block text-[11px] font-semibold text-slate-300">
+                  Senha tecnica E2E
+                </label>
+                <input
+                  id="staging-e2e-password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={stagingAuthPassword}
+                  onChange={(event) => setStagingAuthPassword(event.target.value)}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400"
+                />
+              </div>
+              {stagingAuthError && (
+                <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-200">
+                  {stagingAuthError}
+                </div>
+              )}
+              <button
+                type="submit"
+                disabled={stagingAuthSubmitting}
+                className="w-full rounded-xl bg-indigo-500 px-4 py-3 text-sm font-bold text-white shadow-md transition-colors hover:bg-indigo-400 disabled:cursor-not-allowed disabled:bg-slate-700"
+              >
+                {stagingAuthSubmitting ? 'Entrando...' : 'Entrar no staging'}
+              </button>
+            </form>
+          )}
         </div>
 
         {/* Humble Footer */}
