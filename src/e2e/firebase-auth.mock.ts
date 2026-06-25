@@ -28,6 +28,11 @@ export async function signInWithPopup() {
   return { user: testUser };
 }
 
+export async function signInWithEmailAndPassword() {
+  auth.currentUser = testUser;
+  return { user: testUser };
+}
+
 export async function signOut() {
   auth.currentUser = null;
 }
