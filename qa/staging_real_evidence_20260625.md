@@ -9,7 +9,7 @@ UAT: **nao liberado**
 - Pacote promovido: `vistoria_facil_v0_4_0_rc2_codex_e2e_fix_20260625.zip`
 - Repositorio local: `vistoria-facil-ia-staging`
 - Branch: `main`
-- Commit base: `6060ed6 Promote rc2 package with E2E staging gates`
+- Commits locais: ver `git log --oneline`; incluem a promocao base do pacote e a configuracao/evidencia de staging real.
 - Remote configurado: `https://github.com/gustavorother/vistoria-facil-ia-e2e.git`
 
 ## GitHub remoto / CI
