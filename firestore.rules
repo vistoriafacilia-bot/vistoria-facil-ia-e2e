@@ -1,0 +1,133 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    function isOwnerOrAdmin(userId) {
+      return isOwner(userId) || isAdmin();
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        request.auth.token.email == 'vistoriafacil.ia@gmail.com' ||
+        request.auth.token.email == 'admin@vistoriafacil.com'
+      );
+    }
+
+    // User profile rules
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isOwnerOrAdmin(userId);
+    }
+
+    // Properties rules
+    match /properties/{propertyId} {
+      allow create: if isSignedIn() 
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.id == propertyId;
+        
+      allow read: if isSignedIn() 
+        && resource.data.userId == request.auth.uid;
+        
+      allow update: if isSignedIn() 
+        && resource.data.userId == request.auth.uid 
+        && request.resource.data.userId == request.auth.uid;
+        
+      allow delete: if isSignedIn() 
+        && resource.data.userId == request.auth.uid;
+    }
+
+    match /plans/{planId} {
+      allow read: if true;
+      allow create, update, delete: if false;
+    }
+
+    match /orders/{orderId} {
+      allow read: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+      allow create, update, delete: if false;
+    }
+
+    match /payments/{paymentId} {
+      allow read: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+      allow create, update, delete: if false;
+    }
+
+    match /entitlements/{entitlementId} {
+      allow read: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.id == entitlementId
+        && request.resource.data.planId == 'free_10'
+        && request.resource.data.status == 'active'
+        && request.resource.data.source == 'free_self_service'
+        && request.resource.data.maxPhotosPerInspection <= 10
+        && request.resource.data.pdfEnabled == true
+        && request.resource.data.createdAt is string
+        && request.resource.data.updatedAt is string;
+
+      allow update, delete: if false;
+    }
+
+    match /webhook_events/{eventId} {
+      allow read, create, update, delete: if false;
+    }
+
+    // Diagnostics / System Events
+    match /events/{eventId} {
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.id == eventId;
+      
+      allow read: if isAdmin();
+    }
+
+    // Inspections rules
+    match /inspections/{inspectionId} {
+      allow create: if isSignedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.id == inspectionId
+        && request.resource.data.propertyId is string
+        && get(/databases/$(database)/documents/properties/$(request.resource.data.propertyId)).data.userId == request.auth.uid
+        && request.resource.data.startedAt is string;
+
+      allow read: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+
+      allow update: if isSignedIn()
+        && resource.data.userId == request.auth.uid
+        && request.resource.data.userId == resource.data.userId
+        && request.resource.data.id == resource.data.id
+        && request.resource.data.propertyId == resource.data.propertyId;
+
+      allow delete: if isSignedIn()
+        && resource.data.userId == request.auth.uid;
+
+      match /rooms/{roomId} {
+        allow read, create, update, delete: if isSignedIn()
+          && get(/databases/$(database)/documents/inspections/$(inspectionId)).data.userId == request.auth.uid;
+      }
+
+      match /photos/{photoId} {
+        allow read, create, update, delete: if isSignedIn()
+          && get(/databases/$(database)/documents/inspections/$(inspectionId)).data.userId == request.auth.uid;
+      }
+
+      match /reports/{reportId} {
+        allow read, create, update, delete: if isSignedIn()
+          && get(/databases/$(database)/documents/inspections/$(inspectionId)).data.userId == request.auth.uid;
+      }
+    }
+  }
+}

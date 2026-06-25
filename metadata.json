@@ -1,0 +1,6 @@
+{
+  "name": "Vistoria Fácil IA",
+  "description": "Aplicação inteligente de vistoria imobiliária com suporte de análise de imagens por IA.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

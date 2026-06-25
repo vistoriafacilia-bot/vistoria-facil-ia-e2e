@@ -1,0 +1,140 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Dados do usuário autenticado no sistema",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "ID exclusivo do usuário" },
+        "name": { "type": "string", "description": "Nome do usuário" },
+        "email": { "type": "string", "description": "E-mail do usuário" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Data de criação do perfil" },
+        "lastLoginAt": { "type": "string", "format": "date-time", "description": "Último login do usuário" },
+        "plan": { "type": "string", "description": "Plano de assinatura do usuário" }
+      },
+      "required": ["uid", "name", "email", "createdAt"]
+    },
+    "Property": {
+      "title": "Property",
+      "description": "Propriedade/Imóvel cadastrado para vistoria",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "ID exclusivo do imóvel" },
+        "userId": { "type": "string", "description": "ID do proprietário do registro" },
+        "nickname": { "type": "string", "description": "Apelido do imóvel" },
+        "propertyType": { "type": "string", "enum": ["apartamento", "casa", "sala comercial", "outro"], "description": "Tipo do imóvel" },
+        "address": {
+          "type": "object",
+          "properties": {
+            "street": { "type": "string", "description": "Logradouro/Rua" },
+            "number": { "type": "string", "description": "Número do imóvel" },
+            "complement": { "type": "string", "description": "Complemento" },
+            "neighborhood": { "type": "string", "description": "Bairro" },
+            "city": { "type": "string", "description": "Cidade" },
+            "state": { "type": "string", "description": "UF/Estado" },
+            "zipCode": { "type": "string", "description": "CEP" },
+            "reference": { "type": "string", "description": "Ponto de referência" }
+          },
+          "required": ["street", "number", "neighborhood", "city", "state", "zipCode"]
+        },
+        "generalNotes": { "type": "string", "description": "Observações gerais" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Data de criação" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Data de última atualização" }
+      },
+      "required": ["id", "userId", "nickname", "propertyType", "address", "createdAt", "updatedAt"]
+    },
+    "Inspection": {
+      "title": "Inspection",
+      "description": "Vistoria imobiliária",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "ID da vistoria" },
+        "userId": { "type": "string", "description": "ID do usuário que realiza a vistoria" },
+        "propertyId": { "type": "string", "description": "ID do imóvel associado" },
+        "inspectionType": { "type": "string", "enum": ["entrada", "saida"], "description": "Tipo de vistoria (entrada ou saída)" },
+        "status": { "type": "string", "enum": ["rascunho", "em_andamento", "concluida", "pdf_gerado"], "description": "Status da vistoria" },
+        "startedAt": { "type": "string", "format": "date-time", "description": "Início da vistoria" },
+        "completedAt": { "type": "string", "format": "date-time", "description": "Fim da vistoria" },
+        "pdfUrl": { "type": "string", "description": "Link de download do relatório PDF" },
+        "summary": { "type": "string", "description": "Resumo geral da vistoria" },
+        "appVersion": { "type": "string", "description": "Versão do app utilizada" }
+      },
+      "required": ["id", "userId", "propertyId", "inspectionType", "status", "startedAt", "appVersion"]
+    },
+    "Room": {
+      "title": "Room",
+      "description": "Cômodo ou área da vistoria",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "ID do cômodo" },
+        "name": { "type": "string", "description": "Nome do cômodo (Ex: Sala, Cozinha)" },
+        "order": { "type": "integer", "description": "Ordem de exibição" }
+      },
+      "required": ["id", "name"]
+    },
+    "Photo": {
+      "title": "Photo",
+      "description": "Foto registrada em um cômodo com metadados e análise da IA",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "ID exclusivo da foto" },
+        "roomId": { "type": "string", "description": "ID do cômodo associado" },
+        "url": { "type": "string", "description": "URL da imagem no Storage" },
+        "caption": { "type": "string", "description": "Legenda fornecida pelo usuário ou IA" },
+        "aiAnalysis": {
+          "type": "object",
+          "properties": {
+            "item_observado": { "type": "string", "description": "Item observado na foto" },
+            "condicao_sugerida": { "type": "string", "enum": ["OK", "Atenção", "Problema"], "description": "Condição recomendada" },
+            "descricao_neutra": { "type": "string", "description": "Texto neutro descritivo" },
+            "pontos_de_atencao": { "type": "array", "items": { "type": "string" }, "description": "Pontos identificados" },
+            "confianca": { "type": "string", "enum": ["baixa", "média", "alta"], "description": "Nível de confiança da IA" }
+          },
+          "required": ["item_observado", "condicao_sugerida", "descricao_neutra", "pontos_de_atencao", "confianca"]
+        },
+        "reviewedStatus": { "type": "string", "enum": ["pendente", "confirmado", "editado"], "description": "Status de revisão humana" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Data de envio da foto" }
+      },
+      "required": ["id", "roomId", "url", "reviewedStatus", "createdAt"]
+    },
+    "SystemEvent": {
+      "title": "SystemEvent",
+      "description": "Registro de eventos e custos do sistema",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "ID do usuário" },
+        "event": { "type": "string", "description": "Tipo de evento" },
+        "inspectionId": { "type": "string", "description": "ID da vistoria associada" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Data do evento" },
+        "metadata": { "type": "object", "description": "Informações adicionais do evento" }
+      },
+      "required": ["userId", "event", "createdAt"]
+    }
+  },
+  "firestore": {
+    "users": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "Coleção de usuários do sistema"
+    },
+    "properties": {
+      "schema": { "$ref": "#/entities/Property" },
+      "description": "Coleção de imóveis"
+    },
+    "inspections": {
+      "schema": { "$ref": "#/entities/Inspection" },
+      "description": "Coleção de vistorias"
+    },
+    "inspections/{inspectionId}/rooms": {
+      "schema": { "$ref": "#/entities/Room" },
+      "description": "Cômodos associados a uma vistoria"
+    },
+    "inspections/{inspectionId}/photos": {
+      "schema": { "$ref": "#/entities/Photo" },
+      "description": "Fotos associadas a uma vistoria"
+    },
+    "events": {
+      "schema": { "$ref": "#/entities/SystemEvent" },
+      "description": "Histórico de eventos para auditoria de custos e uso"
+    }
+  }
+}
