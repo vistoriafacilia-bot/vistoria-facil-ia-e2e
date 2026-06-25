@@ -25,8 +25,11 @@
   },
   "exclude": [
     "tests/e2e",
+    "tests/e2e-real",
     "playwright.config.ts",
+    "playwright.staging.config.ts",
     "playwright-report",
+    "playwright-report-staging",
     "test-results"
   ]
 }

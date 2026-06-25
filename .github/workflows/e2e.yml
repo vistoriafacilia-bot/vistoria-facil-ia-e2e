@@ -64,3 +64,68 @@ jobs:
           name: e2e-results
           path: test-results/
           retention-days: 14
+
+  deploy-staging-and-real-e2e:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: gates-and-e2e
+    environment: staging
+    env:
+      FIREBASE_PROJECT_ID_STAGING: ${{ secrets.FIREBASE_PROJECT_ID_STAGING }}
+      FIRESTORE_DATABASE_ID: ${{ secrets.FIRESTORE_DATABASE_ID }}
+      FIREBASE_API_KEY: ${{ secrets.FIREBASE_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY_STAGING }}
+      MERCADOPAGO_ACCESS_TOKEN: ${{ secrets.MERCADOPAGO_ACCESS_TOKEN_STAGING }}
+      STAGING_BASE_URL: ${{ secrets.STAGING_BASE_URL }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Configure Firebase service account
+        shell: bash
+        run: |
+          test -n '${{ secrets.FIREBASE_SERVICE_ACCOUNT_STAGING }}'
+          printf '%s' '${{ secrets.FIREBASE_SERVICE_ACCOUNT_STAGING }}' > "$RUNNER_TEMP/firebase-service-account.json"
+          echo "GOOGLE_APPLICATION_CREDENTIALS=$RUNNER_TEMP/firebase-service-account.json" >> "$GITHUB_ENV"
+
+      - name: Build staging
+        run: npm run build
+
+      - name: Deploy Firebase staging rules and hosting
+        run: npm run deploy:staging:firebase
+
+      - name: Run real staging E2E without E2E mocks
+        run: npm run e2e:staging
+
+      - name: Upload staging Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-staging
+          path: playwright-report-staging/
+          retention-days: 14
+
+      - name: Upload staging E2E results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-e2e-results
+          path: test-results/
+          retention-days: 14

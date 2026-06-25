@@ -2,7 +2,11 @@ node_modules/
 build/
 dist/
 coverage/
+playwright-report/
+playwright-report-staging/
+test-results/
 .DS_Store
 *.log
 .env*
 !.env.example
+!.env.staging.example
