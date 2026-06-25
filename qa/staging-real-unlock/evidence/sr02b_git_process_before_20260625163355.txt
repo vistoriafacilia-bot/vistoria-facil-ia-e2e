@@ -1,0 +1,8 @@
+﻿timestamp=20260625163355
+repo=C:\Users\gusta\OneDrive\Documentos\Growth Agent - Vistoria Facil\vistoria-facil-ia-staging
+[git.exe processes before]
+pid=840; parent_pid=16576; created=2026-06-25T16:33:43.0529510-03:00; age_minutes=0.21; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false rev-parse HEAD
+pid=24924; parent_pid=13116; created=2026-06-25T16:33:43.0610930-03:00; age_minutes=0.21; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false remote -v
+pid=9544; parent_pid=18856; created=2026-06-25T16:33:43.0701720-03:00; age_minutes=0.21; classification=allowed_read_only_polling; command_line_redacted=git.exe config --null --get core.fsmonitor
+pid=23364; parent_pid=18356; created=2026-06-25T16:33:48.0819430-03:00; age_minutes=0.13; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false status --porcelain
+pid=18360; parent_pid=13164; created=2026-06-25T16:33:55.8055410-03:00; age_minutes=0; classification=allowed_read_only_polling; command_line_redacted="C:\Program Files\Git\cmd\git.exe" config --null --get core.fsmonitor

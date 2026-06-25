@@ -1,0 +1,10 @@
+﻿timestamp=20260625162045
+repo=C:\Users\gusta\OneDrive\Documentos\Growth Agent - Vistoria Facil\vistoria-facil-ia-staging
+recovery_executed=false
+git_status_executed_after_recovery=false
+reason=Case C block: active git.exe processes exist but command line does not clearly identify repository association.
+index_lock_removed_or_renamed=false
+process_terminated=false
+push_executed=false
+deploy_executed=false
+uat_executed=false

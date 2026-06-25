@@ -1,0 +1,217 @@
+﻿{
+    "stage":  "SR-02 - Worktree Triage + Secret Hygiene",
+    "generated_at":  "2026-06-25T14:27:06.3760943-03:00",
+    "status":  "blocked",
+    "branch":  "main",
+    "remote":  [
+                   "origin\thttps://github.com/gustavorother/vistoria-facil-ia-e2e.git (fetch)",
+                   "origin\thttps://github.com/gustavorother/vistoria-facil-ia-e2e.git (push)"
+               ],
+    "worktree":  "dirty",
+    "git_status_snapshot":  "C:\\Users\\gusta\\OneDrive\\Documentos\\Growth Agent - Vistoria Facil\\vistoria-facil-ia-staging\\qa\\staging-real-unlock\\evidence\\sr02_git_status_snapshot_20260625142700.txt",
+    "changed_files_count":  1,
+    "classifications":  [
+                            {
+                                "file":  "qa/staging-real-unlock/",
+                                "git_status":  "??",
+                                "category":  "unknown",
+                                "can_commit":  false,
+                                "reason":  "manual review before commit",
+                                "risk":  "unknown: manual review required",
+                                "tracked":  false,
+                                "ignored":  false,
+                                "recommended_action":  "exclude or review before commit"
+                            }
+                        ],
+    "critical_files":  [
+                           {
+                               "path":  ".gitignore",
+                               "exists":  true,
+                               "tracked":  true,
+                               "ignored":  false
+                           },
+                           {
+                               "path":  ".env",
+                               "exists":  false,
+                               "tracked":  false,
+                               "ignored":  true
+                           },
+                           {
+                               "path":  ".env.local",
+                               "exists":  false,
+                               "tracked":  false,
+                               "ignored":  true
+                           },
+                           {
+                               "path":  ".env.staging",
+                               "exists":  false,
+                               "tracked":  false,
+                               "ignored":  true
+                           },
+                           {
+                               "path":  ".env.production",
+                               "exists":  false,
+                               "tracked":  false,
+                               "ignored":  true
+                           },
+                           {
+                               "path":  ".env.staging.example",
+                               "exists":  true,
+                               "tracked":  true,
+                               "ignored":  false
+                           },
+                           {
+                               "path":  "firebase.json",
+                               "exists":  true,
+                               "tracked":  true,
+                               "ignored":  false
+                           },
+                           {
+                               "path":  "Dockerfile",
+                               "exists":  true,
+                               "tracked":  true,
+                               "ignored":  false
+                           },
+                           {
+                               "path":  "server.ts",
+                               "exists":  true,
+                               "tracked":  true,
+                               "ignored":  false
+                           },
+                           {
+                               "path":  "package.json",
+                               "exists":  true,
+                               "tracked":  true,
+                               "ignored":  false
+                           },
+                           {
+                               "path":  "package-lock.json",
+                               "exists":  true,
+                               "tracked":  true,
+                               "ignored":  false
+                           },
+                           {
+                               "path":  "playwright/.auth",
+                               "exists":  false,
+                               "tracked":  false,
+                               "ignored":  false
+                           },
+                           {
+                               "path":  "storageState.json",
+                               "exists":  false,
+                               "tracked":  false,
+                               "ignored":  true
+                           },
+                           {
+                               "path":  "test-results",
+                               "exists":  true,
+                               "tracked":  false,
+                               "ignored":  true
+                           },
+                           {
+                               "path":  "playwright-report",
+                               "exists":  false,
+                               "tracked":  false,
+                               "ignored":  false
+                           },
+                           {
+                               "path":  "playwright-report-staging",
+                               "exists":  true,
+                               "tracked":  false,
+                               "ignored":  true
+                           },
+                           {
+                               "path":  "node_modules",
+                               "exists":  true,
+                               "tracked":  false,
+                               "ignored":  true
+                           },
+                           {
+                               "path":  "dist",
+                               "exists":  true,
+                               "tracked":  false,
+                               "ignored":  true
+                           }
+                       ],
+    "storage_state_files":  [
+
+                            ],
+    "service_account_files":  [
+
+                              ],
+    "gitignore":  {
+                      "status":  "adequate",
+                      "checks":  [
+                                     {
+                                         "name":  ".env",
+                                         "ok":  true
+                                     },
+                                     {
+                                         "name":  ".env.*",
+                                         "ok":  true
+                                     },
+                                     {
+                                         "name":  "service account json",
+                                         "ok":  true
+                                     },
+                                     {
+                                         "name":  "playwright/.auth",
+                                         "ok":  true
+                                     },
+                                     {
+                                         "name":  "storageState*.json",
+                                         "ok":  true
+                                     },
+                                     {
+                                         "name":  "test-results",
+                                         "ok":  true
+                                     },
+                                     {
+                                         "name":  "playwright-report",
+                                         "ok":  true
+                                     },
+                                     {
+                                         "name":  "node_modules",
+                                         "ok":  true
+                                     },
+                                     {
+                                         "name":  "dist",
+                                         "ok":  true
+                                     },
+                                     {
+                                         "name":  "build",
+                                         "ok":  true
+                                     },
+                                     {
+                                         "name":  "sensitive evidence",
+                                         "ok":  true
+                                     }
+                                 ],
+                      "adjustments_needed":  [
+
+                                             ]
+                  },
+    "secret_scan":  {
+                        "status":  "failed",
+                        "report":  "C:\\Users\\gusta\\OneDrive\\Documentos\\Growth Agent - Vistoria Facil\\vistoria-facil-ia-staging\\qa\\staging-real-unlock\\evidence\\sr02_secret_scan_report_20260625142700.json",
+                        "findings_count":  31,
+                        "p0":  2,
+                        "p1":  0
+                    },
+    "p0":  2,
+    "p1":  0,
+    "p2":  1,
+    "p2_items":  [
+                     "unknown files require manual classification"
+                 ],
+    "commit_ready":  false,
+    "commit_recommendation":  "do not commit until blockers are resolved",
+    "planned_commit_message":  "chore(staging): add SR-01 unlock plan and staging readiness docs",
+    "constraints_observed":  {
+                                 "no_push":  true,
+                                 "no_deploy":  true,
+                                 "no_uat":  true,
+                                 "no_secret_values_in_reports":  true,
+                                 "no_production_change":  true
+                             }
+}

@@ -1,0 +1,104 @@
+{
+  "stage": "SR-01 - Staging Real Unlock Plan + DoR",
+  "status": "completed",
+  "uat_status": "not_released",
+  "generated_on": "2026-06-25",
+  "repository_local_path": "C:\\Users\\gusta\\OneDrive\\Documentos\\Growth Agent - Vistoria Facil\\vistoria-facil-ia-staging",
+  "source_evidence": "qa\\staging_real_evidence_20260625.md",
+  "constraints": {
+    "do_not_execute_uat": true,
+    "do_not_call_uat": true,
+    "do_not_publish_beta": true,
+    "do_not_touch_production": true,
+    "do_not_commit_secrets": true,
+    "do_not_print_tokens": true,
+    "do_not_change_product_flow_without_registering": true
+  },
+  "technical_decisions": [
+    "Backend staging must use Cloud Run for server.ts/Express.",
+    "Firebase Hosting must rewrite /api/** to Cloud Run.",
+    "Firebase CLI in CI must use service account / Application Default Credentials.",
+    "Playwright real staging must not depend on interactive Google OAuth.",
+    "Preferred E2E auth strategy is email/password staging user plus storageState.",
+    "Fallback E2E auth strategy is custom token endpoint only in staging/test and protected by secret.",
+    "Mercado Pago must use sandbox before UAT.",
+    "Firestore and Storage must be tested with real staging rules."
+  ],
+  "files": [
+    "qa\\staging-real-unlock\\sr01_staging_real_unlock_plan.md",
+    "qa\\staging-real-unlock\\sr01_dor.md",
+    "qa\\staging-real-unlock\\sr01_required_secrets_template.md",
+    "qa\\staging-real-unlock\\sr01_backend_deploy_decision.md",
+    "qa\\staging-real-unlock\\sr01_auth_e2e_strategy.md",
+    "qa\\staging-real-unlock\\sr01_test_plan.md",
+    "qa\\staging-real-unlock\\sr01_evidence_matrix.md",
+    "qa\\staging-real-unlock\\sr01_blockers.md",
+    "qa\\staging-real-unlock\\sr01_manifest.json"
+  ],
+  "required_secret_groups": [
+    "GitHub",
+    "Firebase/GCP",
+    "Frontend",
+    "Auth E2E",
+    "Backend",
+    "Mercado Pago"
+  ],
+  "planned_minimum_tests": {
+    "count": 20,
+    "source": "qa\\staging-real-unlock\\sr01_test_plan.md"
+  },
+  "required_evidence": {
+    "source": "qa\\staging-real-unlock\\sr01_evidence_matrix.md",
+    "must_include": [
+      "git remote status",
+      "remote commit hash",
+      "GitHub Actions run URL",
+      "redacted Firebase deploy output",
+      "staging Hosting URL",
+      "Cloud Run service URL",
+      "firebase.json rewrite validation",
+      "/api/health response",
+      "Playwright report",
+      "auth storageState status without raw secret",
+      "Firestore/Storage test report",
+      "Mercado Pago sandbox report",
+      "entitlement report",
+      "secret redaction report",
+      "staging_real_evidence_<timestamp>.md"
+    ]
+  },
+  "known_blockers": [
+    {
+      "id": "SR01-B001",
+      "severity": "P1",
+      "summary": "GitHub remote push blocked by missing credential/token"
+    },
+    {
+      "id": "SR01-B002",
+      "severity": "P1",
+      "summary": "Firebase CLI lacks login/service account"
+    },
+    {
+      "id": "SR01-B003",
+      "severity": "P1",
+      "summary": "Real Playwright flow opens interactive Google OAuth"
+    },
+    {
+      "id": "SR01-B004",
+      "severity": "P1",
+      "summary": "Static Hosting alone does not cover server.ts /api backend"
+    },
+    {
+      "id": "SR01-B005",
+      "severity": "P1",
+      "summary": "Firestore, Storage, AI/backend and Mercado Pago are not proved in real staging"
+    },
+    {
+      "id": "SR01-B006",
+      "severity": "P2",
+      "summary": "Local worktree has uncommitted changes that must be classified before push"
+    }
+  ],
+  "decision": "can_configure_credentials_and_prepare_real_staging",
+  "next_step": "Configure credentials through secure channels, classify uncommitted local changes, push to GitHub, provision staging secrets, deploy Firebase/Cloud Run, then execute real staging E2E without misleading mocks."
+}

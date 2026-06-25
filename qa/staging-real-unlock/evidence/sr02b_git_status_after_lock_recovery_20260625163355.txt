@@ -1,0 +1,6 @@
+﻿timestamp=20260625163355
+git_status_functional=false
+reason=git.exe processes still active after terminating allowed read-only polling processes
+push_executed=false
+deploy_executed=false
+uat_executed=false

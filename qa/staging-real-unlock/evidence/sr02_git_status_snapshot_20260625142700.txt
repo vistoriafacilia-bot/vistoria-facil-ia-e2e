@@ -1,0 +1,17 @@
+﻿timestamp=20260625142700
+branch=main
+
+[remote]
+origin	https://github.com/gustavorother/vistoria-facil-ia-e2e.git (fetch)
+origin	https://github.com/gustavorother/vistoria-facil-ia-e2e.git (push)
+
+[log]
+e81835f Implement staging real deploy and E2E gate
+7d2b7fa Clarify staging evidence commit references
+13b7d80 Add real staging CI and evidence gates
+6060ed6 Promote rc2 package with E2E staging gates
+
+[status --short]
+?? qa/staging-real-unlock/
+
+[diff --name-status]

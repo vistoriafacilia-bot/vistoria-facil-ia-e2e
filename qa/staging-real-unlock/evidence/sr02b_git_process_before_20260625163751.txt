@@ -1,0 +1,44 @@
+﻿timestamp=20260625163751
+repo=C:\Users\gusta\OneDrive\Documentos\Growth Agent - Vistoria Facil\vistoria-facil-ia-staging
+[git.exe processes before]
+pid=23416; parent_pid=24320; created=2026-06-25T16:36:15.6059450-03:00; age_minutes=1.59; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false rev-parse HEAD
+pid=15764; parent_pid=1596; created=2026-06-25T16:36:15.6270810-03:00; age_minutes=1.59; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false rev-parse HEAD
+pid=1364; parent_pid=20380; created=2026-06-25T16:36:15.6356030-03:00; age_minutes=1.59; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false remote -v
+pid=21880; parent_pid=12420; created=2026-06-25T16:36:15.6571050-03:00; age_minutes=1.59; classification=allowed_read_only_polling; command_line_redacted=git.exe config --null --get core.fsmonitor
+pid=10708; parent_pid=25160; created=2026-06-25T16:36:15.6618070-03:00; age_minutes=1.59; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false remote -v
+pid=19216; parent_pid=6360; created=2026-06-25T16:36:15.6960130-03:00; age_minutes=1.59; classification=allowed_read_only_polling; command_line_redacted=git.exe config --null --get core.fsmonitor
+pid=15904; parent_pid=23360; created=2026-06-25T16:36:15.6972590-03:00; age_minutes=1.59; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false rev-parse HEAD
+pid=17156; parent_pid=19180; created=2026-06-25T16:36:15.7152390-03:00; age_minutes=1.59; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false rev-parse HEAD
+pid=10844; parent_pid=20764; created=2026-06-25T16:36:15.7347340-03:00; age_minutes=1.59; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false rev-parse HEAD
+pid=10500; parent_pid=22080; created=2026-06-25T16:36:15.7818720-03:00; age_minutes=1.59; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false rev-parse HEAD
+pid=16688; parent_pid=17192; created=2026-06-25T16:36:15.7845800-03:00; age_minutes=1.59; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false rev-parse HEAD
+pid=20256; parent_pid=4148; created=2026-06-25T16:36:15.8086910-03:00; age_minutes=1.59; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false remote -v
+pid=3824; parent_pid=18108; created=2026-06-25T16:36:15.8355120-03:00; age_minutes=1.59; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false rev-parse HEAD
+pid=3560; parent_pid=1888; created=2026-06-25T16:36:15.8438930-03:00; age_minutes=1.59; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false remote -v
+pid=3492; parent_pid=16608; created=2026-06-25T16:36:15.8600720-03:00; age_minutes=1.59; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false remote -v
+pid=7088; parent_pid=24688; created=2026-06-25T16:36:15.8773150-03:00; age_minutes=1.59; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false remote -v
+pid=21160; parent_pid=16852; created=2026-06-25T16:36:15.9052170-03:00; age_minutes=1.59; classification=allowed_read_only_polling; command_line_redacted=git.exe config --null --get core.fsmonitor
+pid=4560; parent_pid=25012; created=2026-06-25T16:36:15.9052150-03:00; age_minutes=1.59; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false remote -v
+pid=20576; parent_pid=16308; created=2026-06-25T16:36:15.9323370-03:00; age_minutes=1.59; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false remote -v
+pid=11912; parent_pid=18772; created=2026-06-25T16:36:15.9519390-03:00; age_minutes=1.59; classification=allowed_read_only_polling; command_line_redacted=git.exe config --null --get core.fsmonitor
+pid=10076; parent_pid=14568; created=2026-06-25T16:36:15.9766980-03:00; age_minutes=1.59; classification=allowed_read_only_polling; command_line_redacted=git.exe config --null --get core.fsmonitor
+pid=19936; parent_pid=1712; created=2026-06-25T16:36:15.9901440-03:00; age_minutes=1.59; classification=allowed_read_only_polling; command_line_redacted=git.exe config --null --get core.fsmonitor
+pid=2752; parent_pid=8316; created=2026-06-25T16:36:16.0102560-03:00; age_minutes=1.59; classification=allowed_read_only_polling; command_line_redacted=git.exe config --null --get core.fsmonitor
+pid=17716; parent_pid=15720; created=2026-06-25T16:36:16.0178410-03:00; age_minutes=1.59; classification=allowed_read_only_polling; command_line_redacted=git.exe config --null --get core.fsmonitor
+pid=21468; parent_pid=2212; created=2026-06-25T16:36:20.6655670-03:00; age_minutes=1.51; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false status --porcelain
+pid=13948; parent_pid=17508; created=2026-06-25T16:36:20.6786610-03:00; age_minutes=1.51; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false status --porcelain
+pid=2736; parent_pid=22596; created=2026-06-25T16:36:20.9065750-03:00; age_minutes=1.5; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false status --porcelain
+pid=10912; parent_pid=7588; created=2026-06-25T16:36:20.9522470-03:00; age_minutes=1.5; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false status --porcelain
+pid=13140; parent_pid=23892; created=2026-06-25T16:36:21.0109910-03:00; age_minutes=1.5; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false status --porcelain
+pid=18780; parent_pid=18932; created=2026-06-25T16:36:21.0182810-03:00; age_minutes=1.5; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false status --porcelain
+pid=16936; parent_pid=7736; created=2026-06-25T16:36:45.6996850-03:00; age_minutes=1.09; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false rev-parse HEAD
+pid=18936; parent_pid=25024; created=2026-06-25T16:36:45.7105210-03:00; age_minutes=1.09; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false remote -v
+pid=7056; parent_pid=23632; created=2026-06-25T16:36:45.7279890-03:00; age_minutes=1.09; classification=allowed_read_only_polling; command_line_redacted=git.exe config --null --get core.fsmonitor
+pid=20820; parent_pid=2196; created=2026-06-25T16:36:46.6672610-03:00; age_minutes=1.08; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false rev-parse HEAD
+pid=21028; parent_pid=12664; created=2026-06-25T16:36:46.6865830-03:00; age_minutes=1.07; classification=allowed_read_only_polling; command_line_redacted=git.exe config --null --get core.fsmonitor
+pid=13320; parent_pid=14644; created=2026-06-25T16:36:46.6925760-03:00; age_minutes=1.07; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false remote -v
+pid=8148; parent_pid=18892; created=2026-06-25T16:36:50.7378330-03:00; age_minutes=1.01; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false status --porcelain
+pid=5696; parent_pid=16840; created=2026-06-25T16:37:45.9498800-03:00; age_minutes=0.09; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false rev-parse HEAD
+pid=22844; parent_pid=23524; created=2026-06-25T16:37:45.9631190-03:00; age_minutes=0.09; classification=allowed_read_only_polling; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false remote -v
+pid=13580; parent_pid=25596; created=2026-06-25T16:37:45.9777300-03:00; age_minutes=0.09; classification=allowed_read_only_polling; command_line_redacted=git.exe config --null --get core.fsmonitor
+pid=6360; parent_pid=13164; created=2026-06-25T16:37:51.2855820-03:00; age_minutes=0; classification=blocked_unknown; command_line_redacted=

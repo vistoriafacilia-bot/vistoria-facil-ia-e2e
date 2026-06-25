@@ -1,0 +1,7 @@
+﻿{
+    "stage":  "SR-02B - Commit Report",
+    "created":  false,
+    "hash":  null,
+    "message":  "chore(staging): add SR-01 unlock plan and staging readiness docs",
+    "reason_not_created":  "git.exe processes still active after bounded termination waves for read-only polling processes"
+}

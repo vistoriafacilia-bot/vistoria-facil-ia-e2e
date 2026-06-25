@@ -1,0 +1,23 @@
+﻿timestamp=20260625161943
+repo=C:\Users\gusta\OneDrive\Documentos\Growth Agent - Vistoria Facil\vistoria-facil-ia-staging
+process_count=5
+safe_action=block
+safe_action_reason=active git.exe process command line does not clearly identify repo association
+
+[git.exe processes]
+pid=25100; parent_pid=16068; process_name=git.exe; creation_date=2026-06-25T16:16:06.2544430-03:00; age_minutes=3.63; points_to_repo=False; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false status --porcelain
+pid=9660; parent_pid=19064; process_name=git.exe; creation_date=2026-06-25T16:19:28.5330060-03:00; age_minutes=0.26; points_to_repo=False; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false rev-parse HEAD
+pid=22492; parent_pid=21520; process_name=git.exe; creation_date=2026-06-25T16:19:28.5476020-03:00; age_minutes=0.26; points_to_repo=False; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false remote -v
+pid=25240; parent_pid=20008; process_name=git.exe; creation_date=2026-06-25T16:19:28.5562670-03:00; age_minutes=0.26; points_to_repo=False; command_line_redacted=git.exe config --null --get core.fsmonitor
+pid=21140; parent_pid=16272; process_name=git.exe; creation_date=2026-06-25T16:19:33.5859230-03:00; age_minutes=0.17; points_to_repo=False; command_line_redacted=git.exe -c core.hooksPath=NUL -c core.fsmonitor=false status --porcelain
+
+[index.lock]
+exists=True; length=0; last_write_time=2026-06-25T14:28:05.6945355-03:00; age_minutes=111.64
+
+[git operation state files]
+.git\MERGE_HEAD exists=False
+.git\REBASE_HEAD exists=False
+.git\CHERRY_PICK_HEAD exists=False
+.git\BISECT_LOG exists=False
+.git\rebase-merge exists=False
+.git\rebase-apply exists=False

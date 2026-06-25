@@ -23,3 +23,5 @@ qa/**/evidence/*raw*
 qa/**/evidence/*payload*
 !qa/**/evidence/*redacted*
 !qa/**/evidence/sr02_secret_scan_report_*.json
+!qa/**/evidence/sr02a_secret_scan_after_recovery_*.json
+!qa/**/evidence/sr02b_secret_scan_after_recovery_*.json

@@ -1,0 +1,250 @@
+﻿{
+    "stage":  "SR-02 - Worktree Triage + Secret Hygiene",
+    "generated_at":  "2026-06-25T14:30:53.0187906-03:00",
+    "status":  "blocked",
+    "branch":  "main",
+    "remote":  [
+                   "origin https://github.com/gustavorother/vistoria-facil-ia-e2e.git (fetch)",
+                   "origin https://github.com/gustavorother/vistoria-facil-ia-e2e.git (push)"
+               ],
+    "worktree":  "dirty",
+    "classifications":  [
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02_git_status_snapshot_20260625142700.txt",
+                                "git_status":  "untracked_or_pending",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "reason":  "superseded evidence retained; prefer latest report for decision",
+                                "risk":  "low but superseded by corrected report",
+                                "recommended_action":  "retain; do not use as decision source"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02_git_status_snapshot_20260625143052.txt",
+                                "git_status":  "untracked_or_pending",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "reason":  "safe to commit after git lock is resolved and final secret scan remains passed",
+                                "risk":  "low",
+                                "recommended_action":  "include in local commit after resolving git lock"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02_secret_scan_report_20260625142700.json",
+                                "git_status":  "untracked_or_pending",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "reason":  "superseded evidence retained; prefer latest report for decision",
+                                "risk":  "low but superseded by corrected report",
+                                "recommended_action":  "retain; do not use as decision source"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02_secret_scan_report_20260625143052.json",
+                                "git_status":  "untracked_or_pending",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "reason":  "safe to commit after git lock is resolved and final secret scan remains passed",
+                                "risk":  "low",
+                                "recommended_action":  "include in local commit after resolving git lock"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02_worktree_triage_report_20260625142700.json",
+                                "git_status":  "untracked_or_pending",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "reason":  "superseded evidence retained; prefer latest report for decision",
+                                "risk":  "low but superseded by corrected report",
+                                "recommended_action":  "retain; do not use as decision source"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02_worktree_triage_report_20260625142700.md",
+                                "git_status":  "untracked_or_pending",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "reason":  "superseded evidence retained; prefer latest report for decision",
+                                "risk":  "low but superseded by corrected report",
+                                "recommended_action":  "retain; do not use as decision source"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02_worktree_triage_report_20260625143052.json",
+                                "git_status":  "untracked_or_pending",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "reason":  "safe to commit after git lock is resolved and final secret scan remains passed",
+                                "risk":  "low",
+                                "recommended_action":  "include in local commit after resolving git lock"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/evidence/sr02_worktree_triage_report_20260625143052.md",
+                                "git_status":  "untracked_or_pending",
+                                "category":  "evidence_sanitized",
+                                "can_commit":  true,
+                                "reason":  "safe to commit after git lock is resolved and final secret scan remains passed",
+                                "risk":  "low",
+                                "recommended_action":  "include in local commit after resolving git lock"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/sr01_auth_e2e_strategy.md",
+                                "git_status":  "untracked_or_pending",
+                                "category":  "sr01_doc",
+                                "can_commit":  true,
+                                "reason":  "safe to commit after git lock is resolved and final secret scan remains passed",
+                                "risk":  "low",
+                                "recommended_action":  "include in local commit after resolving git lock"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/sr01_backend_deploy_decision.md",
+                                "git_status":  "untracked_or_pending",
+                                "category":  "sr01_doc",
+                                "can_commit":  true,
+                                "reason":  "safe to commit after git lock is resolved and final secret scan remains passed",
+                                "risk":  "low",
+                                "recommended_action":  "include in local commit after resolving git lock"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/sr01_blockers.md",
+                                "git_status":  "untracked_or_pending",
+                                "category":  "sr01_doc",
+                                "can_commit":  true,
+                                "reason":  "safe to commit after git lock is resolved and final secret scan remains passed",
+                                "risk":  "low",
+                                "recommended_action":  "include in local commit after resolving git lock"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/sr01_dor.md",
+                                "git_status":  "untracked_or_pending",
+                                "category":  "sr01_doc",
+                                "can_commit":  true,
+                                "reason":  "safe to commit after git lock is resolved and final secret scan remains passed",
+                                "risk":  "low",
+                                "recommended_action":  "include in local commit after resolving git lock"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/sr01_evidence_matrix.md",
+                                "git_status":  "untracked_or_pending",
+                                "category":  "sr01_doc",
+                                "can_commit":  true,
+                                "reason":  "safe to commit after git lock is resolved and final secret scan remains passed",
+                                "risk":  "low",
+                                "recommended_action":  "include in local commit after resolving git lock"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/sr01_manifest.json",
+                                "git_status":  "untracked_or_pending",
+                                "category":  "sr01_doc",
+                                "can_commit":  true,
+                                "reason":  "safe to commit after git lock is resolved and final secret scan remains passed",
+                                "risk":  "low",
+                                "recommended_action":  "include in local commit after resolving git lock"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/sr01_required_secrets_template.md",
+                                "git_status":  "untracked_or_pending",
+                                "category":  "sr01_doc",
+                                "can_commit":  true,
+                                "reason":  "safe to commit after git lock is resolved and final secret scan remains passed",
+                                "risk":  "low",
+                                "recommended_action":  "include in local commit after resolving git lock"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/sr01_staging_real_unlock_plan.md",
+                                "git_status":  "untracked_or_pending",
+                                "category":  "sr01_doc",
+                                "can_commit":  true,
+                                "reason":  "safe to commit after git lock is resolved and final secret scan remains passed",
+                                "risk":  "low",
+                                "recommended_action":  "include in local commit after resolving git lock"
+                            },
+                            {
+                                "file":  "qa/staging-real-unlock/sr01_test_plan.md",
+                                "git_status":  "untracked_or_pending",
+                                "category":  "sr01_doc",
+                                "can_commit":  true,
+                                "reason":  "safe to commit after git lock is resolved and final secret scan remains passed",
+                                "risk":  "low",
+                                "recommended_action":  "include in local commit after resolving git lock"
+                            }
+                        ],
+    "gitignore":  {
+                      "status":  "adequate",
+                      "checks":  [
+                                     {
+                                         "name":  ".env/.env.*",
+                                         "ok":  true
+                                     },
+                                     {
+                                         "name":  "service account json",
+                                         "ok":  true
+                                     },
+                                     {
+                                         "name":  "playwright/.auth",
+                                         "ok":  true
+                                     },
+                                     {
+                                         "name":  "storageState*.json",
+                                         "ok":  true
+                                     },
+                                     {
+                                         "name":  "test-results",
+                                         "ok":  true
+                                     },
+                                     {
+                                         "name":  "playwright-report",
+                                         "ok":  true
+                                     },
+                                     {
+                                         "name":  "node_modules",
+                                         "ok":  true
+                                     },
+                                     {
+                                         "name":  "dist/build",
+                                         "ok":  true
+                                     },
+                                     {
+                                         "name":  "sensitive evidence payloads",
+                                         "ok":  true
+                                     }
+                                 ],
+                      "adjustments_needed":  [
+
+                                             ]
+                  },
+    "critical_files":  {
+                           "env_exists":  false,
+                           "env_local_exists":  false,
+                           "service_account_json_count":  0,
+                           "storage_state_json_count":  0,
+                           "tracked_validation":  "blocked_by_git_index_lock; do not commit until git operations are healthy"
+                       },
+    "secret_scan":  {
+                        "status":  "passed",
+                        "report":  "C:\\Users\\gusta\\OneDrive\\Documentos\\Growth Agent - Vistoria Facil\\vistoria-facil-ia-staging\\qa\\staging-real-unlock\\evidence\\sr02_secret_scan_report_20260625143052.json",
+                        "findings_count":  100,
+                        "p0":  0,
+                        "p1":  0
+                    },
+    "blockers":  [
+                     {
+                         "id":  "SR02-B001",
+                         "severity":  "P1",
+                         "summary":  "Active git.exe processes and .git/index.lock make local commit unsafe in this step",
+                         "action":  "Close/clear Git processes safely, then remove stale lock if no git process remains and rerun SR-02 before commit."
+                     }
+                 ],
+    "p0":  0,
+    "p1":  1,
+    "p2":  0,
+    "commit_local":  {
+                         "created":  false,
+                         "hash":  null,
+                         "message":  "chore(staging): add SR-01 unlock plan and staging readiness docs",
+                         "reason_not_created":  "Blocked by active git.exe processes and .git/index.lock; commit would not be safe."
+                     },
+    "constraints_observed":  {
+                                 "no_push":  true,
+                                 "no_deploy":  true,
+                                 "no_uat":  true,
+                                 "no_secret_values_in_reports":  true,
+                                 "no_production_change":  true
+                             },
+    "decision":  "blocked",
+    "next_step":  "Resolve Git lock/process state, rerun SR-02, then create local commit if secret hygiene remains passed."
+}

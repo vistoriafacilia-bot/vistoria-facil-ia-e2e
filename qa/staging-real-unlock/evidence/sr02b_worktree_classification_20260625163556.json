@@ -1,0 +1,8 @@
+﻿{
+    "stage":  "SR-02B - Worktree Classification",
+    "status":  "not_run",
+    "reason":  "git.exe processes still active after bounded termination waves for read-only polling processes",
+    "classifications":  [
+
+                        ]
+}
