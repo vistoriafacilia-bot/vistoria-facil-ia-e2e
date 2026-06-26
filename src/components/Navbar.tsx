@@ -1,13 +1,12 @@
 import React from 'react';
-import { logout } from '../firebase';
+import { logout } from '../lib/services/authService';
 import { LogOut, ClipboardList, ShieldAlert } from 'lucide-react';
-import { User as FirebaseUser } from 'firebase/auth';
 import { APP_VERSION } from '../lib/appVersion';
 import { PLAN_DEFINITIONS } from '../lib/plans';
-import { Entitlement } from '../types';
+import { AppUser, Entitlement } from '../types';
 
 interface NavbarProps {
-  user: FirebaseUser | null;
+  user: AppUser | null;
   onNavigateHome: () => void;
   isAdminUser: boolean;
   showAdminMetrics: boolean;
@@ -101,4 +100,3 @@ export default function Navbar({ user, onNavigateHome, isAdminUser, showAdminMet
     </header>
   );
 }
-

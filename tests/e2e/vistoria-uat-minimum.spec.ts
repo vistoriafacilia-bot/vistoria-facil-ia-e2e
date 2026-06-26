@@ -6,20 +6,6 @@ const onePixelPng = Buffer.from(
 );
 
 test.beforeEach(async ({ page }) => {
-  await page.route('**/api/analyze-image', async route => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        item_observado: 'Parede',
-        condicao_sugerida: 'OK',
-        descricao_neutra: 'Registro visual sem avaria aparente.',
-        pontos_de_atencao: [],
-        confianca: 'alta',
-      }),
-    });
-  });
-
   await page.goto('/');
   await page.evaluate(() => (window as any).__VF_E2E_RESET_STORE__?.());
   await page.reload();
@@ -52,7 +38,9 @@ async function uploadPhotoToCurrentRoom(page: Page) {
     mimeType: 'image/png',
     buffer: onePixelPng,
   });
-  await expect(page.getByText(/Condi..o: OK/i)).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(/Sem An.lise de IA/i)).toBeVisible({ timeout: 15_000 });
+  await page.getByRole('button', { name: /Confirmar Revis.o/i }).last().click();
+  await expect(page.getByText(/Confirmado/i).last()).toBeVisible();
 }
 
 async function dumpStore(page: Page) {
@@ -189,5 +177,5 @@ test('VF-E2E-010: reload real mantem rascunho, comodos e fotos', async ({ page }
   await expect(page.getByText(/Vistoria de Sa.da/i)).toBeVisible();
   await page.getByRole('button', { name: /Continuar Rascunho/i }).click();
   await expect(page.getByText('Deposito E2E')).toBeVisible();
-  await expect(page.getByText(/Condi..o: OK/i)).toBeVisible();
+  await expect(page.getByText(/Confirmado/i).last()).toBeVisible();
 });

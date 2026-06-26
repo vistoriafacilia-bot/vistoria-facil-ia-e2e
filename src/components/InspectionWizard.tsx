@@ -1,17 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { db, auth, storage, OperationType, handleFirestoreError } from '../firebase';
-import { 
-  collection, 
-  getDocs, 
-  setDoc, 
-  doc, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  query, 
-  where 
-} from 'firebase/firestore';
-import { deleteObject, getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { Property, Inspection, Room, Photo, AiAnalysis, ReviewedStatus, Entitlement } from '../types';
 import { safeCreateAuditEvent } from '../lib/auditEvents';
 import { 
@@ -35,6 +22,11 @@ import { getPhotoLimitForEntitlement } from '../lib/entitlements';
 import { getRemainingPhotoSlots, canAddPhotoBatch } from '../lib/photoRules';
 import { APP_VERSION } from '../lib/appVersion';
 import { formatQaGateIssues, validateInspectionCompletionGate } from '../lib/qaGates';
+import { getCurrentUser } from '../lib/services/authService';
+import { createInspection, updateInspection } from '../lib/services/inspectionService';
+import { deleteRoom, listRooms, newRoomId, saveRoom, updateRoom } from '../lib/services/roomService';
+import { deletePhoto, listPhotos, newPhotoId, savePhoto, updatePhoto } from '../lib/services/photoService';
+import { buildPhotoStoragePath, deleteFile, uploadFile } from '../lib/services/storageService';
 
 interface InspectionWizardProps {
   property: Property;
@@ -107,47 +99,30 @@ export default function InspectionWizard({
   const fetchRoomsAndPhotos = async (inspectionId: string) => {
     setLoading(true);
     try {
-      // Fetch Rooms
-      const roomsRef = collection(db, 'inspections', inspectionId, 'rooms');
-      const roomsSnap = await getDocs(roomsRef);
-      
-      let roomsList: Room[] = [];
-      roomsSnap.forEach(doc => {
-        roomsList.push({ id: doc.id, ...doc.data() } as Room);
-      });
-      roomsList.sort((a, b) => a.order - b.order);
+      let roomsList = await listRooms(inspectionId);
 
-      // If no rooms exist, create default ones once and save to Firestore
-      if (roomsList.length === 0 && auth.currentUser) {
-        const batchPromises = DEFAULT_ROOMS.map((name, index) => {
-          const roomId = doc(collection(db, 'inspections', inspectionId, 'rooms')).id;
+      if (roomsList.length === 0) {
+        const currentUser = await getCurrentUser();
+        if (!currentUser) return;
+        roomsList = await Promise.all(DEFAULT_ROOMS.map(async (name, index) => {
           const roomDoc: Room = {
-            id: roomId,
+            id: newRoomId(),
             inspectionId,
-            userId: auth.currentUser!.uid,
+            userId: currentUser.uid,
             name,
             order: index,
             isDefault: true,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
           };
-          return setDoc(doc(db, 'inspections', inspectionId, 'rooms', roomId), roomDoc).then(() => roomDoc);
-        });
-        roomsList = await Promise.all(batchPromises);
+          await saveRoom(roomDoc);
+          return roomDoc;
+        }));
       }
 
       setRooms(roomsList);
 
-      // Fetch Photos
-      const photosRef = collection(db, 'inspections', inspectionId, 'photos');
-      const photosSnap = await getDocs(photosRef);
-
-      const photosList: Photo[] = [];
-      photosSnap.forEach(doc => {
-        photosList.push({ id: doc.id, ...doc.data() } as Photo);
-      });
-      photosList.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-      setPhotos(photosList);
+      setPhotos(await listPhotos(inspectionId));
 
       // Keep selectedRoom state coherent
       if (roomsList.length > 0) {
@@ -173,44 +148,34 @@ export default function InspectionWizard({
 
   // Step 1: Create the Inspection Object
   const handleCreateInspection = async () => {
-    if (!auth.currentUser) return;
+    const currentUser = await getCurrentUser();
+    if (!currentUser) return;
     setLoading(true);
     try {
-      const inspectionId = doc(collection(db, 'inspections')).id;
-      const newInspection: Inspection = {
-        id: inspectionId,
-        userId: auth.currentUser.uid,
+      const newInspection = await createInspection({
+        userId: currentUser.uid,
         propertyId: property.id,
         inspectionType,
-        status: 'em_andamento',
-        startedAt: new Date().toISOString(),
-        appVersion: 'V0.4.0-rc2'
-      };
-
-      // Set Inspection Doc
-      await setDoc(doc(db, 'inspections', inspectionId), newInspection).catch(err => 
-        handleFirestoreError(err, OperationType.CREATE, `inspections/${inspectionId}`)
-      );
+      });
 
       // Create initial rooms in the subcollection
       const batchPromises = DEFAULT_ROOMS.map((name, index) => {
-        const roomId = doc(collection(db, 'inspections', inspectionId, 'rooms')).id;
-        const roomDoc: Room = { 
-          id: roomId, 
-          inspectionId,
-          userId: auth.currentUser!.uid,
+        const roomDoc: Room = {
+          id: newRoomId(),
+          inspectionId: newInspection.id,
+          userId: currentUser.uid,
           name, 
           order: index,
           isDefault: true,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
-        return setDoc(doc(db, 'inspections', inspectionId, 'rooms', roomId), roomDoc);
+        return saveRoom(roomDoc);
       });
       await Promise.all(batchPromises);
 
       // Record Event
-      await safeCreateAuditEvent(auth.currentUser.uid, 'inspection_create', { propertyId: property.id, inspectionType, inspectionId });
+      await safeCreateAuditEvent(currentUser.uid, 'inspection_create', { propertyId: property.id, inspectionType, inspectionId: newInspection.id });
 
       setActiveInspection(newInspection);
       onInspectionCreated(newInspection);
@@ -224,15 +189,15 @@ export default function InspectionWizard({
 
   // Add Room
   const handleAddRoom = async () => {
-    if (!activeInspection || !newRoomName.trim() || !auth.currentUser) return;
+    const currentUser = await getCurrentUser();
+    if (!activeInspection || !newRoomName.trim() || !currentUser) return;
     setRoomError(null);
     setRoomFeedbackMessage('Salvando cômodo...');
     try {
-      const roomId = doc(collection(db, 'inspections', activeInspection.id, 'rooms')).id;
-      const roomDoc: Room = { 
-        id: roomId, 
+      const roomDoc: Room = {
+        id: newRoomId(),
         inspectionId: activeInspection.id,
-        userId: auth.currentUser.uid,
+        userId: currentUser.uid,
         name: newRoomName.trim(), 
         order: rooms.length > 0 ? Math.max(...rooms.map(room => room.order ?? 0)) + 1 : 0,
         isDefault: false,
@@ -240,9 +205,7 @@ export default function InspectionWizard({
         updatedAt: new Date().toISOString()
       };
 
-      await setDoc(doc(db, 'inspections', activeInspection.id, 'rooms', roomId), roomDoc).catch(err => 
-        handleFirestoreError(err, OperationType.CREATE, `inspections/${activeInspection.id}/rooms/${roomId}`)
-      );
+      await saveRoom(roomDoc);
 
       setNewRoomName('');
       await fetchRoomsAndPhotos(activeInspection.id);
@@ -256,17 +219,14 @@ export default function InspectionWizard({
 
   // Rename Room
   const handleRenameRoom = async () => {
-    if (!activeInspection || !editingRoomId || !editingRoomName.trim() || !auth.currentUser) return;
+    if (!activeInspection || !editingRoomId || !editingRoomName.trim()) return;
     setRoomError(null);
     setRoomFeedbackMessage('Atualizando cômodo...');
     try {
-      const roomRef = doc(db, 'inspections', activeInspection.id, 'rooms', editingRoomId);
-      await updateDoc(roomRef, { 
+      await updateRoom(editingRoomId, {
         name: editingRoomName.trim(),
         updatedAt: new Date().toISOString()
-      }).catch(err => 
-        handleFirestoreError(err, OperationType.UPDATE, `inspections/${activeInspection.id}/rooms/${editingRoomId}`)
-      );
+      });
 
       // Maintain selectedRoom coherence if this is the one being renamed
       if (selectedRoom?.id === editingRoomId) {
@@ -295,9 +255,7 @@ export default function InspectionWizard({
     }
 
     try {
-      await deleteDoc(doc(db, 'inspections', activeInspection.id, 'rooms', roomId)).catch(err => 
-        handleFirestoreError(err, OperationType.DELETE, `inspections/${activeInspection.id}/rooms/${roomId}`)
-      );
+      await deleteRoom(roomId);
 
       const remainingRooms = rooms.filter(r => r.id !== roomId);
       if (selectedRoom?.id === roomId) {
@@ -391,7 +349,8 @@ export default function InspectionWizard({
   // Handle multiple Image uploads & Analysis in a loop
   const handlePhotoFiles = async (files: File[]) => {
     console.log("Arquivos recebidos:", files.length);
-    if (!activeInspection || !selectedRoom || !auth.currentUser) return;
+    const currentUser = await getCurrentUser();
+    if (!activeInspection || !selectedRoom || !currentUser) return;
 
     setUploadError(null);
 
@@ -438,8 +397,8 @@ export default function InspectionWizard({
         }
 
         // Create new photo item
-        const photoId = doc(collection(db, 'inspections', activeInspection.id, 'photos')).id;
-        const photoStoragePath = `inspection-photos/${auth.currentUser.uid}/${activeInspection.id}/${photoId}.jpg`;
+        const photoId = newPhotoId();
+        const photoStoragePath = buildPhotoStoragePath(currentUser.uid, activeInspection.id, photoId);
         let photoDownloadUrl = '';
 
         const roomNameVal = selectedRoom.name;
@@ -447,19 +406,10 @@ export default function InspectionWizard({
 
         try {
           const imageBlob = await fetch(compressedBase64).then(response => response.blob());
-          const storageRef = ref(storage, photoStoragePath);
-          await uploadBytes(storageRef, imageBlob, {
-            contentType: 'image/jpeg',
-            customMetadata: {
-              userId: auth.currentUser.uid,
-              inspectionId: activeInspection.id,
-              roomId: selectedRoom.id,
-              photoId
-            }
-          });
-          photoDownloadUrl = await getDownloadURL(storageRef);
+          const uploaded = await uploadFile(photoStoragePath, imageBlob, 'image/jpeg');
+          photoDownloadUrl = uploaded.url;
         } catch (storageErr: any) {
-          console.error('Erro ao enviar foto ao Firebase Storage:', storageErr);
+          console.error('Erro ao enviar foto ao Supabase Storage:', storageErr);
           setUploadError(`Erro ao enviar a foto ${currentIdx} para o Storage real: ${storageErr?.message || String(storageErr)}`);
           continue;
         }
@@ -469,7 +419,7 @@ export default function InspectionWizard({
           inspectionId: activeInspection.id,
           roomId: selectedRoom.id,
           roomName: roomNameVal,
-          userId: auth.currentUser.uid,
+          userId: currentUser.uid,
           url: photoDownloadUrl,
           imageUrl: compressedBase64,
           storagePath: photoStoragePath,
@@ -485,14 +435,14 @@ export default function InspectionWizard({
           fallbackApplied: false
         };
 
-        // 2. Save compressed photo metadata to Firestore
+        // 2. Save compressed photo metadata to Supabase
         try {
-          await setDoc(doc(db, 'inspections', activeInspection.id, 'photos', photoId), newPhoto);
+          await savePhoto(newPhoto);
           
           // Update state immediately so the photo appears in the UI
           setPhotos(prev => [...prev, newPhoto]);
         } catch (err: any) {
-          console.error('Erro ao salvar foto no Storage/Firestore:', err);
+          console.error('Erro ao salvar foto no Supabase:', err);
           const errStr = String(err);
           if (errStr.toLowerCase().includes('permission') || errStr.toLowerCase().includes('insufficient')) {
             setUploadError('Erro ao salvar foto no Storage. Verifique permissões de armazenamento.');
@@ -506,10 +456,12 @@ export default function InspectionWizard({
         setAnalyzingPhotoId(photoId);
 
         // Log event (doesn't block)
-        await safeCreateAuditEvent(auth.currentUser?.uid || 'unknown', 'ai_analysis_request', { photoId, roomName: roomNameVal, inspectionId: activeInspection.id });
+        await safeCreateAuditEvent(currentUser.uid, 'ai_analysis_request', { photoId, roomName: roomNameVal, inspectionId: activeInspection.id });
 
         try {
-          const response = await fetch('/api/analyze-image', {
+          throw new Error('IA server-side desabilitada no Supabase Free; revise manualmente.');
+          /*
+          const response = await fetch('removed-ai-endpoint', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -540,10 +492,10 @@ export default function InspectionWizard({
             fallbackApplied: false
           };
 
-          await updateDoc(doc(db, 'inspections', activeInspection.id, 'photos', photoId), updateData);
+          await updatePhoto(photoId, updateData);
 
           // Record successful AI event (doesn't block)
-          await safeCreateAuditEvent(auth.currentUser?.uid || 'unknown', 'ai_analysis', { photoId, roomName: roomNameVal, inspectionId: activeInspection.id });
+          await safeCreateAuditEvent(currentUser.uid, 'ai_analysis', { photoId, roomName: roomNameVal, inspectionId: activeInspection.id });
 
           // Trigger local state sync for this specific photo in our photos list
           setPhotos(prev => prev.map(p => p.id === photoId ? {
@@ -551,6 +503,7 @@ export default function InspectionWizard({
             ...updateData
           } : p));
 
+          */
         } catch (error: any) {
           console.error(`Erro ao analisar a foto ${photoId}:`, error);
           setUploadError('Algumas fotos foram salvas, mas a análise automática falhou em parte delas. Você pode revisar manualmente ou tentar novamente.');
@@ -569,7 +522,7 @@ export default function InspectionWizard({
           };
 
           try {
-            await updateDoc(doc(db, 'inspections', activeInspection.id, 'photos', photoId), fallbackUpdate);
+            await updatePhoto(photoId, fallbackUpdate);
           } catch (writeErr) {
             console.error('Falha ao gravar dados de fallback da foto:', writeErr);
           }
@@ -642,8 +595,6 @@ export default function InspectionWizard({
   const handleSavePhotoEdit = async (photoId: string) => {
     if (!activeInspection) return;
     try {
-      const photoRef = doc(db, 'inspections', activeInspection.id, 'photos', photoId);
-      
       const photo = photos.find(p => p.id === photoId);
       if (!photo) return;
 
@@ -676,9 +627,7 @@ export default function InspectionWizard({
         fallbackApplied: photo.fallbackApplied || false
       };
 
-      await updateDoc(photoRef, editData as any).catch(err => 
-        handleFirestoreError(err, OperationType.UPDATE, `inspections/${activeInspection.id}/photos/${photoId}`)
-      );
+      await updatePhoto(photoId, editData as any);
 
       setEditingPhotoId(null);
       fetchRoomsAndPhotos(activeInspection.id);
@@ -698,17 +647,14 @@ export default function InspectionWizard({
       const displayTitleVal = photo.displayTitle || photo.caption || `Foto registrada na ${roomNameVal}`;
       const descriptionVal = photo.description || photo.aiAnalysis?.descricao_neutra || 'Descrição confirmada.';
 
-      const photoRef = doc(db, 'inspections', activeInspection.id, 'photos', photoId);
-      await updateDoc(photoRef, {
+      await updatePhoto(photoId, {
         reviewedStatus: 'confirmado',
         reviewStatus: 'confirmed',
         roomName: roomNameVal,
         displayTitle: displayTitleVal,
         description: descriptionVal,
         updatedAt: new Date().toISOString()
-      }).catch(err => 
-        handleFirestoreError(err, OperationType.UPDATE, `inspections/${activeInspection.id}/photos/${photoId}`)
-      );
+      });
 
       fetchRoomsAndPhotos(activeInspection.id);
     } catch (error) {
@@ -723,7 +669,9 @@ export default function InspectionWizard({
     setRetryingPhotoId(photo.id);
     setUploadError(null);
     try {
-      const response = await fetch('/api/analyze-image', {
+      throw new Error('IA server-side desabilitada no Supabase Free; revise manualmente.');
+      /*
+      const response = await fetch('removed-ai-endpoint', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -755,16 +703,18 @@ export default function InspectionWizard({
         analysisError: undefined
       };
 
-      await updateDoc(doc(db, 'inspections', activeInspection.id, 'photos', photo.id), updateData);
+      await updatePhoto(photo.id, updateData);
 
       // Record successful AI event (doesn't block)
-      await safeCreateAuditEvent(auth.currentUser?.uid || 'unknown', 'ai_analysis_retry', { photoId: photo.id, roomName: retryRoomName, inspectionId: activeInspection.id });
+      const currentUser = await getCurrentUser();
+      await safeCreateAuditEvent(currentUser?.uid || 'unknown', 'ai_analysis_retry', { photoId: photo.id, roomName: retryRoomName, inspectionId: activeInspection.id });
 
       setPhotos(prev => prev.map(p => p.id === photo.id ? {
         ...p,
         ...updateData
       } : p));
 
+      */
     } catch (error: any) {
       console.error(`Erro ao analisar novamente a foto ${photo.id}:`, error);
       setUploadError('Falha ao gerar sugestão novamente. Verifique a conexão ou tente outra imagem.');
@@ -776,7 +726,7 @@ export default function InspectionWizard({
       };
 
       try {
-        await updateDoc(doc(db, 'inspections', activeInspection.id, 'photos', photo.id), fallbackUpdate);
+        await updatePhoto(photo.id, fallbackUpdate);
       } catch (e) {}
 
       setPhotos(prev => prev.map(p => p.id === photo.id ? {
@@ -794,14 +744,12 @@ export default function InspectionWizard({
     try {
       const photo = photos.find(item => item.id === photoId);
       if (photo?.storagePath) {
-        await deleteObject(ref(storage, photo.storagePath)).catch(storageErr => {
-          console.warn('Nao foi possivel remover a foto do Storage; o cleanup de staging tentara novamente:', storageErr);
+        await deleteFile(photo.storagePath).catch(storageErr => {
+          console.warn('Nao foi possivel remover a foto do Supabase Storage; cleanup manual pode ser necessario:', storageErr);
         });
       }
 
-      await deleteDoc(doc(db, 'inspections', activeInspection.id, 'photos', photoId)).catch(err => 
-        handleFirestoreError(err, OperationType.DELETE, `inspections/${activeInspection.id}/photos/${photoId}`)
-      );
+      await deletePhoto(photoId);
 
       fetchRoomsAndPhotos(activeInspection.id);
     } catch (error) {
@@ -811,13 +759,14 @@ export default function InspectionWizard({
 
   const handleFinishInspection = async () => {
     if (!activeInspection) return;
+    const currentUser = await getCurrentUser();
     const completionGate = validateInspectionCompletionGate({
       inspection: activeInspection,
       property,
       rooms,
       photos,
       photoLimit: getPhotoLimitForEntitlement(entitlement),
-      userId: auth.currentUser?.uid,
+      userId: currentUser?.uid,
     });
 
     if (!completionGate.passed) {
@@ -826,13 +775,10 @@ export default function InspectionWizard({
     }
 
     try {
-      const inspectionRef = doc(db, 'inspections', activeInspection.id);
-      await updateDoc(inspectionRef, {
+      await updateInspection(activeInspection.id, {
         status: 'concluida',
         completedAt: new Date().toISOString()
-      }).catch(err => 
-        handleFirestoreError(err, OperationType.UPDATE, `inspections/${activeInspection.id}`)
-      );
+      });
 
       onProceedToReport({
         ...activeInspection,

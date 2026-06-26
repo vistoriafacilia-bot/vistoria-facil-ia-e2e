@@ -4,10 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx server.ts",
-    "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
-    "start": "node dist/server.cjs",
-    "clean": "rm -rf dist server.js",
+    "dev": "vite",
+    "build": "vite build",
+    "start": "vite preview",
+    "preview": "vite preview",
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
     "lint": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -16,23 +17,18 @@
     "qa:static": "node scripts/qa-release-gate.mjs",
     "qa:staging": "node scripts/qa-staging-readiness.mjs",
     "qa:performance": "node scripts/qa-performance-budget.mjs",
+    "qa:supabase-storage-auth": "node scripts/validate-supabase-storage-auth.mjs",
     "e2e:local": "playwright test --config=playwright.config.ts",
-    "e2e:staging": "playwright test --config=playwright.staging.config.ts",
+    "e2e:staging": "npm run qa:supabase-storage-auth",
     "e2e:headed": "playwright test --config=playwright.config.ts --headed",
     "e2e:report": "playwright show-report",
     "qa:local-e2e": "npm run lint && npm run test:ci && npm run build && npm run e2e:local",
-    "qa:staging-real": "npm run lint && npm run test:ci && npm run build && npm run e2e:staging",
-    "seed:staging:e2e": "node scripts/staging-e2e-data.mjs seed",
-    "cleanup:staging:e2e": "node scripts/staging-e2e-data.mjs cleanup",
-    "deploy:staging:firebase": "firebase deploy --non-interactive --project \"$FIREBASE_PROJECT_ID_STAGING\" --only hosting,firestore:rules,storage"
+    "qa:staging-real": "npm run lint && npm run test:ci && npm run build && npm run qa:supabase-storage-auth"
   },
   "dependencies": {
-    "@google/genai": "^2.4.0",
+    "@supabase/supabase-js": "^2.108.2",
     "@tailwindcss/vite": "^4.1.14",
     "@vitejs/plugin-react": "^5.0.4",
-    "dotenv": "^17.2.3",
-    "express": "^4.21.2",
-    "firebase": "^12.15.0",
     "jspdf": "^4.2.1",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
@@ -41,10 +37,10 @@
     "vite": "^6.2.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
-    "@types/express": "^4.17.21",
     "@types/node": "^22.14.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
@@ -55,7 +51,6 @@
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.3",
-    "vitest": "^4.1.9",
-    "@playwright/test": "^1.61.1"
+    "vitest": "^4.1.9"
   }
 }

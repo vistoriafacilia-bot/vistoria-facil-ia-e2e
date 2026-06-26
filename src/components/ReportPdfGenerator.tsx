@@ -1,7 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { db, auth, storage, OperationType, handleFirestoreError } from '../firebase';
-import { collection, getDocs, updateDoc, doc, addDoc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Property, Inspection, Room, Photo, Entitlement } from '../types';
 import { jsPDF } from 'jspdf';
 import { 
@@ -18,11 +15,17 @@ import {
   Compass, 
   FileCheck 
 } from 'lucide-react';
-import { buildReportFilename, buildReportStoragePath, buildReportId } from '../lib/reporting';
+import { buildReportFilename, buildReportId } from '../lib/reporting';
 import { safeCreateAuditEvent } from '../lib/auditEvents';
 import { validateReportGenerationGate, QaGateResult } from '../lib/qaGates';
 import { getPhotoLimitForEntitlement } from '../lib/entitlements';
 import { APP_VERSION } from '../lib/appVersion';
+import { getCurrentUser } from '../lib/services/authService';
+import { updateInspection } from '../lib/services/inspectionService';
+import { listPhotos } from '../lib/services/photoService';
+import { saveReport } from '../lib/services/reportService';
+import { listRooms } from '../lib/services/roomService';
+import { buildReportStoragePath, uploadFile } from '../lib/services/storageService';
 
 interface ReportPdfGeneratorProps {
   property: Property;
@@ -50,23 +53,11 @@ export default function ReportPdfGenerator({ property, inspection, onBack, entit
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Rooms
-      const roomsRef = collection(db, 'inspections', inspection.id, 'rooms');
-      const roomsSnap = await getDocs(roomsRef);
-      const roomsList: Room[] = [];
-      roomsSnap.forEach(doc => {
-        roomsList.push({ id: doc.id, ...doc.data() } as Room);
-      });
-      roomsList.sort((a, b) => a.order - b.order);
+      const currentUser = await getCurrentUser();
+      const roomsList = await listRooms(inspection.id);
       setRooms(roomsList);
 
-      // Photos
-      const photosRef = collection(db, 'inspections', inspection.id, 'photos');
-      const photosSnap = await getDocs(photosRef);
-      const photosList: Photo[] = [];
-      photosSnap.forEach(doc => {
-        photosList.push({ id: doc.id, ...doc.data() } as Photo);
-      });
+      const photosList = await listPhotos(inspection.id);
       setPhotos(photosList);
 
       const gate = validateReportGenerationGate({
@@ -75,7 +66,7 @@ export default function ReportPdfGenerator({ property, inspection, onBack, entit
         rooms: roomsList,
         photos: photosList,
         photoLimit: getPhotoLimitForEntitlement(entitlement),
-        userId: auth.currentUser?.uid,
+        userId: currentUser?.uid,
         entitlement
       });
       setGateResult(gate);
@@ -105,6 +96,7 @@ export default function ReportPdfGenerator({ property, inspection, onBack, entit
   // Render PDF using jsPDF
   const generatePDF = async () => {
     if (pdfGenerating) return;
+    const currentUser = await getCurrentUser();
 
     // Gate validation check
     const currentGate = validateReportGenerationGate({
@@ -113,7 +105,7 @@ export default function ReportPdfGenerator({ property, inspection, onBack, entit
       rooms,
       photos,
       photoLimit: getPhotoLimitForEntitlement(entitlement),
-      userId: auth.currentUser?.uid,
+      userId: currentUser?.uid,
       entitlement
     });
 
@@ -202,7 +194,7 @@ export default function ReportPdfGenerator({ property, inspection, onBack, entit
       docPdf.setFont('helvetica', 'bold');
       docPdf.text('Vistoriador Responsável:', 20, 190);
       docPdf.setFont('helvetica', 'normal');
-      docPdf.text(auth.currentUser?.displayName || auth.currentUser?.email || 'Usuário Autenticado', 68, 190);
+      docPdf.text(currentUser?.displayName || currentUser?.email || 'Usuário Autenticado', 68, 190);
 
       docPdf.setFont('helvetica', 'bold');
       docPdf.text('Código de Segurança:', 20, 198);
@@ -419,9 +411,9 @@ export default function ReportPdfGenerator({ property, inspection, onBack, entit
       // Save PDF Local
       docPdf.save(filename);
 
-      // Upload to Firebase Storage
+      // Upload to Supabase Storage
       const pdfBlob = docPdf.output('blob');
-      const userId = auth.currentUser?.uid;
+      const userId = currentUser?.uid;
       let downloadUrl = '';
       const nowIso = new Date().toISOString();
 
@@ -432,22 +424,11 @@ export default function ReportPdfGenerator({ property, inspection, onBack, entit
           inspectionId: inspection.id,
           filename
         });
-        const storageRef = ref(storage, storagePath);
-
-        await uploadBytes(storageRef, pdfBlob, {
-          contentType: 'application/pdf',
-          customMetadata: {
-            userId,
-            propertyId: property.id,
-            inspectionId: inspection.id,
-            appVersion: APP_VERSION
-          }
-        });
-
-        downloadUrl = await getDownloadURL(storageRef);
+        const uploaded = await uploadFile(storagePath, pdfBlob, 'application/pdf');
+        downloadUrl = uploaded.url;
 
         const reportId = buildReportId(inspection.id, nowIso);
-        const reportData = {
+        await saveReport({
           id: reportId,
           userId,
           propertyId: property.id,
@@ -458,35 +439,23 @@ export default function ReportPdfGenerator({ property, inspection, onBack, entit
           generalSummary,
           generatedAt: nowIso,
           appVersion: APP_VERSION
-        };
+        });
 
-        // Save report metadata under inspections/{inspectionId}/reports/{reportId}
-        const reportDocRef = doc(db, 'inspections', inspection.id, 'reports', reportId);
-        await setDoc(reportDocRef, reportData);
-
-        // Update Inspection Document with latest report details
-        const inspectionRef = doc(db, 'inspections', inspection.id);
-        await updateDoc(inspectionRef, {
+        await updateInspection(inspection.id, {
           status: 'pdf_gerado',
           summary: generalSummary,
-          pdfUrl: downloadUrl,
-          reportId: reportId
-        }).catch(err => 
-          handleFirestoreError(err, OperationType.UPDATE, `inspections/${inspection.id}`)
-        );
+          pdfUrl: downloadUrl
+        });
       } else {
         // Fallback update without user auth
-        const inspectionRef = doc(db, 'inspections', inspection.id);
-        await updateDoc(inspectionRef, {
+        await updateInspection(inspection.id, {
           status: 'pdf_gerado',
           summary: generalSummary
-        }).catch(err => 
-          handleFirestoreError(err, OperationType.UPDATE, `inspections/${inspection.id}`)
-        );
+        });
       }
 
       // Record Audit Event
-      await safeCreateAuditEvent(auth.currentUser?.uid || 'unknown', 'pdf_generation', { propertyId: property.id, inspectionId: inspection.id });
+      await safeCreateAuditEvent(userId || 'unknown', 'pdf_generation', { propertyId: property.id, inspectionId: inspection.id });
 
       setPdfDownloaded(true);
     } catch (err) {

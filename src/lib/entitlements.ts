@@ -1,7 +1,6 @@
 import { Entitlement } from '../types';
 import { FREE_PLAN_ID, PAID_BETA_PLAN_ID, PLAN_DEFINITIONS } from './plans';
-import { db } from '../firebase';
-import { collection, query, where, getDocs, setDoc, doc } from 'firebase/firestore';
+import { getOrCreateSupabaseEntitlement } from './services/entitlementService';
 
 export const isEntitlementActive = (entitlement?: Entitlement | null, now = new Date()) => {
   if (!entitlement || entitlement.status !== 'active') return false;
@@ -32,43 +31,5 @@ export const canGeneratePdf = (entitlement?: Entitlement | null) => {
 };
 
 export async function getOrCreateUserEntitlement(userId: string): Promise<Entitlement> {
-  const list: Entitlement[] = [];
-  
-  try {
-    const q = query(collection(db, 'entitlements'), where('userId', '==', userId));
-    const snap = await getDocs(q);
-    
-    snap.forEach(doc => {
-      list.push({ id: doc.id, ...doc.data() } as Entitlement);
-    });
-    
-    // Select best active entitlement
-    const best = selectBestActiveEntitlement(list);
-    if (best) return best;
-  } catch (readError) {
-    console.warn('Error reading entitlements from Firestore (permission issue?):', readError);
-  }
-  
-  // If no active entitlement, create default free entitlement
-  const nowIso = new Date().toISOString();
-  const entitlementId = `${userId}_free_init`;
-  const defaultFree: Entitlement = {
-    id: entitlementId,
-    userId,
-    planId: 'free_10',
-    status: 'active',
-    source: 'free_self_service',
-    maxPhotosPerInspection: 10,
-    pdfEnabled: true,
-    createdAt: nowIso,
-    updatedAt: nowIso
-  };
-  
-  try {
-    await setDoc(doc(db, 'entitlements', entitlementId), defaultFree);
-  } catch (writeError) {
-    console.warn('Error creating default entitlement in Firestore (permission issue?):', writeError);
-  }
-  
-  return defaultFree;
+  return getOrCreateSupabaseEntitlement(userId);
 }

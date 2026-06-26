@@ -22,6 +22,14 @@ export interface Property {
   updatedAt: string;
 }
 
+export interface AppUser {
+  uid: string;
+  id: string;
+  email?: string | null;
+  displayName?: string | null;
+  photoURL?: string | null;
+}
+
 export type InspectionType = 'entrada' | 'saida';
 export type InspectionStatus = 'rascunho' | 'em_andamento' | 'concluida' | 'pdf_gerado';
 
@@ -65,7 +73,7 @@ export interface Photo {
   roomId: string;
   roomName?: string;
   userId?: string;
-  url: string; // Firebase Storage URL or highly compressed base64 fallback
+  url: string; // Supabase Storage signed URL or highly compressed base64 fallback
   imageUrl?: string;
   storagePath?: string;
   caption: string;

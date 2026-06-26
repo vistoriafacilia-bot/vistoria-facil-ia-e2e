@@ -6,41 +6,51 @@ const root = process.cwd();
 const read = (relativePath: string) => fs.readFileSync(path.join(root, relativePath), 'utf8');
 
 describe('critical static regression guards', () => {
-  it('does not use addDoc to write audit events because Firestore rules require id == eventId', () => {
-    const files = ['src/App.tsx', 'src/components/InspectionWizard.tsx', 'src/components/PropertyManager.tsx', 'src/components/ReportPdfGenerator.tsx', 'src/lib/auditEvents.ts'];
+  it('does not import Firebase SDKs in production source after Supabase migration', () => {
+    const files = [
+      'src/App.tsx',
+      'src/components/InspectionWizard.tsx',
+      'src/components/PropertyManager.tsx',
+      'src/components/ReportPdfGenerator.tsx',
+      'src/components/PlanGate.tsx',
+      'src/lib/auditEvents.ts',
+      'src/lib/entitlements.ts',
+      'src/lib/supabaseClient.ts',
+    ];
     for (const file of files) {
       const source = read(file);
-      expect(source, `${file} must not directly addDoc to events`).not.toMatch(/addDoc\s*\(\s*collection\s*\(\s*db\s*,\s*['\"]events['\"]/);
+      expect(source, `${file} must not import firebase`).not.toMatch(/from ['"]firebase\/|from ['"]\.\.\/firebase|from ['"]\.\/firebase/);
     }
   });
 
-  it('routes all audit event writes through safeCreateAuditEvent and keeps it non-blocking', () => {
+  it('routes audit event writes through the Supabase audit service and keeps it non-blocking', () => {
     const helper = read('src/lib/auditEvents.ts');
+    const service = read('src/lib/services/auditService.ts');
     expect(helper).toContain('export async function safeCreateAuditEvent');
-    expect(helper).toContain('setDoc(eventRef, eventDoc)');
-    expect(helper).toContain('id: eventId');
+    expect(helper).toContain('createAuditEvent');
     expect(helper).toContain('return null');
     expect(helper).toContain('console.warn');
+    expect(service).toContain("supabase.from('events').insert");
   });
 
-  it('Firestore rules allow only owned entitlement reads and controlled free entitlement creation', () => {
-    const rules = read('firestore.rules');
-    expect(rules).toContain('match /entitlements/{entitlementId}');
-    expect(rules).toContain('resource.data.userId == request.auth.uid');
-    expect(rules).toContain("request.resource.data.planId == 'free_10'");
-    expect(rules).toContain("request.resource.data.source == 'free_self_service'");
-    expect(rules).toContain('request.resource.data.maxPhotosPerInspection <= 10');
-    expect(rules).toContain('allow update, delete: if false');
+  it('Supabase migration enables RLS and controlled free entitlement creation', () => {
+    const migration = read('supabase/migrations/202606250001_vistoria_facil_foundation.sql');
+    expect(migration).toContain('alter table public.entitlements enable row level security');
+    expect(migration).toContain('create policy "entitlements controlled free insert"');
+    expect(migration).toContain("plan_id = 'free_10'");
+    expect(migration).toContain("source = 'free_self_service'");
+    expect(migration).toContain('max_photos_per_inspection <= 10');
   });
 
-  it('Firestore rules require ownership on inspections, nested rooms, nested photos and reports', () => {
-    const rules = read('firestore.rules');
-    expect(rules).toContain('match /inspections/{inspectionId}');
-    expect(rules).toContain('request.resource.data.userId == request.auth.uid');
-    expect(rules).toContain('get(/databases/$(database)/documents/properties/$(request.resource.data.propertyId)).data.userId == request.auth.uid');
-    expect(rules).toContain('match /rooms/{roomId}');
-    expect(rules).toContain('match /photos/{photoId}');
-    expect(rules).toContain('match /reports/{reportId}');
+  it('Supabase migration requires ownership on core tables and storage objects', () => {
+    const migration = read('supabase/migrations/202606250001_vistoria_facil_foundation.sql');
+    for (const table of ['properties', 'inspections', 'rooms', 'photos', 'reports']) {
+      expect(migration).toContain(`alter table public.${table} enable row level security`);
+    }
+    expect(migration).toContain('create policy "photos owner all"');
+    expect(migration).toContain('create policy "inspection photos owner insert"');
+    expect(migration).toContain("bucket_id = 'inspection-photos'");
+    expect(migration).toContain("(storage.foldername(name))[1] = (select auth.uid()::text)");
   });
 
   it('production app version is the release candidate and no V0.1.0 marker remains in source files', () => {

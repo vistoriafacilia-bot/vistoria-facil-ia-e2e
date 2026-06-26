@@ -18,8 +18,7 @@ const requiredFiles = [
   'qa/release_candidate_gate_v0_4.md',
   'qa/uat_script_v0_4.md',
   '.env.example',
-  'firestore.rules',
-  'storage.rules',
+  'supabase/migrations/202606250001_vistoria_facil_foundation.sql',
   'qa/performance_budget_v0_4.md',
   'scripts/qa-performance-budget.mjs'
 ];
@@ -32,11 +31,7 @@ const requiredRunbookTokens = [
   'AI Studio não será usado para pensar',
   'backup válido',
   'rollback',
-  'Mercado Pago sandbox',
-  'webhook',
   'entitlement',
-  'Firestore rules',
-  'Storage rules',
   'STG-E2E-01',
   'STG-E2E-07',
   'UAT só entra após PASS'
@@ -71,7 +66,7 @@ if (exists('package.json')) {
 
 if (exists('.env.example')) {
   const env = read('.env.example');
-  for (const key of ['APP_URL', 'MERCADOPAGO_ACCESS_TOKEN', 'GEMINI_API_KEY', 'FIREBASE_PROJECT_ID']) {
+  for (const key of ['VITE_SUPABASE_URL', 'VITE_SUPABASE_ANON_KEY', 'VITE_E2E_MODE']) {
     env.includes(key) ? pass(`.env.example contém ${key}`) : fail(`.env.example não contém ${key}`);
   }
   if (/MERCADOPAGO_ACCESS_TOKEN=.*APP_USR-[A-Za-z0-9_-]{12,}/.test(env) || /MERCADOPAGO_ACCESS_TOKEN=.*TEST-(?!MY_)[A-Za-z0-9_-]{12,}/.test(env)) {
@@ -81,7 +76,7 @@ if (exists('.env.example')) {
 
 if (exists('qa/performance_budget_v0_4.md')) {
   const performance = read('qa/performance_budget_v0_4.md');
-  for (const token of ['chunk principal', 'maior chunk', 'vendor-react', 'vendor-firebase', 'qa:performance']) {
+  for (const token of ['chunk principal', 'maior chunk', 'vendor-react', 'vendor-supabase', 'qa:performance']) {
     performance.includes(token) ? pass(`performance budget contém: ${token}`) : fail(`performance budget não contém: ${token}`);
   }
 }

@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { auth, loginWithEmailPassword, loginWithGoogle, db, OperationType, handleFirestoreError } from './firebase';
-import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
-import { Property, Inspection, Entitlement } from './types';
+import { Property, Inspection, Entitlement, AppUser } from './types';
 import Navbar from './components/Navbar';
 import PropertyManager from './components/PropertyManager';
 import InspectionWizard from './components/InspectionWizard';
@@ -13,9 +10,11 @@ import { ClipboardList, Plus, History, Trash2, FileText, Play, ChevronLeft, Arro
 import { APP_VERSION } from './lib/appVersion';
 import { getOrCreateUserEntitlement } from './lib/entitlements';
 import { safeCreateAuditEvent } from './lib/auditEvents';
+import { loginWithEmailPassword, loginWithGoogle, onAuthStateChanged, upsertProfile } from './lib/services/authService';
+import { deleteInspection, listInspections } from './lib/services/inspectionService';
 
 export default function App() {
-  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const isStagingE2EAuthEnabled = import.meta.env.VITE_STAGING_E2E_AUTH === 'true';
   const [stagingAuthEmail, setStagingAuthEmail] = useState('');
@@ -42,31 +41,15 @@ export default function App() {
   const isAdminUser = user?.email === 'vistoriafacil.ia@gmail.com';
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setUser(firebaseUser);
+    const unsubscribe = onAuthStateChanged(async (currentUser) => {
+      setUser(currentUser);
       setAuthLoading(false);
 
-      if (firebaseUser) {
-        // Create/Update user profile in Firestore
-        const userRef = doc(db, 'users', firebaseUser.uid);
+      if (currentUser) {
         try {
-          const userSnap = await getDoc(userRef);
-          if (userSnap.exists()) {
-            await updateDoc(userRef, {
-              lastLoginAt: new Date().toISOString()
-            });
-          } else {
-            await setDoc(userRef, {
-              uid: firebaseUser.uid,
-              name: firebaseUser.displayName || 'Vistoriador',
-              email: firebaseUser.email || '',
-              createdAt: new Date().toISOString(),
-              lastLoginAt: new Date().toISOString(),
-              plan: 'gratuito'
-            });
-          }
+          await upsertProfile(currentUser);
         } catch (err) {
-          console.warn('Alerta: Erro ao salvar/atualizar o perfil do usuário no Firestore (as regras podem não estar totalmente propagadas ou o login foi realizado sem permissão de escrita):', err);
+          console.warn('Alerta: Erro ao salvar/atualizar o perfil do usuario no Supabase (as politicas RLS podem nao estar aplicadas):', err);
         }
       } else {
         // Reset state
@@ -100,22 +83,7 @@ export default function App() {
 
   const loadPropertyInspections = async (property: Property): Promise<Inspection[]> => {
     if (!user) return [];
-    const q = query(
-      collection(db, 'inspections'),
-      where('userId', '==', user.uid),
-      where('propertyId', '==', property.id)
-    );
-    const snap = await getDocs(q);
-    const list: Inspection[] = [];
-    snap.forEach(doc => {
-      list.push({ id: doc.id, ...doc.data() } as Inspection);
-    });
-    list.sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime());
-    return list;
-  };
-
-  const findMostRecentDraftInspection = (list: Inspection[]): Inspection | null => {
-    return list.find(insp => insp.status === 'em_andamento' || insp.status === 'rascunho') || null;
+    return listInspections(user.uid, property.id);
   };
 
   // Fetch past inspections for selected property
@@ -152,9 +120,7 @@ export default function App() {
   const handleDeleteInspection = async (id: string) => {
     if (!window.confirm('Tem certeza de que deseja excluir esta vistoria? Todos os registros de fotos associados serão perdidos.')) return;
     try {
-      await deleteDoc(doc(db, 'inspections', id)).catch(err => 
-        handleFirestoreError(err, OperationType.DELETE, `inspections/${id}`)
-      );
+      await deleteInspection(id);
 
       // Record audit event
       await safeCreateAuditEvent(user?.uid || 'unknown', 'inspection_delete', { inspectionId: id });
@@ -325,7 +291,7 @@ export default function App() {
         {/* Humble Footer */}
         <footer className="text-center text-slate-500 text-[10px] space-y-1">
           <p>Vistoria Fácil IA © 2026 | Versão {APP_VERSION}</p>
-          <p className="max-w-xs mx-auto">Desenvolvido em conformidade com as diretrizes do Google AI Studio & Firebase</p>
+          <p className="max-w-xs mx-auto">Desenvolvido para frontend estatico com Supabase Free</p>
         </footer>
 
       </div>

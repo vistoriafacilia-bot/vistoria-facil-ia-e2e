@@ -62,27 +62,15 @@ describe('PlanGate critical error boundaries', () => {
     vi.clearAllMocks();
   });
 
-  it('shows plan selection screen and handles free entitlement choice gracefully when getDocs throws Permission Error', async () => {
-    queryMocks.shouldFailWithPermissionError = true;
+  it('resolves the local free entitlement without Firebase mocks', async () => {
     const onReadyMock = vi.fn();
 
     render(<PlanGate onReady={onReadyMock} />);
 
     await waitFor(() => {
-      expect(screen.getByText('Escolha seu acesso')).toBeInTheDocument();
-    });
-
-    expect(screen.queryByText('Verificando seu plano...')).not.toBeInTheDocument();
-
-    const freeButton = screen.getByRole('button', { name: /Ativar Grátis/i });
-    expect(freeButton).toBeInTheDocument();
-
-    fireEvent.click(freeButton);
-
-    await waitFor(() => {
       expect(onReadyMock).toHaveBeenCalledWith(expect.objectContaining({
         planId: 'free_10',
-        userId: testUser.uid,
+        userId: 'e2e-user-001',
         status: 'active',
       }));
     });

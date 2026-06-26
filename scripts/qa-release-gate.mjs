@@ -14,8 +14,7 @@ const warn = message => warnings.push(message);
 const requiredFiles = [
   'README.md',
   'security_spec.md',
-  'firestore.rules',
-  'storage.rules',
+  'supabase/migrations/202606250001_vistoria_facil_foundation.sql',
   '.env.example',
   'src/lib/appVersion.ts',
   'src/lib/plans.ts',
@@ -23,6 +22,13 @@ const requiredFiles = [
   'src/lib/paymentGuards.ts',
   'src/lib/qaGates.ts',
   'src/lib/reporting.ts',
+  'src/lib/supabaseClient.ts',
+  'src/lib/services/authService.ts',
+  'src/lib/services/propertyService.ts',
+  'src/lib/services/inspectionService.ts',
+  'src/lib/services/roomService.ts',
+  'src/lib/services/photoService.ts',
+  'src/lib/services/storageService.ts',
   'qa/patch017_e2e_hardening_checklist.md',
   'qa/patch018_payment_webhook_hardening_checklist.md',
   'qa/release_candidate_gate_v0_4.md',
@@ -49,14 +55,38 @@ if (exists('package.json')) {
 if (exists('.env.example')) {
   const env = read('.env.example');
   for (const key of [
-    'GEMINI_API_KEY',
-    'APP_URL',
-    'MERCADOPAGO_ACCESS_TOKEN',
-    'FIREBASE_PROJECT_ID',
-    'FIRESTORE_DATABASE_ID',
-    'FIREBASE_API_KEY'
+    'VITE_SUPABASE_URL',
+    'VITE_SUPABASE_ANON_KEY',
+    'VITE_E2E_MODE'
   ]) {
     env.includes(key) ? pass(`.env.example documenta ${key}`) : fail(`.env.example não documenta ${key}`);
+  }
+}
+
+if (exists('supabase/migrations/202606250001_vistoria_facil_foundation.sql')) {
+  const migration = read('supabase/migrations/202606250001_vistoria_facil_foundation.sql');
+  for (const token of [
+    'create table if not exists public.profiles',
+    'create table if not exists public.properties',
+    'create table if not exists public.inspections',
+    'create table if not exists public.rooms',
+    'create table if not exists public.photos',
+    'create table if not exists public.entitlements',
+    'enable row level security',
+    'auth.uid()',
+    'inspection-photos',
+    'storage.objects'
+  ]) {
+    migration.includes(token) ? pass(`migration Supabase contem ${token}`) : fail(`migration Supabase nao contem ${token}`);
+  }
+}
+
+if (exists('.github/workflows/e2e.yml')) {
+  const workflow = read('.github/workflows/e2e.yml');
+  for (const forbidden of ['gcloud', 'firebase deploy', 'google-github-actions', 'Cloud Run', 'Artifact Registry']) {
+    workflow.includes(forbidden)
+      ? fail(`workflow ainda referencia recurso pago/billing: ${forbidden}`)
+      : pass(`workflow nao referencia ${forbidden}`);
   }
 }
 
@@ -91,7 +121,6 @@ const walk = dir => {
   }
 };
 walk('src');
-prodFiles.push('server.ts');
 
 for (const file of prodFiles) {
   const contents = read(file);
@@ -105,7 +134,7 @@ if (exists('vite.config.ts')) {
   viteConfig.includes('manualChunks')
     ? pass('vite.config.ts contém manualChunks para split de bundle.')
     : fail('vite.config.ts não contém manualChunks para split de bundle.');
-  for (const chunk of ['vendor-react', 'vendor-firebase', 'vendor-ui']) {
+  for (const chunk of ['vendor-react', 'vendor-supabase', 'vendor-ui']) {
     viteConfig.includes(chunk)
       ? pass(`vite.config.ts configura chunk ${chunk}.`)
       : fail(`vite.config.ts não configura chunk ${chunk}.`);

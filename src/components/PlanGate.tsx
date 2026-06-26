@@ -1,32 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { User as FirebaseUser } from 'firebase/auth';
-import { collection, doc, getDocs, query, setDoc, where } from 'firebase/firestore';
 import { CheckCircle2, CreditCard, Loader2, ShieldCheck, Sparkles } from 'lucide-react';
-import { auth, db } from '../firebase';
-import { Entitlement, EntitlementPlan } from '../types';
-import { FREE_PLAN_ID, PAID_BETA_PLAN_ID, PLAN_DEFINITIONS, SORTED_PLANS, formatPlanPrice } from '../lib/plans';
+import { AppUser, Entitlement, EntitlementPlan } from '../types';
+import { FREE_PLAN_ID, PAID_BETA_PLAN_ID, SORTED_PLANS, formatPlanPrice } from '../lib/plans';
 import { selectBestActiveEntitlement } from '../lib/entitlements';
+import { createFreeEntitlement, listEntitlements, saveEntitlement } from '../lib/services/entitlementService';
+import { getCurrentUser } from '../lib/services/authService';
 
 interface PlanGateProps {
-  user?: FirebaseUser;
+  user?: AppUser;
   onReady: (entitlement: Entitlement) => void;
 }
-
-const createFreeEntitlement = (user: FirebaseUser): Entitlement => {
-  const now = new Date().toISOString();
-  const plan = PLAN_DEFINITIONS[FREE_PLAN_ID];
-  return {
-    id: `${user.uid}_${FREE_PLAN_ID}`,
-    userId: user.uid,
-    planId: FREE_PLAN_ID,
-    status: 'active',
-    source: 'free_self_service',
-    maxPhotosPerInspection: plan.maxPhotosPerInspection,
-    pdfEnabled: plan.pdfEnabled,
-    createdAt: now,
-    updatedAt: now
-  };
-};
 
 const getPaymentReturnMessage = (status: string, orderId?: string | null) => {
   const suffix = orderId ? ` Pedido: ${orderId}.` : '';
@@ -37,29 +20,49 @@ const getPaymentReturnMessage = (status: string, orderId?: string | null) => {
 };
 
 export default function PlanGate({ user, onReady }: PlanGateProps) {
-  const activeUser = user || auth.currentUser;
+  const [resolvedUser, setResolvedUser] = useState<AppUser | null>(user || null);
+  const activeUser = user || resolvedUser;
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<EntitlementPlan | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (user) {
+      setResolvedUser(user);
+      return;
+    }
+
+    let mounted = true;
+    void getCurrentUser()
+      .then(currentUser => {
+        if (mounted) {
+          setResolvedUser(currentUser);
+          if (!currentUser) setLoading(false);
+        }
+      })
+      .catch(err => {
+        console.error('Erro ao resolver usuario atual:', err);
+        if (mounted) {
+          setError('Nao foi possivel verificar seu usuario agora. Entre novamente.');
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [user?.uid]);
+
   const loadEntitlement = async (options?: { silent?: boolean }) => {
-    if (!activeUser) return;
+    if (!activeUser) {
+      setLoading(false);
+      return;
+    }
     if (!options?.silent) setLoading(true);
     setError(null);
     try {
-      const entitlementsQuery = query(
-        collection(db, 'entitlements'),
-        where('userId', '==', activeUser.uid),
-        where('status', '==', 'active')
-      );
-      const snap = await getDocs(entitlementsQuery);
-      const entitlements: Entitlement[] = [];
-      snap.forEach(docSnap => {
-        const data = docSnap.data() as Entitlement;
-        entitlements.push({ ...data, id: data.id || docSnap.id });
-      });
-      const best = selectBestActiveEntitlement(entitlements);
+      const best = selectBestActiveEntitlement(await listEntitlements(activeUser.uid));
       if (best) {
         onReady(best);
       }
@@ -110,12 +113,12 @@ export default function PlanGate({ user, onReady }: PlanGateProps) {
     setError(null);
     setMessage(null);
     try {
-      const entitlement = createFreeEntitlement(activeUser);
-      await setDoc(doc(db, 'entitlements', entitlement.id), entitlement);
+      const entitlement = createFreeEntitlement(activeUser.uid);
+      await saveEntitlement(entitlement);
       onReady(entitlement);
     } catch (err) {
       console.error('Erro ao ativar plano gratuito:', err);
-      setError('Não foi possível ativar o plano gratuito. Verifique as permissões do Firestore.');
+      setError('Nao foi possivel ativar o plano gratuito. Verifique as politicas RLS do Supabase.');
     } finally {
       setActionLoading(null);
     }
@@ -127,8 +130,10 @@ export default function PlanGate({ user, onReady }: PlanGateProps) {
     setError(null);
     setMessage(null);
     try {
-      const token = await activeUser.getIdToken();
-      const response = await fetch('/api/payments/create-checkout', {
+      throw new Error('Plano pago indisponivel no escopo Supabase Free: checkout, webhook e backend foram removidos desta fundacao sem billing.');
+      /*
+      const token = '';
+      const response = await fetch('removed-paid-checkout-endpoint', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -153,6 +158,7 @@ export default function PlanGate({ user, onReady }: PlanGateProps) {
       }
 
       throw new Error('Checkout não retornou URL de pagamento.');
+      */
     } catch (err: any) {
       console.error('Erro ao criar checkout:', err);
       setError(err?.message || 'Não foi possível abrir o pagamento.');

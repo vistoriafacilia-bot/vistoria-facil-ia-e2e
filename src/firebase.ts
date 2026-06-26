@@ -1,75 +1,18 @@
-import { initializeApp } from 'firebase/app';
-import { 
-  getAuth, 
-  GoogleAuthProvider, 
-  signInWithEmailAndPassword,
-  signInWithPopup, 
-  signOut,
-  onAuthStateChanged,
-  User as FirebaseUser
-} from 'firebase/auth';
-import { 
-  getFirestore, 
-  initializeFirestore,
-  doc, 
-  getDocFromServer,
-  collection,
-  addDoc,
-  setDoc,
-  getDoc,
-  getDocs,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  orderBy,
-  serverTimestamp
-} from 'firebase/firestore';
-import { getStorage } from 'firebase/storage';
-import firebaseConfig from '../firebase-applet-config.json';
+import { getCurrentUser, loginWithEmailPassword, loginWithGoogle, logout } from './lib/services/authService';
 
-// Initialize Firebase App
-const app = initializeApp(firebaseConfig);
+// Compatibility facade retained for older tests and imports during the Supabase migration.
+// Production code must use src/lib/services/* directly.
+export { loginWithEmailPassword, loginWithGoogle, logout };
 
-// Initialize Services
-export const db = firebaseConfig.firestoreDatabaseId && firebaseConfig.firestoreDatabaseId !== '(default)'
-  ? getFirestore(app, firebaseConfig.firestoreDatabaseId)
-  : getFirestore(app);
-export const auth = getAuth(app);
-export const storage = getStorage(app);
+export const db = {};
+export const storage = {};
+export const googleProvider = {};
 
-// Google Auth Provider
-export const googleProvider = new GoogleAuthProvider();
-
-// Standard login / logout functions
-export async function loginWithGoogle() {
-  try {
-    const result = await signInWithPopup(auth, googleProvider);
-    return result.user;
-  } catch (error) {
-    console.error('Google Sign-In Error:', error);
-    throw error;
-  }
-}
-
-export async function loginWithEmailPassword(email: string, password: string) {
-  try {
-    const result = await signInWithEmailAndPassword(auth, email, password);
-    return result.user;
-  } catch (error) {
-    console.error('Email/Password Sign-In Error:', error);
-    throw error;
-  }
-}
-
-export async function logout() {
-  try {
-    await signOut(auth);
-  } catch (error) {
-    console.error('Logout Error:', error);
-    throw error;
-  }
-}
+export const auth = {
+  get currentUser() {
+    return null;
+  },
+};
 
 // --------------------------------------------------
 // ERROR HANDLING FOR SECURITY RULES COMPLIANCE
@@ -83,40 +26,34 @@ export enum OperationType {
   WRITE = 'write',
 }
 
-export interface FirestoreErrorInfo {
+export interface PersistenceErrorInfo {
   error: string;
   operationType: OperationType;
   path: string | null;
   authInfo: {
     userId?: string | null;
     email?: string | null;
-    emailVerified?: boolean | null;
-    isAnonymous?: boolean | null;
-    tenantId?: string | null;
-    providerInfo?: {
-      providerId?: string | null;
-      email?: string | null;
-    }[];
+  };
+}
+
+export async function getSupabaseAuthInfo() {
+  const user = await getCurrentUser();
+  return {
+    userId: user?.uid || null,
+    email: user?.email || null,
   };
 }
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo: FirestoreErrorInfo = {
+  const errInfo: PersistenceErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-      isAnonymous: auth.currentUser?.isAnonymous,
-      tenantId: auth.currentUser?.tenantId,
-      providerInfo: auth.currentUser?.providerData?.map(provider => ({
-        providerId: provider.providerId,
-        email: provider.email,
-      })) || []
-    },
     operationType,
-    path
+    path,
+    authInfo: {
+      userId: null,
+      email: null,
+    },
   };
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  console.error('Persistence Error: ', JSON.stringify(errInfo));
   throw new Error(JSON.stringify(errInfo));
 }

@@ -26,7 +26,7 @@ if (!fs.existsSync(assetsDir)) {
   const largest = files[0];
   const mainIndexChunks = files.filter(item => item.file.startsWith('index-'));
   const oversized = files.filter(item => item.sizeKb > 500);
-  const expectedVendorChunks = ['vendor-react', 'vendor-firebase', 'vendor-ui'];
+  const expectedVendorChunks = ['vendor-react', 'vendor-supabase', 'vendor-ui'];
 
   if (!files.length) fail('nenhum bundle JS encontrado em dist/assets.');
   else pass(`bundles JS encontrados: ${files.length}. Maior chunk: ${largest.file} (${largest.sizeKb} KB).`);

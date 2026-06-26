@@ -172,7 +172,7 @@ const seedCoreData = () => {
   return { property, entitlement };
 };
 
-describe('App integrated critical path', () => {
+describe.skip('Legacy Firebase App integrated critical path', () => {
   beforeEach(() => {
     firestoreStore.docs.clear();
     firestoreStore.counters.clear();
@@ -375,5 +375,54 @@ describe('App integrated critical path', () => {
 
     expect(firestoreMocks.where).toHaveBeenCalledWith('userId', '==', testUser.uid);
     expect(firestoreMocks.where).toHaveBeenCalledWith('propertyId', '==', 'prop-1');
+  });
+});
+
+describe('App integrated critical path with Supabase local store', () => {
+  beforeEach(() => {
+    window.localStorage.clear();
+    vi.clearAllMocks();
+  });
+
+  it('loads free entitlement, opens a property and starts an inspection with default rooms', async () => {
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/Apartamento E2E Persist/i)).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Nova Vistoria/i }));
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Come.ar Vistoria/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Come.ar Vistoria/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Sala')).toBeInTheDocument();
+    });
+    expect(screen.getByText('Quarto 1')).toBeInTheDocument();
+  });
+
+  it('persists custom room organization through history and resume', async () => {
+    render(<App />);
+
+    await waitFor(() => expect(screen.getByText(/Apartamento E2E Persist/i)).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /Nova Vistoria/i }));
+    await waitFor(() => expect(screen.getByRole('button', { name: /Come.ar Vistoria/i })).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /Come.ar Vistoria/i }));
+    await waitFor(() => expect(screen.getByText('Sala')).toBeInTheDocument());
+
+    const input = screen.getByPlaceholderText(/Novo c.modo/i);
+    fireEvent.change(input, { target: { value: 'Sala Principal QA' } });
+    fireEvent.click(screen.getByTitle(/Adicionar c.modo/i));
+    await waitFor(() => expect(screen.getByText('Sala Principal QA')).toBeInTheDocument());
+
+    fireEvent.click(screen.getByLabelText(/Voltar para hist.rico/i));
+    await waitFor(() => expect(screen.getByText(/Hist.rico de Vistorias/i)).toBeInTheDocument());
+    fireEvent.click(screen.getByRole('button', { name: /Continuar Rascunho/i }));
+
+    await waitFor(() => expect(screen.getByText('Sala Principal QA')).toBeInTheDocument());
+    expect(screen.queryByRole('button', { name: /Come.ar Vistoria/i })).not.toBeInTheDocument();
   });
 });

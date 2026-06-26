@@ -23,7 +23,7 @@ npm run qa:performance
 - maior chunk JS <= 900 KB;
 - chunks manuais obrigatórios presentes:
   - `vendor-react`;
-  - `vendor-firebase`;
+  - `vendor-supabase`;
   - `vendor-ui`;
 - qualquer chunk acima de 500 KB vira monitoramento explícito;
 - alerta de performance não pode ser ignorado sem registro.

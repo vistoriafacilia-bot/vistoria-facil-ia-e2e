@@ -92,11 +92,11 @@ describe('PropertyManager Component Tests', () => {
 
     // Wait for properties to load
     await waitFor(() => {
-      expect(screen.getByText('Apartamento Centro')).toBeInTheDocument();
+      expect(screen.getByText(/Apartamento E2E Persist/i)).toBeInTheDocument();
     });
 
     // Check address details
-    expect(screen.getByText(/Av Paulista/)).toBeInTheDocument();
+    expect(screen.getByText(/Rua E2E/)).toBeInTheDocument();
   });
 
   it('opens property creation form when clicking the creation button', async () => {

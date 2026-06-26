@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { db, auth, OperationType, handleFirestoreError } from '../firebase';
-import { collection, addDoc, setDoc, getDocs, doc, deleteDoc, updateDoc, query, where, serverTimestamp } from 'firebase/firestore';
 import { Property, PropertyType, PropertyAddress } from '../types';
 import { Plus, Home, Edit2, Trash2, MapPin, ClipboardPlus, FolderOpen, ArrowRight, X, Sparkles, HelpCircle, ShieldAlert } from 'lucide-react';
 import { validatePropertyRequiredFields } from '../lib/validation';
 import { safeCreateAuditEvent } from '../lib/auditEvents';
+import { getCurrentUser } from '../lib/services/authService';
+import { createProperty, deleteProperty, listProperties, updateProperty } from '../lib/services/propertyService';
 
 interface PropertyManagerProps {
   onSelectPropertyForInspection: (property: Property) => void;
@@ -50,22 +50,11 @@ export default function PropertyManager({ onSelectPropertyForInspection, onViewH
   }, []);
 
   const fetchProperties = async () => {
-    if (!auth.currentUser) return;
+    const currentUser = await getCurrentUser();
+    if (!currentUser) return;
     setLoading(true);
     try {
-      const q = query(
-        collection(db, 'properties'), 
-        where('userId', '==', auth.currentUser.uid)
-      );
-      const querySnapshot = await getDocs(q);
-      
-      const propList: Property[] = [];
-      querySnapshot.forEach((doc) => {
-        propList.push({ id: doc.id, ...doc.data() } as Property);
-      });
-      // Sort newest first
-      propList.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      setProperties(propList);
+      setProperties(await listProperties(currentUser.uid));
     } catch (error) {
       console.error('Error fetching properties:', error);
     } finally {
@@ -114,7 +103,8 @@ export default function PropertyManager({ onSelectPropertyForInspection, onViewH
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!auth.currentUser) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
       setSaveError('Sessão expirada. Faça login novamente.');
       return;
     }
@@ -163,8 +153,7 @@ export default function PropertyManager({ onSelectPropertyForInspection, onViewH
     try {
       if (selectedProperty) {
         // Edit existing
-        const docRef = doc(db, 'properties', selectedProperty.id);
-        const updatedData: any = {
+        const updatedData: Partial<Property> = {
           nickname: nickname.trim(),
           propertyType,
           address,
@@ -176,20 +165,16 @@ export default function PropertyManager({ onSelectPropertyForInspection, onViewH
           updatedData.generalNotes = '';
         }
 
-        try {
-          await updateDoc(docRef, updatedData);
-        } catch (err: any) {
-          handleFirestoreError(err, OperationType.UPDATE, `properties/${selectedProperty.id}`);
-        }
+        await updateProperty(selectedProperty.id, updatedData);
 
         // Record audit event (doesn't block the property save)
-        await safeCreateAuditEvent(auth.currentUser.uid, 'property_update', { propertyId: selectedProperty.id, nickname: nickname.trim() });
+        await safeCreateAuditEvent(currentUser.uid, 'property_update', { propertyId: selectedProperty.id, nickname: nickname.trim() });
       } else {
         // Create new
-        const newId = doc(collection(db, 'properties')).id;
+        const newId = crypto.randomUUID();
         const newProperty: Property = {
           id: newId,
-          userId: auth.currentUser.uid,
+          userId: currentUser.uid,
           nickname: nickname.trim(),
           propertyType,
           address,
@@ -200,14 +185,10 @@ export default function PropertyManager({ onSelectPropertyForInspection, onViewH
           newProperty.generalNotes = generalNotes.trim();
         }
 
-        try {
-          await setDoc(doc(db, 'properties', newId), newProperty);
-        } catch (err: any) {
-          handleFirestoreError(err, OperationType.CREATE, `properties/${newId}`);
-        }
+        await createProperty(newProperty);
 
         // Record audit event (doesn't block the property save)
-        await safeCreateAuditEvent(auth.currentUser.uid, 'property_create', { propertyId: newId, nickname: nickname.trim() });
+        await safeCreateAuditEvent(currentUser.uid, 'property_create', { propertyId: newId, nickname: nickname.trim() });
       }
 
       setSaveSuccess('Imóvel salvo com sucesso!');
@@ -215,19 +196,19 @@ export default function PropertyManager({ onSelectPropertyForInspection, onViewH
       fetchProperties();
     } catch (error: any) {
       console.error('Error saving property:', error);
-      let userFriendlyMsg = 'Ocorreu um erro ao salvar o imóvel. Verifique as regras de segurança do Firestore.';
+      let userFriendlyMsg = 'Ocorreu um erro ao salvar o imovel. Verifique as politicas RLS do Supabase.';
       
       const errorStr = error instanceof Error ? error.message : String(error);
       const isPermissionError = errorStr.toLowerCase().includes('permission') || errorStr.toLowerCase().includes('insufficient');
       
       if (isPermissionError) {
-        userFriendlyMsg = 'Erro de permissão no Firestore ao criar imóvel. Verifique se as regras foram publicadas no Firebase.';
+        userFriendlyMsg = 'Erro de permissao no Supabase ao criar imovel. Verifique se as politicas RLS foram aplicadas.';
       } else if (error instanceof Error) {
         try {
           const parsed = JSON.parse(error.message);
           if (parsed && parsed.error) {
             if (parsed.error.toLowerCase().includes('permission') || parsed.error.toLowerCase().includes('insufficient')) {
-              userFriendlyMsg = 'Erro de permissão no Firestore ao criar imóvel. Verifique se as regras foram publicadas no Firebase.';
+              userFriendlyMsg = 'Erro de permissao no Supabase ao criar imovel. Verifique se as politicas RLS foram aplicadas.';
             } else {
               userFriendlyMsg = `Erro: ${parsed.error}`;
             }
@@ -245,16 +226,13 @@ export default function PropertyManager({ onSelectPropertyForInspection, onViewH
   };
 
   const handleDelete = async (id: string) => {
-    if (!auth.currentUser) return;
+    const currentUser = await getCurrentUser();
+    if (!currentUser) return;
     try {
-      try {
-        await deleteDoc(doc(db, 'properties', id));
-      } catch (err: any) {
-        handleFirestoreError(err, OperationType.DELETE, `properties/${id}`);
-      }
+      await deleteProperty(id);
 
       // Record audit event (doesn't block deletion)
-      await safeCreateAuditEvent(auth.currentUser.uid, 'property_delete', { propertyId: id });
+      await safeCreateAuditEvent(currentUser.uid, 'property_delete', { propertyId: id });
 
       setPropertyToDelete(null);
       fetchProperties();

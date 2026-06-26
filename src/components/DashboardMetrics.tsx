@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { db, auth, OperationType, handleFirestoreError } from '../firebase';
-import { collection, getDocs, query, where } from 'firebase/firestore';
 import { BarChart3, Users, Building2, ClipboardList, Camera, Cpu, FileText } from 'lucide-react';
 import { APP_VERSION } from '../lib/appVersion';
 import { getPhotoLimitForEntitlement } from '../lib/entitlements';
 import { Entitlement } from '../types';
+import { getCurrentUser } from '../lib/services/authService';
+import { getUserMetrics } from '../lib/services/metricsService';
 
 interface MetricsProps {
   isAdminUser: boolean;
@@ -24,79 +24,11 @@ export default function DashboardMetrics({ isAdminUser, entitlement }: MetricsPr
 
   useEffect(() => {
     async function fetchMetrics() {
-      if (!auth.currentUser) return;
+      const currentUser = await getCurrentUser();
+      if (!currentUser) return;
       setLoading(true);
       try {
-        const userId = auth.currentUser.uid;
-
-        // Create queries based on user privilege
-        const propertiesRef = collection(db, 'properties');
-        const inspectionsRef = collection(db, 'inspections');
-        const eventsRef = collection(db, 'events');
-
-        const propertiesQuery = isAdminUser 
-          ? propertiesRef 
-          : query(propertiesRef, where('userId', '==', userId));
-
-        const inspectionsQuery = isAdminUser 
-          ? inspectionsRef 
-          : query(inspectionsRef, where('userId', '==', userId));
-
-        const eventsQuery = isAdminUser 
-          ? eventsRef 
-          : query(eventsRef, where('userId', '==', userId));
-
-        // Execute queries
-        const [propSnap, inspSnap, eventSnap] = await Promise.all([
-          getDocs(propertiesQuery),
-          getDocs(inspectionsQuery),
-          getDocs(eventsQuery),
-        ]);
-
-        const propertiesCount = propSnap.size;
-        const inspectionsCount = inspSnap.size;
-
-        // Fetch photos from inspections
-        let totalPhotosCount = 0;
-        for (const doc of inspSnap.docs) {
-          const photosRef = collection(db, 'inspections', doc.id, 'photos');
-          try {
-            const photosSnap = await getDocs(photosRef);
-            totalPhotosCount += photosSnap.size;
-          } catch (e) {
-            // Ignore error for missing subcollections
-          }
-        }
-
-        // Parse events
-        let aiCount = 0;
-        let pdfCount = 0;
-        const uniqueUsers = new Set<string>();
-
-        if (eventSnap) {
-          eventSnap.docs.forEach(doc => {
-            const data = doc.data();
-            if (data.userId) uniqueUsers.add(data.userId);
-            if (data.event === 'ai_analysis') aiCount++;
-            if (data.event === 'pdf_generation') pdfCount++;
-          });
-        }
-
-        // If admin, we can also count from unique users across properties/inspections/events
-        propSnap.docs.forEach(doc => uniqueUsers.add(doc.data().userId));
-        inspSnap.docs.forEach(doc => uniqueUsers.add(doc.data().userId));
-        if (auth.currentUser) {
-          uniqueUsers.add(auth.currentUser.uid);
-        }
-
-        setMetrics({
-          totalUsers: uniqueUsers.size || 1,
-          totalProperties: propertiesCount,
-          totalInspections: inspectionsCount,
-          totalPhotos: totalPhotosCount,
-          totalAiAnalyses: aiCount,
-          totalPdfsGenerated: pdfCount,
-        });
+        setMetrics(await getUserMetrics(currentUser.uid));
       } catch (error) {
         console.error('Error fetching metrics:', error);
       } finally {

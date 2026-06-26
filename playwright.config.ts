@@ -29,11 +29,8 @@ export default defineConfig({
       VITE_E2E_MODE: 'true',
       E2E_MODE: 'true',
       DISABLE_HMR: 'true',
-      VITE_GEMINI_API_KEY: 'E2E-ONLY',
-      MERCADOPAGO_ACCESS_TOKEN: 'TEST-E2E-ONLY',
-      FIREBASE_PROJECT_ID: 'e2e-local',
-      FIRESTORE_DATABASE_ID: '(default)',
-      FIREBASE_API_KEY: 'e2e-local',
+      VITE_SUPABASE_URL: 'https://e2e-local.supabase.co',
+      VITE_SUPABASE_ANON_KEY: 'e2e-local-anon-key',
     },
   },
   projects: [

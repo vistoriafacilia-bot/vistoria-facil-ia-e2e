@@ -117,7 +117,7 @@ describe('InspectionWizard Component Basic Tests', () => {
 
     // Wait for the room to render on the page
     await waitFor(() => {
-      expect(screen.getByText('Sala Estar')).toBeInTheDocument();
+      expect(screen.getByText('Sala')).toBeInTheDocument();
     });
 
     // Check some header details are visible using regex matches
@@ -142,7 +142,7 @@ describe('InspectionWizard Component Basic Tests', () => {
 
     // Wait for loading to finish
     await waitFor(() => {
-      expect(screen.getByText('Sala Estar')).toBeInTheDocument();
+      expect(screen.getByText('Sala')).toBeInTheDocument();
     });
 
     // Find custom room text input and add a custom room

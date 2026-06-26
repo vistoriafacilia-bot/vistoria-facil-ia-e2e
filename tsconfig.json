@@ -30,6 +30,7 @@
     "playwright.staging.config.ts",
     "playwright-report",
     "playwright-report-staging",
-    "test-results"
+    "test-results",
+    "server.ts"
   ]
 }
