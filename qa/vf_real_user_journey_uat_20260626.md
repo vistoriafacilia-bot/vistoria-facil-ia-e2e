@@ -2,10 +2,10 @@
 
 Status: PASS
 
-URL testada: http://127.0.0.1:5178
-Run ID: uat_real_1782492447046
-Inicio: 2026-06-26T16:47:27.047Z
-Fim: 2026-06-26T16:48:21.682Z
+URL testada: https://glittery-boba-2b3367.netlify.app
+Run ID: uat_real_1782492870767
+Inicio: 2026-06-26T16:54:30.768Z
+Fim: 2026-06-26T16:55:36.126Z
 
 ## Correcao de criterio
 
@@ -59,7 +59,7 @@ Fim: 2026-06-26T16:48:21.682Z
 ## Cleanup
 
 - Cleanup total: PASS
-- Leftovers: {"propertiesRows":0,"inspectionsRows":0,"roomsRows":0,"photosRows":0,"reportsRows":0,"entitlementsRows":0,"eventsRows":0,"profileRows":0,"authUserExists":false,"storage:b57083eb-98c9-4fa3-9faf-99e94d522d2f/photos/3b259f0a-9a2d-474d-8308-9aa7d0255440/878ee91d-33e0-475c-ae1f-f0b2f0207b9d.jpg":false,"storage:b57083eb-98c9-4fa3-9faf-99e94d522d2f/photos/3b259f0a-9a2d-474d-8308-9aa7d0255440/5369769b-8f7f-44e5-820d-b04c36329b6e.jpg":false,"storage:b57083eb-98c9-4fa3-9faf-99e94d522d2f/photos/3b259f0a-9a2d-474d-8308-9aa7d0255440/b23dd304-298e-4f78-84d6-44194f760d02.jpg":false,"storage:b57083eb-98c9-4fa3-9faf-99e94d522d2f/photos/3b259f0a-9a2d-474d-8308-9aa7d0255440/c9304658-07b7-4ad9-9d65-3110fd8d284c.jpg":false,"storage:b57083eb-98c9-4fa3-9faf-99e94d522d2f/photos/3b259f0a-9a2d-474d-8308-9aa7d0255440/4179dc3a-5fc5-49f1-a56c-e97daaa0c855.jpg":false,"storage:b57083eb-98c9-4fa3-9faf-99e94d522d2f/photos/3b259f0a-9a2d-474d-8308-9aa7d0255440/82a1c317-a4ec-44d8-9eaa-f211f4b5ec3c.jpg":false,"storage:b57083eb-98c9-4fa3-9faf-99e94d522d2f/photos/3b259f0a-9a2d-474d-8308-9aa7d0255440/c94d59d1-9386-4b27-b85b-4b57543c0732.jpg":false,"storage:b57083eb-98c9-4fa3-9faf-99e94d522d2f/photos/3b259f0a-9a2d-474d-8308-9aa7d0255440/fbf83f88-e2e9-410c-a2e8-0a1a2c4ff05c.jpg":false,"storage:b57083eb-98c9-4fa3-9faf-99e94d522d2f/photos/3b259f0a-9a2d-474d-8308-9aa7d0255440/823adcce-adb7-4acf-88b4-ba7fa39d3505.jpg":false,"storage:b57083eb-98c9-4fa3-9faf-99e94d522d2f/photos/3b259f0a-9a2d-474d-8308-9aa7d0255440/3180d123-1619-471f-8c46-b27747fefe52.jpg":false}
+- Leftovers: {"propertiesRows":0,"inspectionsRows":0,"roomsRows":0,"photosRows":0,"reportsRows":0,"entitlementsRows":0,"eventsRows":0,"profileRows":0,"authUserExists":false,"storage:fd477bb1-0ac3-4a33-a9a2-9a3f2279b9c4/photos/e9d563b5-d1a7-4327-8245-243364549dc9/3ef3451f-b555-4c4f-afd8-afd06d895c30.jpg":false,"storage:fd477bb1-0ac3-4a33-a9a2-9a3f2279b9c4/photos/e9d563b5-d1a7-4327-8245-243364549dc9/d2171d9e-4162-496b-9fea-3ba76bd89dcc.jpg":false,"storage:fd477bb1-0ac3-4a33-a9a2-9a3f2279b9c4/photos/e9d563b5-d1a7-4327-8245-243364549dc9/2e096163-7efc-4040-95f4-86271b1748df.jpg":false,"storage:fd477bb1-0ac3-4a33-a9a2-9a3f2279b9c4/photos/e9d563b5-d1a7-4327-8245-243364549dc9/6e3a9e6a-2d52-4e10-9efa-1c0668d9bd6f.jpg":false,"storage:fd477bb1-0ac3-4a33-a9a2-9a3f2279b9c4/photos/e9d563b5-d1a7-4327-8245-243364549dc9/6f973932-e5d7-44c8-9687-ba204b3bc011.jpg":false,"storage:fd477bb1-0ac3-4a33-a9a2-9a3f2279b9c4/photos/e9d563b5-d1a7-4327-8245-243364549dc9/f844bb6c-90c7-48d6-9d10-b29ad189b6c9.jpg":false,"storage:fd477bb1-0ac3-4a33-a9a2-9a3f2279b9c4/photos/e9d563b5-d1a7-4327-8245-243364549dc9/d12379c9-5ee4-4dd6-9db5-3195d39cea87.jpg":false,"storage:fd477bb1-0ac3-4a33-a9a2-9a3f2279b9c4/photos/e9d563b5-d1a7-4327-8245-243364549dc9/9a703e2e-709c-40ca-b37e-47dbed4b2196.jpg":false,"storage:fd477bb1-0ac3-4a33-a9a2-9a3f2279b9c4/photos/e9d563b5-d1a7-4327-8245-243364549dc9/014ffd62-99c1-48e6-9b90-10b821f2b155.jpg":false,"storage:fd477bb1-0ac3-4a33-a9a2-9a3f2279b9c4/photos/e9d563b5-d1a7-4327-8245-243364549dc9/2e45754f-70e6-4e1c-834d-905f466dc0b8.jpg":false}
 
 ## Decisao
 
