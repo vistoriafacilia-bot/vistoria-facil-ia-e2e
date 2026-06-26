@@ -2,63 +2,13 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import InspectionWizard from '../components/InspectionWizard';
-import { Property, Inspection } from '../types';
-
-// Dynamic mock store for rooms to simulate Firestore persistence
-let mockRooms: any[] = [];
-
-// Mock Firebase
-vi.mock('../firebase', () => ({
-  db: {},
-  auth: {
-    currentUser: { uid: 'test-user-123', email: 'test@example.com' },
-  },
-  OperationType: {
-    CREATE: 'create',
-    READ: 'read',
-    UPDATE: 'update',
-    DELETE: 'delete',
-  },
-  handleFirestoreError: vi.fn(),
-}));
-
-vi.mock('firebase/firestore', () => ({
-  collection: vi.fn(() => 'mock-collection'),
-  doc: vi.fn(() => ({ id: 'mock-room-' + Math.random().toString(36).substr(2, 9) })),
-  setDoc: vi.fn((ref: any, data: any) => {
-    if (data && typeof data === 'object' && 'inspectionId' in data && 'name' in data) {
-      if (!mockRooms.some(r => r.id === data.id)) {
-        mockRooms.push(data);
-      }
-    }
-    return Promise.resolve();
-  }),
-  addDoc: vi.fn(() => Promise.resolve({ id: 'mock-add-doc-id' })),
-  getDocs: vi.fn(() => Promise.resolve({
-    empty: mockRooms.length === 0,
-    forEach: (cb: any) => {
-      mockRooms.forEach(room => {
-        cb({
-          id: room.id,
-          data: () => room,
-        });
-      });
-    },
-    docs: mockRooms.map(room => ({
-      id: room.id,
-      data: () => room,
-    })),
-  })),
-  query: vi.fn((col) => col),
-  where: vi.fn(),
-  deleteDoc: vi.fn(() => Promise.resolve()),
-  updateDoc: vi.fn(() => Promise.resolve()),
-}));
+import { Property, Inspection, Room } from '../types';
+import { localTestUser, localUpsert } from '../lib/supabaseLocalStore';
 
 describe('InspectionWizard Component Basic Tests', () => {
   const mockProperty: Property = {
     id: 'prop-1',
-    userId: 'test-user-123',
+    userId: localTestUser.uid,
     nickname: 'Apartamento Centro',
     propertyType: 'apartamento',
     address: {
@@ -75,7 +25,7 @@ describe('InspectionWizard Component Basic Tests', () => {
 
   const mockInspection: Inspection = {
     id: 'insp-1',
-    userId: 'test-user-123',
+    userId: localTestUser.uid,
     propertyId: 'prop-1',
     inspectionType: 'entrada',
     status: 'rascunho',
@@ -84,20 +34,19 @@ describe('InspectionWizard Component Basic Tests', () => {
   };
 
   beforeEach(() => {
+    window.localStorage.clear();
     vi.clearAllMocks();
-    // Pre-populate with our standard mock room
-    mockRooms = [
-      {
-        id: 'room-1',
-        inspectionId: 'insp-1',
-        userId: 'test-user-123',
-        name: 'Sala Estar',
-        order: 0,
-        isDefault: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }
-    ];
+    const persistedRoom: Room = {
+      id: 'room-1',
+      inspectionId: 'insp-1',
+      userId: localTestUser.uid,
+      name: 'Sala',
+      order: 0,
+      isDefault: true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    localUpsert('rooms', persistedRoom);
   });
 
   it('renders the wizard with loaded rooms successfully', async () => {

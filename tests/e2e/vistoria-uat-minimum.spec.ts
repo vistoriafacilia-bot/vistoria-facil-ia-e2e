@@ -53,6 +53,17 @@ test('VF-E2E-001: login mockado, plano gratuito e tela inicial carregam', async 
   await expect(page.getByRole('button', { name: /Hist.rico/i })).toBeVisible();
 });
 
+test('VF-E2E-011: Ver Planos abre tela de planos beta sem checkout automatico', async ({ page }) => {
+  await page.getByRole('button', { name: /Ver Planos/i }).click();
+  await expect(page.getByText(/Planos de Assinatura/i)).toBeVisible();
+  await expect(page.getByText(/free_10/i)).toBeVisible();
+  await expect(page.getByText(/beta_paid_4990/i)).toBeVisible();
+  await expect(page.getByText(/At. 10 fotos/i).first()).toBeVisible();
+  await expect(page.getByText(/At. 50 fotos/i).first()).toBeVisible();
+  await page.getByRole('button', { name: /Solicitar upgrade/i }).click();
+  await expect(page.getByText(/Upgrade em beta assistido/i).first()).toBeVisible();
+});
+
 test('VF-E2E-002: Nova Vistoria sempre abre selecao explicita de Entrada/Saida', async ({ page }) => {
   await page.getByRole('button', { name: /Nova Vistoria/i }).click();
   await expect(page.getByText(/Iniciar Nova Vistoria/i)).toBeVisible();

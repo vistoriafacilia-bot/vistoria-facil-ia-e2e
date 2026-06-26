@@ -99,26 +99,7 @@ export default function InspectionWizard({
   const fetchRoomsAndPhotos = async (inspectionId: string) => {
     setLoading(true);
     try {
-      let roomsList = await listRooms(inspectionId);
-
-      if (roomsList.length === 0) {
-        const currentUser = await getCurrentUser();
-        if (!currentUser) return;
-        roomsList = await Promise.all(DEFAULT_ROOMS.map(async (name, index) => {
-          const roomDoc: Room = {
-            id: newRoomId(),
-            inspectionId,
-            userId: currentUser.uid,
-            name,
-            order: index,
-            isDefault: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          };
-          await saveRoom(roomDoc);
-          return roomDoc;
-        }));
-      }
+      const roomsList = await listRooms(inspectionId);
 
       setRooms(roomsList);
 

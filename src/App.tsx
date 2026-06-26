@@ -649,6 +649,7 @@ export default function App() {
             <div className="flex items-center gap-3 border-b border-slate-100 pb-4">
               <button 
                 type="button"
+                aria-label="Voltar para imóveis"
                 onClick={() => setCurrentView('properties')}
                 className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
               >
@@ -662,6 +663,7 @@ export default function App() {
             {user && (
               <PlanGate 
                 user={user}
+                autoContinueOnActiveEntitlement={false}
                 onReady={(updatedEnt) => {
                   setEntitlement(updatedEnt);
                   setCurrentView('properties');

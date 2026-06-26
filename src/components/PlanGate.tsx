@@ -9,6 +9,7 @@ import { getCurrentUser } from '../lib/services/authService';
 interface PlanGateProps {
   user?: AppUser;
   onReady: (entitlement: Entitlement) => void;
+  autoContinueOnActiveEntitlement?: boolean;
 }
 
 const getPaymentReturnMessage = (status: string, orderId?: string | null) => {
@@ -19,7 +20,7 @@ const getPaymentReturnMessage = (status: string, orderId?: string | null) => {
   return `Retorno de pagamento recebido. Verificando liberação segura.${suffix}`;
 };
 
-export default function PlanGate({ user, onReady }: PlanGateProps) {
+export default function PlanGate({ user, onReady, autoContinueOnActiveEntitlement = true }: PlanGateProps) {
   const [resolvedUser, setResolvedUser] = useState<AppUser | null>(user || null);
   const activeUser = user || resolvedUser;
   const [loading, setLoading] = useState(true);
@@ -63,7 +64,7 @@ export default function PlanGate({ user, onReady }: PlanGateProps) {
     setError(null);
     try {
       const best = selectBestActiveEntitlement(await listEntitlements(activeUser.uid));
-      if (best) {
+      if (best && autoContinueOnActiveEntitlement) {
         onReady(best);
       }
     } catch (err) {
@@ -130,7 +131,8 @@ export default function PlanGate({ user, onReady }: PlanGateProps) {
     setError(null);
     setMessage(null);
     try {
-      throw new Error('Plano pago indisponivel no escopo Supabase Free: checkout, webhook e backend foram removidos desta fundacao sem billing.');
+      setMessage('Upgrade em beta assistido. Entre em contato para ativacao.');
+      return;
       /*
       const token = '';
       const response = await fetch('removed-paid-checkout-endpoint', {
@@ -187,13 +189,13 @@ export default function PlanGate({ user, onReady }: PlanGateProps) {
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Escolha seu acesso</h1>
               <p className="text-sm text-slate-400 mt-2 leading-relaxed">
-                Para usar o Vistoria Fácil IA, ative um plano. O acesso pago só é liberado após confirmação do pagamento pelo backend.
+                Consulte os limites do beta. Upgrade pago esta em ativacao assistida, sem checkout automatico nesta versao.
               </p>
             </div>
             <div className="bg-slate-800/50 border border-slate-800 rounded-2xl p-4 text-xs text-slate-300 space-y-2">
               <p className="flex gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Cadastro de imóvel e vistoria dentro do app.</p>
               <p className="flex gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Fotos vinculadas por cômodo e relatório PDF.</p>
-              <p className="flex gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Pagamento integrado por checkout seguro.</p>
+              <p className="flex gap-2"><CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" /> Upgrade beta assistido para ampliar o limite de fotos.</p>
             </div>
           </div>
         </section>
@@ -218,12 +220,13 @@ export default function PlanGate({ user, onReady }: PlanGateProps) {
                       <h3 className="font-bold text-base">{plan.name}</h3>
                       <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${isPaid ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-700'}`}>{plan.badge}</span>
                     </div>
+                    <p className="text-[10px] font-mono font-bold uppercase tracking-wide text-slate-400">{plan.id}</p>
                     <p className="text-2xl font-bold">{formatPlanPrice(plan.priceCents, plan.currency)}</p>
                     <p className="text-xs text-slate-600 leading-relaxed">{plan.description}</p>
                     <ul className="text-xs text-slate-600 space-y-2">
                       <li>• Até {plan.maxPhotosPerInspection} fotos por vistoria</li>
                       <li>• Relatório PDF {plan.pdfEnabled ? 'habilitado' : 'indisponível'}</li>
-                      <li>• {isPaid ? 'Liberação após confirmação automática' : 'Ativação imediata para teste'}</li>
+                      <li>• {isPaid ? 'Upgrade em beta assistido. Entre em contato para ativacao.' : 'Ativação imediata para teste'}</li>
                     </ul>
                   </div>
                   <button
@@ -233,7 +236,7 @@ export default function PlanGate({ user, onReady }: PlanGateProps) {
                     className={`h-11 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all disabled:opacity-60 ${isPaid ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-white hover:bg-slate-100 border border-slate-200 text-slate-800'}`}
                   >
                     {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : isPaid ? <CreditCard className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
-                    {isPaid ? 'Pagar e liberar' : 'Ativar Grátis'}
+                    {isPaid ? 'Solicitar upgrade' : 'Ativar Grátis'}
                   </button>
                 </article>
               );
@@ -242,7 +245,7 @@ export default function PlanGate({ user, onReady }: PlanGateProps) {
 
           <div className="border-t border-slate-100 pt-4 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
             <p className="text-[11px] text-slate-500 max-w-xl">
-              O retorno da tela de pagamento não libera acesso sozinho. O app precisa receber confirmação validada antes de ativar o plano pago.
+              Upgrade automatico e pagamento online nao fazem parte deste UAT zero-cost. A ativacao beta paga e assistida.
             </p>
             <button
               type="button"
