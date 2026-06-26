@@ -77,6 +77,7 @@ export default function InspectionWizard({
   const [retryingPhotoId, setRetryingPhotoId] = useState<string | null>(null);
   const [processingMessage, setProcessingMessage] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadInfoMessage, setUploadInfoMessage] = useState<string | null>(null);
   const [roomFeedbackMessage, setRoomFeedbackMessage] = useState<string | null>(null);
   const [roomError, setRoomError] = useState<string | null>(null);
 
@@ -334,6 +335,7 @@ export default function InspectionWizard({
     if (!activeInspection || !selectedRoom || !currentUser) return;
 
     setUploadError(null);
+    setUploadInfoMessage(null);
 
     // Filter only images
     const imageFiles = files.filter(file => file.type.startsWith('image/'));
@@ -487,7 +489,7 @@ export default function InspectionWizard({
           */
         } catch (error: any) {
           console.error(`Erro ao analisar a foto ${photoId}:`, error);
-          setUploadError('Algumas fotos foram salvas, mas a análise automática falhou em parte delas. Você pode revisar manualmente ou tentar novamente.');
+          setUploadInfoMessage('Foto salva. A análise automática não está disponível agora. Revise manualmente.');
 
           const fallbackUpdate: Partial<Photo> = {
             caption: defaultCaption,
@@ -649,6 +651,7 @@ export default function InspectionWizard({
     const retryRoomName = rooms.find(room => room.id === photo.roomId)?.name || photo.roomName || selectedRoom?.name || 'Cômodo não especificado';
     setRetryingPhotoId(photo.id);
     setUploadError(null);
+    setUploadInfoMessage(null);
     try {
       throw new Error('IA server-side desabilitada no Supabase Free; revise manualmente.');
       /*
@@ -698,7 +701,7 @@ export default function InspectionWizard({
       */
     } catch (error: any) {
       console.error(`Erro ao analisar novamente a foto ${photo.id}:`, error);
-      setUploadError('Falha ao gerar sugestão novamente. Verifique a conexão ou tente outra imagem.');
+      setUploadInfoMessage('Foto salva. A análise automática não está disponível agora. Revise manualmente.');
       
       const fallbackUpdate: Partial<Photo> = {
         analysisStatus: 'failed',
@@ -1107,6 +1110,15 @@ export default function InspectionWizard({
                     <span>{uploadError}</span>
                   </div>
                 )}
+                {uploadInfoMessage && (
+                  <div
+                    data-testid="photo-upload-info-message"
+                    className="mb-6 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl text-xs font-semibold flex items-center gap-2"
+                  >
+                    <Info className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>{uploadInfoMessage}</span>
+                  </div>
+                )}
                 
                 {currentRoomPhotos.length === 0 ? (
                   <div className="border-2 border-dashed border-slate-200 rounded-xl p-12 flex flex-col items-center justify-center text-center">
@@ -1173,6 +1185,7 @@ export default function InspectionWizard({
                       return (
                         <div 
                           key={photo.id} 
+                          data-testid={`photo-card-${photo.id}`}
                           className="bg-slate-50 rounded-xl border border-slate-100 p-4 grid grid-cols-1 md:grid-cols-4 gap-4"
                         >
                           {/* Left: Image thumbnail */}
@@ -1209,14 +1222,20 @@ export default function InspectionWizard({
                               {/* Remove / edit buttons */}
                               <div className="flex items-center gap-1.5">
                                 <button
+                                  type="button"
                                   onClick={() => handleStartEditPhoto(photo)}
+                                  aria-label="Editar descrição manual da foto"
+                                  data-testid={`photo-edit-${photo.id}`}
                                   className="p-1 text-slate-400 hover:text-indigo-600 rounded transition-colors"
                                   title="Editar descrição manual"
                                 >
                                   <Edit3 className="w-3.5 h-3.5" />
                                 </button>
                                 <button
+                                  type="button"
                                   onClick={() => handleDeletePhoto(photo.id)}
+                                  aria-label="Excluir foto"
+                                  data-testid={`photo-delete-${photo.id}`}
                                   className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors"
                                   title="Excluir foto"
                                 >
@@ -1228,6 +1247,7 @@ export default function InspectionWizard({
                             {/* Main edit form OR viewer content */}
                             {isPhotoEditing ? (
                               <form
+                                data-testid={`photo-edit-form-${photo.id}`}
                                 onSubmit={(e) => {
                                   e.preventDefault();
                                   handleSavePhotoEdit(photo.id);
@@ -1238,6 +1258,7 @@ export default function InspectionWizard({
                                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Título/Legenda da Foto</label>
                                   <input
                                     type="text"
+                                    data-testid={`photo-edit-caption-${photo.id}`}
                                     value={editCaption}
                                     onChange={(e) => setEditCaption(e.target.value)}
                                     className="w-full text-xs border border-slate-200 focus:border-indigo-500 rounded-lg px-2.5 py-1.5 outline-none"
@@ -1248,6 +1269,7 @@ export default function InspectionWizard({
                                   <div>
                                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Condição Física</label>
                                     <select
+                                      data-testid={`photo-edit-condition-${photo.id}`}
                                       value={editCondition}
                                       onChange={(e) => setEditCondition(e.target.value as any)}
                                       className="w-full text-xs border border-slate-200 focus:border-indigo-500 rounded-lg px-2 py-1.5 outline-none h-[30px]"
@@ -1263,6 +1285,7 @@ export default function InspectionWizard({
                                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Descrição Neutra</label>
                                   <textarea
                                     rows={2}
+                                    data-testid={`photo-edit-description-${photo.id}`}
                                     value={editDescription}
                                     onChange={(e) => setEditDescription(e.target.value)}
                                     className="w-full text-xs border border-slate-200 focus:border-indigo-500 rounded-lg px-2.5 py-1.5 outline-none resize-none"
@@ -1279,6 +1302,7 @@ export default function InspectionWizard({
                                   </button>
                                   <button
                                     type="submit"
+                                    data-testid={`photo-edit-save-${photo.id}`}
                                     className="bg-indigo-600 text-white text-[10px] font-semibold px-3 py-1.5 rounded-md shadow-xs cursor-pointer"
                                   >
                                     Salvar Alterações
@@ -1299,7 +1323,7 @@ export default function InspectionWizard({
                                     <span>Gemini IA analisando a imagem visualmente...</span>
                                   </div>
                                 ) : (analysisStatus === 'completed' && photo.aiAnalysis) ? (
-                                  <div className="bg-white border border-slate-150 rounded-xl p-3 space-y-2 text-xs">
+                                  <div data-testid={`photo-ai-completed-${photo.id}`} className="bg-white border border-slate-150 rounded-xl p-3 space-y-2 text-xs">
                                     <div className="flex items-center justify-between">
                                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1">
                                         <Sparkles className="w-3 h-3 text-indigo-600" /> IA Recomendação
@@ -1357,7 +1381,7 @@ export default function InspectionWizard({
                                     )}
                                   </div>
                                 ) : (
-                                  <div className="bg-white border border-slate-150 rounded-xl p-3 space-y-2 text-xs">
+                                  <div data-testid={`photo-ai-fallback-${photo.id}`} className="bg-white border border-slate-150 rounded-xl p-3 space-y-2 text-xs">
                                     <div className="flex items-center justify-between">
                                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1">
                                         <AlertTriangle className="w-3 h-3 text-amber-500" /> Sem Análise de IA

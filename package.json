@@ -20,6 +20,7 @@
     "qa:supabase-storage-auth": "node scripts/validate-supabase-storage-auth.mjs",
     "qa:uat-real-public": "node scripts/run-real-public-auth-signup-journey.mjs",
     "qa:uat-manual-regression": "node scripts/run-manual-uat-regression.mjs",
+    "qa:uat-full-regression": "node scripts/run-uat-full-regression.mjs",
     "e2e:local": "playwright test --config=playwright.config.ts",
     "e2e:staging": "npm run qa:supabase-storage-auth",
     "e2e:headed": "playwright test --config=playwright.config.ts --headed",
