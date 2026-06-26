@@ -348,22 +348,22 @@ async function runClient(browser, anon, admin, plan, index) {
   try {
     const response = await page.goto(`${TARGET_URL}/?uat_mass=${RUN_ID}_${label}`, { waitUntil: 'networkidle', timeout: 60_000 });
     if ((response?.status() || 0) !== 200) throw new Error(`HTTP status ${response?.status() || 'unknown'}`);
-    await page.getByTestId('staging-email-auth-form').waitFor({ state: 'visible', timeout: 20_000 });
+    await page.getByTestId('public-email-auth-form').waitFor({ state: 'visible', timeout: 20_000 });
 
     const loginBody = await page.locator('body').innerText();
     client.auth.forgotPassword = /esqueci|minha senha|reset/i.test(loginBody) ? 'SUPPORTED_NOT_EXERCISED' : 'NOT_SUPPORTED';
     client.auth.resendEmail = /reenviar|convite|confirm/i.test(loginBody) ? 'SUPPORTED_NOT_EXERCISED' : 'NOT_SUPPORTED';
 
     phase = 'wrong_password';
-    await page.getByLabel(/Email tecnico E2E/i).fill(email);
-    await page.getByLabel(/Senha tecnica E2E/i).fill(`wrong-${password}`);
-    await page.getByRole('button', { name: /Entrar no staging/i }).click();
-    await page.getByText(/Falha no login tecnico/i).waitFor({ state: 'visible', timeout: 20_000 });
+    await page.getByLabel(/^E-mail$/i).fill(email);
+    await page.getByLabel(/^Senha$/i).fill(`wrong-${password}`);
+    await page.getByRole('button', { name: /^Entrar$/i }).click();
+    await page.getByText(/E-mail ou senha invalidos/i).waitFor({ state: 'visible', timeout: 20_000 });
     client.auth.wrongPassword = 'PASS';
 
     phase = 'correct_login';
-    await page.getByLabel(/Senha tecnica E2E/i).fill(password);
-    await page.getByRole('button', { name: /Entrar no staging/i }).click();
+    await page.getByLabel(/^Senha$/i).fill(password);
+    await page.getByRole('button', { name: /^Entrar$/i }).click();
     await page.getByText(/Meus Im.veis/i).waitFor({ state: 'visible', timeout: 30_000 });
     client.auth.login = 'PASS';
 
@@ -535,7 +535,7 @@ async function runClient(browser, anon, admin, plan, index) {
 
     client.status = 'PASS';
   } catch (error) {
-    client.status = /policy|permission|rls|service_role|staging-email-auth-form|missing/i.test(String(error?.message || error))
+    client.status = /policy|permission|rls|service_role|public-email-auth-form|missing/i.test(String(error?.message || error))
       ? 'BLOCKED'
       : 'FAIL';
     client.error = `${phase}: ${sanitizeMessage(error?.message || error)}`;
@@ -672,10 +672,10 @@ async function main() {
   const deployCheckBrowser = await chromium.launch({ headless: true });
   const deployPage = await deployCheckBrowser.newPage();
   const deployResponse = await deployPage.goto(`${TARGET_URL}/?mass_preflight=${RUN_ID}`, { waitUntil: 'networkidle', timeout: 60_000 });
-  const stagingVisible = await deployPage.getByTestId('staging-email-auth-form').isVisible().catch(() => false);
+  const stagingVisible = await deployPage.getByTestId('public-email-auth-form').isVisible().catch(() => false);
   await deployCheckBrowser.close().catch(() => undefined);
   if ((deployResponse?.status() || 0) !== 200 || !stagingVisible) {
-    console.log('BLOCKED: Netlify deploy is not ready or VITE_STAGING_E2E_AUTH is not active.');
+    console.log('BLOCKED: Netlify deploy is not ready or public Email/Password auth form is not active.');
     process.exitCode = 2;
     return;
   }

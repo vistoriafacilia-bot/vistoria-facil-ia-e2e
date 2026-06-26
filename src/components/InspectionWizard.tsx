@@ -963,7 +963,7 @@ export default function InspectionWizard({
                   </button>
 
                   {/* Room Quick Actions (Inline renaming & deleting) */}
-                  <div className="hidden group-hover:flex items-center gap-0.5">
+                  <div className="flex items-center gap-0.5 opacity-80 transition-opacity sm:opacity-60 sm:group-hover:opacity-100">
                     <button
                       type="button"
                       onClick={() => {

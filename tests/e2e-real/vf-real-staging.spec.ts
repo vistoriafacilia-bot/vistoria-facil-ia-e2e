@@ -19,21 +19,21 @@ async function requireAuthenticatedHome(page: Page) {
   await page.goto('/');
   const appHome = page.getByText(/Meus Im.veis/i);
   const googleLogin = page.getByRole('button', { name: /Entrar com o Google/i });
-  const stagingEmailForm = page.getByTestId('staging-email-auth-form');
+  const publicEmailForm = page.getByTestId('public-email-auth-form');
 
-  if (await stagingEmailForm.isVisible().catch(() => false)) {
+  if (await publicEmailForm.isVisible().catch(() => false)) {
     const email = process.env.STAGING_E2E_EMAIL;
     const password = process.env.STAGING_E2E_PASSWORD;
     if (!email || !password) {
       throw new Error(
-        'STAGING_AUTH_BLOCKED: formulario Email/Password real de staging esta disponivel, ' +
+        'STAGING_AUTH_BLOCKED: formulario Email/Password real esta disponivel, ' +
         'mas STAGING_E2E_EMAIL/STAGING_E2E_PASSWORD nao foram definidos no CI.'
       );
     }
 
-    await page.getByLabel(/Email tecnico E2E/i).fill(email);
-    await page.getByLabel(/Senha tecnica E2E/i).fill(password);
-    await page.getByRole('button', { name: /Entrar no staging/i }).click();
+    await page.getByLabel(/^E-mail$/i).fill(email);
+    await page.getByLabel(/^Senha$/i).fill(password);
+    await page.getByRole('button', { name: /^Entrar$/i }).click();
   }
 
   if (await googleLogin.isVisible().catch(() => false)) {

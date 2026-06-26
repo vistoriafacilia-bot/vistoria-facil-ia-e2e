@@ -18,6 +18,7 @@
     "qa:staging": "node scripts/qa-staging-readiness.mjs",
     "qa:performance": "node scripts/qa-performance-budget.mjs",
     "qa:supabase-storage-auth": "node scripts/validate-supabase-storage-auth.mjs",
+    "qa:uat-real-public": "node scripts/run-real-public-user-journey.mjs",
     "e2e:local": "playwright test --config=playwright.config.ts",
     "e2e:staging": "npm run qa:supabase-storage-auth",
     "e2e:headed": "playwright test --config=playwright.config.ts --headed",

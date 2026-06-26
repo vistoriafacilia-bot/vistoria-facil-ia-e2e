@@ -16,11 +16,11 @@ import { deleteInspection, listInspections } from './lib/services/inspectionServ
 export default function App() {
   const [user, setUser] = useState<AppUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const isStagingE2EAuthEnabled = import.meta.env.VITE_STAGING_E2E_AUTH === 'true';
-  const [stagingAuthEmail, setStagingAuthEmail] = useState('');
-  const [stagingAuthPassword, setStagingAuthPassword] = useState('');
-  const [stagingAuthSubmitting, setStagingAuthSubmitting] = useState(false);
-  const [stagingAuthError, setStagingAuthError] = useState<string | null>(null);
+  const isGoogleAuthEnabled = import.meta.env.VITE_ENABLE_GOOGLE_AUTH === 'true';
+  const [emailAuthEmail, setEmailAuthEmail] = useState('');
+  const [emailAuthPassword, setEmailAuthPassword] = useState('');
+  const [emailAuthSubmitting, setEmailAuthSubmitting] = useState(false);
+  const [emailAuthError, setEmailAuthError] = useState<string | null>(null);
 
   // Entitlement states
   const [entitlement, setEntitlement] = useState<Entitlement | null>(null);
@@ -143,18 +143,18 @@ export default function App() {
     setCurrentView('pdf_generator');
   };
 
-  const handleStagingEmailLogin = async (event: React.FormEvent) => {
+  const handleEmailLogin = async (event: React.FormEvent) => {
     event.preventDefault();
-    setStagingAuthSubmitting(true);
-    setStagingAuthError(null);
+    setEmailAuthSubmitting(true);
+    setEmailAuthError(null);
 
     try {
-      await loginWithEmailPassword(stagingAuthEmail.trim(), stagingAuthPassword);
+      await loginWithEmailPassword(emailAuthEmail.trim(), emailAuthPassword);
     } catch (error) {
-      console.error('Staging E2E email/password login failed:', error);
-      setStagingAuthError('Falha no login tecnico de staging. Verifique usuario, senha e provider Email/Password.');
+      console.error('Email/password login failed:', error);
+      setEmailAuthError('E-mail ou senha invalidos.');
     } finally {
-      setStagingAuthSubmitting(false);
+      setEmailAuthSubmitting(false);
     }
   };
 
@@ -208,84 +208,84 @@ export default function App() {
             </div>
           </div>
 
-          {/* Social login action */}
-          <button
-            onClick={loginWithGoogle}
-            className="w-full flex items-center justify-center gap-3 bg-white hover:bg-slate-100 text-slate-800 font-bold text-sm py-3.5 px-4 rounded-xl shadow-md transition-all active:scale-98 cursor-pointer h-12"
-          >
-            {/* Minimal google SVG */}
-            <svg className="w-4 h-4" viewBox="0 0 24 24">
-              <path
-                fill="#EA4335"
-                d="M12 5.04c1.61 0 3.05.56 4.19 1.64l3.12-3.12C17.43 1.84 14.93 1 12 1 7.35 1 3.4 3.65 1.5 7.5l3.86 3C6.35 7.64 8.95 5.04 12 5.04z"
-              />
-              <path
-                fill="#4285F4"
-                d="M23.5 12.25c0-.82-.07-1.61-.21-2.38H12v4.5h6.48c-.28 1.48-1.12 2.73-2.38 3.58l3.7 2.87c2.16-2 3.7-4.94 3.7-8.57z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M5.36 14.5c-.24-.72-.38-1.5-.38-2.3s.14-1.58.38-2.3L1.5 6.9C.54 8.84 0 11.02 0 13.3c0 2.28.54 4.46 1.5 6.4l3.86-3.2z"
-              />
-              <path
-                fill="#34A853"
-                d="M12 23c3.24 0 5.97-1.08 7.96-2.93l-3.7-2.87c-1.03.69-2.34 1.1-3.9 1.1-3.05 0-5.65-2.6-6.58-5.46L1.86 16.1C3.76 20.01 7.59 23 12 23z"
-              />
-            </svg>
-            Entrar com o Google
-          </button>
+          {isGoogleAuthEnabled && (
+            <button
+              type="button"
+              onClick={loginWithGoogle}
+              className="w-full flex items-center justify-center gap-3 bg-white hover:bg-slate-100 text-slate-800 font-bold text-sm py-3.5 px-4 rounded-xl shadow-md transition-all active:scale-98 cursor-pointer h-12"
+            >
+              {/* Minimal google SVG */}
+              <svg className="w-4 h-4" viewBox="0 0 24 24">
+                <path
+                  fill="#EA4335"
+                  d="M12 5.04c1.61 0 3.05.56 4.19 1.64l3.12-3.12C17.43 1.84 14.93 1 12 1 7.35 1 3.4 3.65 1.5 7.5l3.86 3C6.35 7.64 8.95 5.04 12 5.04z"
+                />
+                <path
+                  fill="#4285F4"
+                  d="M23.5 12.25c0-.82-.07-1.61-.21-2.38H12v4.5h6.48c-.28 1.48-1.12 2.73-2.38 3.58l3.7 2.87c2.16-2 3.7-4.94 3.7-8.57z"
+                />
+                <path
+                  fill="#FBBC05"
+                  d="M5.36 14.5c-.24-.72-.38-1.5-.38-2.3s.14-1.58.38-2.3L1.5 6.9C.54 8.84 0 11.02 0 13.3c0 2.28.54 4.46 1.5 6.4l3.86-3.2z"
+                />
+                <path
+                  fill="#34A853"
+                  d="M12 23c3.24 0 5.97-1.08 7.96-2.93l-3.7-2.87c-1.03.69-2.34 1.1-3.9 1.1-3.05 0-5.65-2.6-6.58-5.46L1.86 16.1C3.76 20.01 7.59 23 12 23z"
+                />
+              </svg>
+              Entrar com o Google
+            </button>
+          )}
 
-          {isStagingE2EAuthEnabled && (
             <form
-              onSubmit={handleStagingEmailLogin}
-              data-testid="staging-email-auth-form"
+              onSubmit={handleEmailLogin}
+              data-testid="public-email-auth-form"
               className="border-t border-slate-800 pt-5 space-y-3 text-left"
             >
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                Acesso tecnico staging E2E
+                Entrar com e-mail
               </p>
               <div className="space-y-1.5">
-                <label htmlFor="staging-e2e-email" className="block text-[11px] font-semibold text-slate-300">
-                  Email tecnico E2E
+                <label htmlFor="email-auth-email" className="block text-[11px] font-semibold text-slate-300">
+                  E-mail
                 </label>
                 <input
-                  id="staging-e2e-email"
+                  id="email-auth-email"
                   type="email"
                   autoComplete="username"
                   required
-                  value={stagingAuthEmail}
-                  onChange={(event) => setStagingAuthEmail(event.target.value)}
+                  value={emailAuthEmail}
+                  onChange={(event) => setEmailAuthEmail(event.target.value)}
                   className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400"
                 />
               </div>
               <div className="space-y-1.5">
-                <label htmlFor="staging-e2e-password" className="block text-[11px] font-semibold text-slate-300">
-                  Senha tecnica E2E
+                <label htmlFor="email-auth-password" className="block text-[11px] font-semibold text-slate-300">
+                  Senha
                 </label>
                 <input
-                  id="staging-e2e-password"
+                  id="email-auth-password"
                   type="password"
                   autoComplete="current-password"
                   required
-                  value={stagingAuthPassword}
-                  onChange={(event) => setStagingAuthPassword(event.target.value)}
+                  value={emailAuthPassword}
+                  onChange={(event) => setEmailAuthPassword(event.target.value)}
                   className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400"
                 />
               </div>
-              {stagingAuthError && (
+              {emailAuthError && (
                 <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-200">
-                  {stagingAuthError}
+                  {emailAuthError}
                 </div>
               )}
               <button
                 type="submit"
-                disabled={stagingAuthSubmitting}
+                disabled={emailAuthSubmitting}
                 className="w-full rounded-xl bg-indigo-500 px-4 py-3 text-sm font-bold text-white shadow-md transition-colors hover:bg-indigo-400 disabled:cursor-not-allowed disabled:bg-slate-700"
               >
-                {stagingAuthSubmitting ? 'Entrando...' : 'Entrar no staging'}
+                {emailAuthSubmitting ? 'Entrando...' : 'Entrar'}
               </button>
             </form>
-          )}
         </div>
 
         {/* Humble Footer */}
