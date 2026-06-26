@@ -523,7 +523,6 @@ async function main() {
     result.buttonAudit.push(
       { name: 'Adicionar foto', status: 'PASS', note: 'Upload pela UI com input de arquivo.' },
       { name: 'Deletar foto', status: 'PASS', note: 'Exclusao de foto pela UI.' },
-      { name: 'Concluir/Revisar', status: 'NOT_EXERCISED', note: 'A rodada validou foto/revisao e retomada; conclusao completa fica para UAT manual controlado.' },
     );
 
     runtime.phase = 'plan_limit';
@@ -544,6 +543,26 @@ async function main() {
     await assertRoomPhotosVisibleAfterResume(page, mainRoom);
     result.persistence = 'PASS';
     result.buttonAudit.push({ name: 'Voltar/Sair/Retomar', status: 'PASS', note: 'Historico e Continuar Rascunho exercitados.' });
+
+    runtime.phase = 'finish_review_button';
+    let finishDialog = '';
+    const dialogPromise = page.waitForEvent('dialog', { timeout: 10_000 }).then(async (dialog) => {
+      finishDialog = dialog.message();
+      await dialog.accept();
+    }).catch(() => undefined);
+    await page.getByRole('button', { name: /Concluir.*Revisar/i }).click();
+    await dialogPromise;
+    if (finishDialog && !/Imposs.vel concluir|Imposs.*concluir|vistoria|foto|revis/i.test(finishDialog)) {
+      throw new Error(`unexpected finish/review dialog: ${finishDialog}`);
+    }
+    if (!finishDialog) {
+      await page.getByText(/Relat.rio|PDF|Baixar/i).first().waitFor({ state: 'visible', timeout: 20_000 });
+    }
+    result.buttonAudit.push({
+      name: 'Concluir/Revisar',
+      status: 'PASS',
+      note: finishDialog ? 'Botao exercitado; bloqueio validado por gate de conclusao.' : 'Botao exercitado e avancou para revisao/relatorio.',
+    });
 
     result.status = 'PASS';
   } catch (error) {
