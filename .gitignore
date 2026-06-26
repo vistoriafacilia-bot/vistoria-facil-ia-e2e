@@ -25,3 +25,6 @@ qa/**/evidence/*payload*
 !qa/**/evidence/sr02_secret_scan_report_*.json
 !qa/**/evidence/sr02a_secret_scan_after_recovery_*.json
 !qa/**/evidence/sr02b_secret_scan_after_recovery_*.json
+
+# Local Netlify folder
+.netlify

@@ -442,9 +442,7 @@ export default function InspectionWizard({
         await safeCreateAuditEvent(currentUser.uid, 'ai_analysis_request', { photoId, roomName: roomNameVal, inspectionId: activeInspection.id });
 
         try {
-          throw new Error('IA server-side desabilitada no Supabase Free; revise manualmente.');
-          /*
-          const response = await fetch('removed-ai-endpoint', {
+          const response = await fetch('/.netlify/functions/analyze-photo', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json'
@@ -460,10 +458,24 @@ export default function InspectionWizard({
           }
 
           const rawResult = await response.json();
-          const aiResult = parseAndValidateAiAnalysis(rawResult);
+          const aiResult = parseAndValidateAiAnalysis({
+            item_observado: rawResult.descricao_objetiva,
+            condicao_sugerida: rawResult.condicao_sugerida,
+            descricao_neutra: rawResult.observacao_sugerida,
+            pontos_de_atencao: rawResult.avarias_visiveis,
+            confianca: rawResult.confianca
+          });
 
           const updateData: Partial<Photo> = {
-            aiAnalysis: aiResult,
+            aiAnalysis: {
+              ...aiResult,
+              openai: {
+                model: rawResult.model,
+                usage: rawResult.usage,
+                elapsed_ms: rawResult.elapsed_ms,
+                requer_revisao_humana: rawResult.requer_revisao_humana
+              }
+            } as any,
             caption: `${aiResult.item_observado} - ${aiResult.descricao_neutra}`,
             displayTitle: `${aiResult.item_observado} - ${aiResult.descricao_neutra}`,
             description: aiResult.descricao_neutra,
@@ -485,8 +497,6 @@ export default function InspectionWizard({
             ...p,
             ...updateData
           } : p));
-
-          */
         } catch (error: any) {
           console.error(`Erro ao analisar a foto ${photoId}:`, error);
           setUploadInfoMessage('Foto salva. A análise automática não está disponível agora. Revise manualmente.');
