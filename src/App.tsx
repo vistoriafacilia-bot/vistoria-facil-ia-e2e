@@ -10,17 +10,20 @@ import { ClipboardList, Plus, History, Trash2, FileText, Play, ChevronLeft, Arro
 import { APP_VERSION } from './lib/appVersion';
 import { getOrCreateUserEntitlement } from './lib/entitlements';
 import { safeCreateAuditEvent } from './lib/auditEvents';
-import { loginWithEmailPassword, loginWithGoogle, onAuthStateChanged, upsertProfile } from './lib/services/authService';
+import { loginWithEmailPassword, loginWithGoogle, onAuthStateChanged, resetPasswordForEmail, signUpWithEmailPassword, upsertProfile } from './lib/services/authService';
 import { deleteInspection, listInspections } from './lib/services/inspectionService';
 
 export default function App() {
   const [user, setUser] = useState<AppUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const isGoogleAuthEnabled = import.meta.env.VITE_ENABLE_GOOGLE_AUTH === 'true';
+  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [emailAuthEmail, setEmailAuthEmail] = useState('');
   const [emailAuthPassword, setEmailAuthPassword] = useState('');
+  const [emailAuthConfirmPassword, setEmailAuthConfirmPassword] = useState('');
   const [emailAuthSubmitting, setEmailAuthSubmitting] = useState(false);
   const [emailAuthError, setEmailAuthError] = useState<string | null>(null);
+  const [emailAuthMessage, setEmailAuthMessage] = useState<string | null>(null);
 
   // Entitlement states
   const [entitlement, setEntitlement] = useState<Entitlement | null>(null);
@@ -147,15 +150,84 @@ export default function App() {
     event.preventDefault();
     setEmailAuthSubmitting(true);
     setEmailAuthError(null);
+    setEmailAuthMessage(null);
 
     try {
-      await loginWithEmailPassword(emailAuthEmail.trim(), emailAuthPassword);
+      const email = emailAuthEmail.trim();
+      if (authMode === 'signup') {
+        if (emailAuthPassword.length < 6) {
+          setEmailAuthError('A senha precisa ter pelo menos 6 caracteres.');
+          return;
+        }
+        if (emailAuthPassword !== emailAuthConfirmPassword) {
+          setEmailAuthError('As senhas informadas nao conferem.');
+          return;
+        }
+
+        const result = await signUpWithEmailPassword(email, emailAuthPassword);
+        if (result.needsEmailConfirmation) {
+          setEmailAuthMessage('Conta criada. Verifique seu e-mail para confirmar o acesso.');
+          setAuthMode('login');
+          setEmailAuthPassword('');
+          setEmailAuthConfirmPassword('');
+        } else {
+          setEmailAuthMessage('Conta criada com sucesso. Entrando...');
+        }
+        return;
+      }
+
+      await loginWithEmailPassword(email, emailAuthPassword);
     } catch (error) {
       console.error('Email/password login failed:', error);
-      setEmailAuthError('E-mail ou senha invalidos.');
+      const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+      if (authMode === 'signup') {
+        if (message.includes('already') || message.includes('registered')) {
+          setEmailAuthError('Este e-mail ja possui uma conta. Tente entrar ou recuperar a senha.');
+        } else if (message.includes('rate limit')) {
+          setEmailAuthError('Muitas tentativas de criacao de conta agora. Aguarde alguns minutos e tente novamente.');
+        } else if (message.includes('invalid') && message.includes('email')) {
+          setEmailAuthError('Informe um e-mail valido para criar sua conta.');
+        } else {
+          setEmailAuthError('Nao foi possivel criar a conta. Verifique o e-mail e a senha.');
+        }
+      } else {
+        setEmailAuthError('E-mail ou senha invalidos. Se voce ainda nao tem conta, escolha Criar conta.');
+      }
     } finally {
       setEmailAuthSubmitting(false);
     }
+  };
+
+  const handleResetPassword = async () => {
+    const email = emailAuthEmail.trim();
+    setEmailAuthError(null);
+    setEmailAuthMessage(null);
+    if (!email) {
+      setEmailAuthError('Informe seu e-mail para recuperar a senha.');
+      return;
+    }
+
+    setEmailAuthSubmitting(true);
+    try {
+      await resetPasswordForEmail(email);
+      setEmailAuthMessage('Se houver uma conta para este e-mail, enviaremos as instrucoes de recuperacao.');
+    } catch (error) {
+      console.error('Password reset request failed:', error);
+      const message = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
+      setEmailAuthError(message.includes('rate limit')
+        ? 'Muitas tentativas de recuperacao agora. Aguarde alguns minutos e tente novamente.'
+        : 'Nao foi possivel solicitar a recuperacao agora. Verifique o e-mail e tente novamente.');
+    } finally {
+      setEmailAuthSubmitting(false);
+    }
+  };
+
+  const switchAuthMode = (mode: 'login' | 'signup') => {
+    setAuthMode(mode);
+    setEmailAuthError(null);
+    setEmailAuthMessage(null);
+    setEmailAuthPassword('');
+    setEmailAuthConfirmPassword('');
   };
 
   if (authLoading) {
@@ -242,8 +314,24 @@ export default function App() {
               data-testid="public-email-auth-form"
               className="border-t border-slate-800 pt-5 space-y-3 text-left"
             >
+              <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-950/70 p-1">
+                <button
+                  type="button"
+                  onClick={() => switchAuthMode('login')}
+                  className={`rounded-lg px-3 py-2 text-xs font-bold transition-colors ${authMode === 'login' ? 'bg-indigo-500 text-white' : 'text-slate-400 hover:text-white'}`}
+                >
+                  Entrar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => switchAuthMode('signup')}
+                  className={`rounded-lg px-3 py-2 text-xs font-bold transition-colors ${authMode === 'signup' ? 'bg-indigo-500 text-white' : 'text-slate-400 hover:text-white'}`}
+                >
+                  Criar conta
+                </button>
+              </div>
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                Entrar com e-mail
+                {authMode === 'login' ? 'Entrar com e-mail' : 'Criar conta com e-mail'}
               </p>
               <div className="space-y-1.5">
                 <label htmlFor="email-auth-email" className="block text-[11px] font-semibold text-slate-300">
@@ -273,6 +361,27 @@ export default function App() {
                   className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400"
                 />
               </div>
+              {authMode === 'signup' && (
+                <div className="space-y-1.5">
+                  <label htmlFor="email-auth-confirm-password" className="block text-[11px] font-semibold text-slate-300">
+                    Confirmar senha
+                  </label>
+                  <input
+                    id="email-auth-confirm-password"
+                    type="password"
+                    autoComplete="new-password"
+                    required
+                    value={emailAuthConfirmPassword}
+                    onChange={(event) => setEmailAuthConfirmPassword(event.target.value)}
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400"
+                  />
+                </div>
+              )}
+              {emailAuthMessage && (
+                <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-200">
+                  {emailAuthMessage}
+                </div>
+              )}
               {emailAuthError && (
                 <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-3 py-2 text-xs font-semibold text-rose-200">
                   {emailAuthError}
@@ -283,8 +392,18 @@ export default function App() {
                 disabled={emailAuthSubmitting}
                 className="w-full rounded-xl bg-indigo-500 px-4 py-3 text-sm font-bold text-white shadow-md transition-colors hover:bg-indigo-400 disabled:cursor-not-allowed disabled:bg-slate-700"
               >
-                {emailAuthSubmitting ? 'Entrando...' : 'Entrar'}
+                {emailAuthSubmitting ? 'Aguarde...' : (authMode === 'login' ? 'Entrar' : 'Criar conta')}
               </button>
+              {authMode === 'login' && (
+                <button
+                  type="button"
+                  onClick={handleResetPassword}
+                  disabled={emailAuthSubmitting}
+                  className="w-full text-center text-xs font-semibold text-indigo-200 transition-colors hover:text-white disabled:text-slate-600"
+                >
+                  Esqueci minha senha
+                </button>
+              )}
             </form>
         </div>
 

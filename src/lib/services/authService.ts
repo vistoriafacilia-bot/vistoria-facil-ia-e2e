@@ -34,6 +34,32 @@ export async function loginWithEmailPassword(email: string, password: string): P
   return user;
 }
 
+export async function signUpWithEmailPassword(email: string, password: string): Promise<{ user: AppUser | null; needsEmailConfirmation: boolean }> {
+  if (isLocalE2EMode()) return { user: localTestUser, needsEmailConfirmation: false };
+  requireSupabaseConfigured();
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: window.location.origin,
+    },
+  });
+  throwIfSupabaseError(error, 'Supabase Email/Password signup');
+  return {
+    user: toAppUser(data.user),
+    needsEmailConfirmation: !data.session,
+  };
+}
+
+export async function resetPasswordForEmail(email: string): Promise<void> {
+  if (isLocalE2EMode()) return;
+  requireSupabaseConfigured();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin,
+  });
+  throwIfSupabaseError(error, 'Supabase reset password');
+}
+
 export async function loginWithGoogle(): Promise<void> {
   if (isLocalE2EMode()) return;
   requireSupabaseConfigured();
