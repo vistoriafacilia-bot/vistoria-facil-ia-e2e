@@ -114,6 +114,12 @@ async function blobSize(data) {
   return 0;
 }
 
+function splitStoragePath(path) {
+  const parts = path.split('/');
+  const fileName = parts.pop();
+  return { folder: parts.join('/'), fileName };
+}
+
 async function main() {
   const { values, loadedValues } = loadDotEnvLocal();
 
@@ -187,10 +193,15 @@ async function main() {
       return;
     }
 
-    const verifyDeleted = await bucket.download(objectPath);
-    cleanupConfirmed = Boolean(verifyDeleted.error);
+    const { folder, fileName } = splitStoragePath(objectPath);
+    const verifyDeleted = await bucket.list(folder, { limit: 100 });
+    if (verifyDeleted.error) {
+      blocked(`Supabase Storage cleanup verification: ${verifyDeleted.error.message}`, loadedValues);
+      return;
+    }
+    cleanupConfirmed = !verifyDeleted.data.some((entry) => entry.name === fileName);
     if (!cleanupConfirmed) {
-      fail('Supabase Storage cleanup verification failed: object is still downloadable', loadedValues);
+      fail('Supabase Storage cleanup verification failed: object is still listed', loadedValues);
       return;
     }
 
