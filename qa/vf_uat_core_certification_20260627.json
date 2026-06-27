@@ -1,0 +1,700 @@
+{
+  "status": "PASS_CORE_WITH_GAPS_NO_COST",
+  "url": "https://glittery-boba-2b3367.netlify.app",
+  "runId": "real_complete_1782554264206",
+  "startedAt": "2026-06-27T09:57:44.207Z",
+  "finishedAt": "2026-06-27T09:58:39.707Z",
+  "inventory": {
+    "photoRoot": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes",
+    "totalRooms": 10,
+    "totalValidPhotos": 158,
+    "invalidFiles": 1,
+    "invalidExtensions": [
+      {
+        "extension": ".zip",
+        "count": 1
+      }
+    ],
+    "rooms": [
+      {
+        "name": "Area Externa",
+        "files": [
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191127.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191143.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191151.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191157.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191205.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191211.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191218.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191238.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191248.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191309.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191314.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191335.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191345.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191356.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191412.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191419.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191457.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191505.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191511.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191603.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191609.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191619.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191654.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191706.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191715.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191757.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191808.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191820.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191836.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191939.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171028_074958.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171028_075135.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171028_084003.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171028_084009.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171028_105543.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171028_105549.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171028_105552.jpg"
+        ],
+        "count": 37,
+        "totalMb": 105.87,
+        "sampleFiles": [
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191127.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191143.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191151.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191157.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191205.jpg"
+        ]
+      },
+      {
+        "name": "Banheiro 1",
+        "files": [
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 1\\20171026_185419.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 1\\20171027_185045.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 1\\20171027_185051.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 1\\20171027_185059.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 1\\20171027_185103.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 1\\20171027_185359.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 1\\20171027_185407.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 1\\20171027_185415.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 1\\20171027_185421.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 1\\20171027_185530.jpg"
+        ],
+        "count": 10,
+        "totalMb": 23.34,
+        "sampleFiles": [
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 1\\20171026_185419.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 1\\20171027_185045.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 1\\20171027_185051.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 1\\20171027_185059.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 1\\20171027_185103.jpg"
+        ]
+      },
+      {
+        "name": "Banheiro 2",
+        "files": [
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 2\\20171027_185128.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 2\\20171027_185132.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 2\\20171027_185137.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 2\\20171027_185147.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 2\\20171027_185225.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 2\\20171027_185427.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 2\\20171027_185431.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 2\\20171027_185435.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 2\\20171027_185444.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 2\\20171027_185448.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 2\\20171027_185451.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 2\\20171027_185456.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 2\\20171027_185522.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 2\\20171027_190012.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 2\\20171027_190238.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 2\\20171027_190243.jpg"
+        ],
+        "count": 16,
+        "totalMb": 36.52,
+        "sampleFiles": [
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 2\\20171027_185128.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 2\\20171027_185132.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 2\\20171027_185137.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 2\\20171027_185147.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 2\\20171027_185225.jpg"
+        ]
+      },
+      {
+        "name": "Banheiro 3",
+        "files": [
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 3\\20171027_190806.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 3\\20171027_190810.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 3\\20171027_190945.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 3\\20171027_190950.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 3\\20171027_191003.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 3\\20171027_191007.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 3\\20171027_191012.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 3\\20171027_191019.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 3\\20171027_191022.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 3\\20171027_191059.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 3\\20171029_091504.jpg"
+        ],
+        "count": 11,
+        "totalMb": 26.26,
+        "sampleFiles": [
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 3\\20171027_190806.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 3\\20171027_190810.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 3\\20171027_190945.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 3\\20171027_190950.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 3\\20171027_191003.jpg"
+        ]
+      },
+      {
+        "name": "Cozinha",
+        "files": [
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184404.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184412.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184439.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184447.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184450.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184456.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184503.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184511.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184527.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184540.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184545.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184552.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184559.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184608.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184629.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184647.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184658.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184714.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184720.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184738.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_190034.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_190039.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_190405.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_190428.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_190441.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_190503.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_190525.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_192319.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_194948.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_194957.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_195025.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171028_164934.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171030_075114[1].jpg"
+        ],
+        "count": 33,
+        "totalMb": 82.14,
+        "sampleFiles": [
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184404.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184412.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184439.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184447.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184450.jpg"
+        ]
+      },
+      {
+        "name": "Quarto 2",
+        "files": [
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 2\\20171027_185235.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 2\\20171027_185304.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 2\\20171027_185326.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 2\\20171027_185333.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 2\\20171027_185342.jpg"
+        ],
+        "count": 5,
+        "totalMb": 13.27,
+        "sampleFiles": [
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 2\\20171027_185235.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 2\\20171027_185304.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 2\\20171027_185326.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 2\\20171027_185333.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 2\\20171027_185342.jpg"
+        ]
+      },
+      {
+        "name": "Quarto 3",
+        "files": [
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 3\\20171027_190819.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 3\\20171027_190826.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 3\\20171027_190832.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 3\\20171027_190851.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 3\\20171027_190855.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 3\\20171027_190901.jpg"
+        ],
+        "count": 6,
+        "totalMb": 15.87,
+        "sampleFiles": [
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 3\\20171027_190819.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 3\\20171027_190826.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 3\\20171027_190832.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 3\\20171027_190851.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 3\\20171027_190855.jpg"
+        ]
+      },
+      {
+        "name": "Sala Piso 2",
+        "files": [
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Piso 2\\20171027_190610.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Piso 2\\20171027_190616.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Piso 2\\20171027_190622.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Piso 2\\20171027_190629.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Piso 2\\20171027_190646.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Piso 2\\20171027_190701.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Piso 2\\20171027_190716.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Piso 2\\20171027_190726.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Piso 2\\20171027_190730.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Piso 2\\20171027_190743.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Piso 2\\20171027_190756.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Piso 2\\20171027_190800.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Piso 2\\20171027_192110.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Piso 2\\20171027_192120.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Piso 2\\20171028_074931.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Piso 2\\20171028_214022.jpg"
+        ],
+        "count": 16,
+        "totalMb": 39.23,
+        "sampleFiles": [
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Piso 2\\20171027_190610.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Piso 2\\20171027_190616.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Piso 2\\20171027_190622.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Piso 2\\20171027_190629.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Piso 2\\20171027_190646.jpg"
+        ]
+      },
+      {
+        "name": "Sala Sala Piso 1",
+        "files": [
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Sala Piso 1\\20171027_184810.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Sala Piso 1\\20171027_184816.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Sala Piso 1\\20171027_184825.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Sala Piso 1\\20171027_184843.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Sala Piso 1\\20171027_184857.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Sala Piso 1\\20171027_184904.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Sala Piso 1\\20171027_184928.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Sala Piso 1\\20171027_184942.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Sala Piso 1\\20171027_185001.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Sala Piso 1\\20171027_185020.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Sala Piso 1\\20171027_185734.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Sala Piso 1\\20171027_185753.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Sala Piso 1\\20171027_185806.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Sala Piso 1\\20171027_185815.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Sala Piso 1\\20171027_192410.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Sala Piso 1\\20171028_174304.jpg"
+        ],
+        "count": 16,
+        "totalMb": 41.41,
+        "sampleFiles": [
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Sala Piso 1\\20171027_184810.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Sala Piso 1\\20171027_184816.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Sala Piso 1\\20171027_184825.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Sala Piso 1\\20171027_184843.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Sala Piso 1\\20171027_184857.jpg"
+        ]
+      },
+      {
+        "name": "Varanda Sala",
+        "files": [
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Varanda Sala\\20171027_185552.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Varanda Sala\\20171027_185559.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Varanda Sala\\20171027_185610.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Varanda Sala\\20171027_185620.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Varanda Sala\\20171027_185624.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Varanda Sala\\20171027_185641.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Varanda Sala\\20171027_185651.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Varanda Sala\\20171027_185714.jpg"
+        ],
+        "count": 8,
+        "totalMb": 21.99,
+        "sampleFiles": [
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Varanda Sala\\20171027_185552.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Varanda Sala\\20171027_185559.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Varanda Sala\\20171027_185610.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Varanda Sala\\20171027_185620.jpg",
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Varanda Sala\\20171027_185624.jpg"
+        ]
+      }
+    ],
+    "sample": [
+      {
+        "room": "Area Externa",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191127.jpg"
+      },
+      {
+        "room": "Area Externa",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191143.jpg"
+      },
+      {
+        "room": "Area Externa",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191151.jpg"
+      },
+      {
+        "room": "Area Externa",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191157.jpg"
+      },
+      {
+        "room": "Area Externa",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191205.jpg"
+      },
+      {
+        "room": "Banheiro 1",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 1\\20171026_185419.jpg"
+      },
+      {
+        "room": "Banheiro 1",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 1\\20171027_185045.jpg"
+      },
+      {
+        "room": "Banheiro 1",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 1\\20171027_185051.jpg"
+      },
+      {
+        "room": "Banheiro 1",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 1\\20171027_185059.jpg"
+      },
+      {
+        "room": "Banheiro 1",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 1\\20171027_185103.jpg"
+      },
+      {
+        "room": "Banheiro 2",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 2\\20171027_185128.jpg"
+      },
+      {
+        "room": "Banheiro 2",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 2\\20171027_185132.jpg"
+      },
+      {
+        "room": "Banheiro 2",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 2\\20171027_185137.jpg"
+      },
+      {
+        "room": "Banheiro 2",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 2\\20171027_185147.jpg"
+      },
+      {
+        "room": "Banheiro 2",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 2\\20171027_185225.jpg"
+      },
+      {
+        "room": "Banheiro 3",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 3\\20171027_190806.jpg"
+      },
+      {
+        "room": "Banheiro 3",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 3\\20171027_190810.jpg"
+      },
+      {
+        "room": "Banheiro 3",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 3\\20171027_190945.jpg"
+      },
+      {
+        "room": "Banheiro 3",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 3\\20171027_190950.jpg"
+      },
+      {
+        "room": "Banheiro 3",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 3\\20171027_191003.jpg"
+      },
+      {
+        "room": "Cozinha",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184404.jpg"
+      },
+      {
+        "room": "Cozinha",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184412.jpg"
+      },
+      {
+        "room": "Cozinha",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184439.jpg"
+      },
+      {
+        "room": "Cozinha",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184447.jpg"
+      },
+      {
+        "room": "Cozinha",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184450.jpg"
+      },
+      {
+        "room": "Quarto 2",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 2\\20171027_185235.jpg"
+      },
+      {
+        "room": "Quarto 2",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 2\\20171027_185304.jpg"
+      },
+      {
+        "room": "Quarto 2",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 2\\20171027_185326.jpg"
+      },
+      {
+        "room": "Quarto 2",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 2\\20171027_185333.jpg"
+      },
+      {
+        "room": "Quarto 2",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 2\\20171027_185342.jpg"
+      },
+      {
+        "room": "Quarto 3",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 3\\20171027_190819.jpg"
+      },
+      {
+        "room": "Quarto 3",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 3\\20171027_190826.jpg"
+      },
+      {
+        "room": "Quarto 3",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 3\\20171027_190832.jpg"
+      },
+      {
+        "room": "Quarto 3",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 3\\20171027_190851.jpg"
+      },
+      {
+        "room": "Quarto 3",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 3\\20171027_190855.jpg"
+      },
+      {
+        "room": "Sala Piso 2",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Piso 2\\20171027_190610.jpg"
+      },
+      {
+        "room": "Sala Piso 2",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Piso 2\\20171027_190616.jpg"
+      },
+      {
+        "room": "Sala Piso 2",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Piso 2\\20171027_190622.jpg"
+      },
+      {
+        "room": "Sala Piso 2",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Piso 2\\20171027_190629.jpg"
+      },
+      {
+        "room": "Sala Piso 2",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Piso 2\\20171027_190646.jpg"
+      },
+      {
+        "room": "Sala Sala Piso 1",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Sala Piso 1\\20171027_184810.jpg"
+      },
+      {
+        "room": "Sala Sala Piso 1",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Sala Piso 1\\20171027_184816.jpg"
+      },
+      {
+        "room": "Sala Sala Piso 1",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Sala Piso 1\\20171027_184825.jpg"
+      },
+      {
+        "room": "Sala Sala Piso 1",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Sala Piso 1\\20171027_184843.jpg"
+      },
+      {
+        "room": "Sala Sala Piso 1",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Sala Piso 1\\20171027_184857.jpg"
+      },
+      {
+        "room": "Varanda Sala",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Varanda Sala\\20171027_185552.jpg"
+      },
+      {
+        "room": "Varanda Sala",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Varanda Sala\\20171027_185559.jpg"
+      },
+      {
+        "room": "Varanda Sala",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Varanda Sala\\20171027_185610.jpg"
+      },
+      {
+        "room": "Varanda Sala",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Varanda Sala\\20171027_185620.jpg"
+      },
+      {
+        "room": "Varanda Sala",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Varanda Sala\\20171027_185624.jpg"
+      }
+    ],
+    "samplePhotoCount": 50,
+    "fullCostBase": 23.7,
+    "fullCostStress": 39.5,
+    "sampleCostBase": 7.5,
+    "sampleCostStress": 12.5
+  },
+  "matrix": [
+    {
+      "phase": "0",
+      "caso": "Inventario",
+      "acao": "Mapear subpastas e selecionar ate 5 fotos por comodo com maximo total 50",
+      "esperado": "Todos os comodos entram no core e amostra IA fica <= 50",
+      "resultado": "Acervo 158 fotos",
+      "status": "PASS",
+      "evidencia": "50 fotos selecionadas em 10 comodos"
+    },
+    {
+      "phase": "1",
+      "caso": "Usuario UAT valido",
+      "acao": "Provisionar usuario tecnico e entitlement beta_paid_4990",
+      "esperado": "Usuario normal entra pelo frontend; service_role apenas setup/cleanup",
+      "resultado": "",
+      "status": "PASS",
+      "evidencia": "Plano beta_paid_4990 com limite 50"
+    },
+    {
+      "phase": "1",
+      "caso": "Senha errada",
+      "acao": "Tentar login com senha invalida",
+      "esperado": "Mensagem clara sem autenticar",
+      "resultado": "",
+      "status": "PASS",
+      "evidencia": "Mensagem de credenciais invalidas exibida"
+    },
+    {
+      "phase": "1",
+      "caso": "Esqueci senha",
+      "acao": "Solicitar recuperacao uma vez",
+      "esperado": "Solicitacao aceita ou bloqueio externo documentado",
+      "resultado": "",
+      "status": "GAP",
+      "evidencia": "P1/P2: rate limit Supabase Auth; Discovery continua"
+    },
+    {
+      "phase": "1",
+      "caso": "Esqueci e-mail",
+      "acao": "Procurar fluxo equivalente",
+      "esperado": "Registrar suporte ou GAP funcional",
+      "resultado": "",
+      "status": "NOT_SUPPORTED",
+      "evidencia": "Nao existe controle visivel de recuperar e-mail."
+    },
+    {
+      "phase": "1",
+      "caso": "Login valido",
+      "acao": "Entrar com usuario UAT",
+      "esperado": "Abrir Meus Imoveis",
+      "resultado": "",
+      "status": "PASS",
+      "evidencia": "Login por e-mail/senha abriu app autenticado"
+    },
+    {
+      "phase": "1",
+      "caso": "Logout/login",
+      "acao": "Sair e entrar novamente",
+      "esperado": "Sessao volta sem erro",
+      "resultado": "",
+      "status": "PASS",
+      "evidencia": "Logout retornou ao auth e login reabriu app"
+    },
+    {
+      "phase": "2",
+      "caso": "CRUD imovel",
+      "acao": "Criar, listar, alterar, reload, logout/login e deletar temporario",
+      "esperado": "Imovel principal persiste e temporario some",
+      "resultado": "",
+      "status": "PASS",
+      "evidencia": "UI validada; Supabase validado no fechamento"
+    },
+    {
+      "phase": "3",
+      "caso": "CRUD vistoria",
+      "acao": "Criar entrada, listar/retomar, reload/logout-login e deletar temporaria",
+      "esperado": "Vistoria principal persiste vinculada ao imovel",
+      "resultado": "",
+      "status": "PASS_WITH_GATE_FALLBACK",
+      "evidencia": "inspectionId=fa5b4916-2aa5-4c6f-aa73-c6aaf41cd5c5; evidencias={\"operational\":true,\"photoRegistry\":true,\"fileInputCount\":2,\"addRoomVisible\":true,\"roomRows\":9,\"backToHistory\":true,\"reviewButton\":true,\"url\":\"https://glittery-boba-2b3367.netlify.app/?uat_real_complete=real_complete_1782554264206\"}"
+    },
+    {
+      "phase": "3",
+      "caso": "Alterar vistoria",
+      "acao": "Procurar controle de edicao de metadados/status",
+      "esperado": "Alterar se suportado",
+      "resultado": "",
+      "status": "NOT_SUPPORTED",
+      "evidencia": "Sem UI dedicada alem do fluxo rascunho/concluir."
+    },
+    {
+      "phase": "4",
+      "caso": "CRUD comodos",
+      "acao": "Criar comodos por subpasta, editar um, deletar temporario, reload/logout-login",
+      "esperado": "Todos os comodos persistem",
+      "resultado": "",
+      "status": "PASS",
+      "evidencia": "10 comodos validados"
+    },
+    {
+      "phase": "A",
+      "caso": "Barreira custo zero FASE A",
+      "acao": "Validar Auth, imovel, vistoria, comodos, Supabase e nenhum uso de IA",
+      "esperado": "0 fotos, 0 tokens, 0 requests IA antes da FASE B",
+      "resultado": "",
+      "status": "PASS",
+      "evidencia": "10 comodos persistidos; custo OpenAI R$ 0.00"
+    },
+    {
+      "phase": "B",
+      "caso": "FASE B nao executada",
+      "acao": "Recalcular custo e manter IA bloqueada no gate core",
+      "esperado": "Nao subir fotos nem chamar OpenAI",
+      "resultado": "",
+      "status": "NOT_EXECUTED",
+      "evidencia": "Amostra IA 50/50; base R$ 7.50; stress R$ 12.50"
+    },
+    {
+      "phase": "9",
+      "caso": "Cleanup",
+      "acao": "Remover dados e fotos do teste",
+      "esperado": "Sem leftovers no Supabase/Storage/Auth",
+      "resultado": "",
+      "status": "PASS",
+      "evidencia": "Cleanup total confirmado"
+    }
+  ],
+  "phaseAStatus": "PASS",
+  "phaseBStatus": "NOT_EXECUTED_CORE_CERTIFICATION",
+  "phaseACostOpenAi": 0,
+  "totalRoomsCreated": 10,
+  "photosProcessed": 0,
+  "photosAnalyzedByIa": 0,
+  "usage": {
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "totalTokens": 0
+  },
+  "gaps": [
+    "Esqueci senha bloqueado por rate limit Supabase Auth; nao bloqueia Discovery core.",
+    "Esqueci e-mail / recuperar e-mail nao existe na UI publica atual.",
+    "Gate aceitou vistoria temporaria por evidencia funcional sem texto Registro de Fotos. Screenshot: test-results\\uat-governance\\real_complete_1782554264206_temporaria_functional_evidence_without_photo_registry_text.png",
+    "Edicao de metadados/status de vistoria nao tem controle dedicado na UI atual."
+  ],
+  "bugs": [],
+  "runtime": {
+    "criticalConsoleErrors": 0,
+    "criticalConsoleSamples": [],
+    "pageErrors": 0,
+    "criticalFailedRequests": 0,
+    "criticalHttpResponses": 0,
+    "expectedHttpResponses": 2,
+    "aiRequestsBeforePhaseB": 0,
+    "aiRequestSamples": []
+  },
+  "cleanupOk": true,
+  "cleanupDetails": {
+    "ok": true,
+    "errors": [],
+    "leftovers": {
+      "propertiesRows": 0,
+      "inspectionsRows": 0,
+      "roomsRows": 0,
+      "photosRows": 0,
+      "reportsRows": 0,
+      "entitlementsRows": 0,
+      "eventsRows": 0,
+      "profileRows": 0,
+      "authUserExists": false
+    },
+    "storagePaths": []
+  },
+  "error": null
+}
