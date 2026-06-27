@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "url": "http://127.0.0.1:4184",
+  "guardVisible": true,
+  "checkboxVisible": true,
+  "uploadBlockedBeforeConsent": true,
+  "uploadEnabledAfterConsent": true,
+  "aiRequestsBeforeConsent": 0,
+  "aiRequestsTotal": 0,
+  "secretExposure": false,
+  "tokens": 0,
+  "openAiCostBrl": 0,
+  "errors": []
+}

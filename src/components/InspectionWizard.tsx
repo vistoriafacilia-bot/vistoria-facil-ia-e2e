@@ -78,6 +78,7 @@ export default function InspectionWizard({
   const [processingMessage, setProcessingMessage] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadInfoMessage, setUploadInfoMessage] = useState<string | null>(null);
+  const [privacyGuardAccepted, setPrivacyGuardAccepted] = useState(false);
   const [roomFeedbackMessage, setRoomFeedbackMessage] = useState<string | null>(null);
   const [roomError, setRoomError] = useState<string | null>(null);
 
@@ -786,6 +787,10 @@ export default function InspectionWizard({
 
   // Get photos for current room
   const currentRoomPhotos = selectedRoom ? photos.filter(p => p.roomId === selectedRoom.id) : [];
+  const photoLimit = getPhotoLimitForEntitlement(entitlement);
+  const photoLimitReached = photos.length >= photoLimit;
+  const uploadBlockedByPrivacy = !privacyGuardAccepted;
+  const uploadDisabled = photoLimitReached || uploading || uploadBlockedByPrivacy;
 
   // Initial State: Prompt for inspection type
   if (!activeInspection) {
@@ -1059,6 +1064,34 @@ export default function InspectionWizard({
                   <p className="text-[11px] text-slate-500">Insira imagens representativas deste cômodo.</p>
                 </div>
 
+                <div
+                  data-testid="privacy-ai-upload-guard"
+                  className="md:flex-1 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-3 text-[11px] leading-relaxed space-y-2"
+                >
+                  <p>
+                    As fotos enviadas poderao ser processadas por servico de inteligencia artificial para gerar sugestoes de vistoria.
+                  </p>
+                  <p>
+                    Nao envie fotos que contenham pessoas, rostos, documentos, correspondencias, telas, placas, dados bancarios, dados medicos, criancas ou qualquer informacao pessoal/sensivel.
+                  </p>
+                  <p>
+                    Envie apenas imagens necessarias para registrar o estado do imovel, como paredes, pisos, portas, janelas, instalacoes, moveis fixos e avarias aparentes.
+                  </p>
+                  <label className="flex items-start gap-2 font-semibold text-amber-950">
+                    <input
+                      data-testid="privacy-ai-upload-checkbox"
+                      type="checkbox"
+                      checked={privacyGuardAccepted}
+                      onChange={(event) => setPrivacyGuardAccepted(event.target.checked)}
+                      className="mt-0.5 h-4 w-4 rounded border-amber-300 text-indigo-600 focus:ring-indigo-500"
+                    />
+                    <span>Li e confirmo que as fotos nao contem informacoes pessoais ou sensiveis.</span>
+                  </label>
+                  <p className="text-[10px] text-amber-800">
+                    Ao continuar, voce confirma que revisou as imagens e que elas nao contem informacoes pessoais ou sensiveis.
+                  </p>
+                </div>
+
                 {/* Hidden File Inputs */}
                 <input
                   ref={cameraInputRef}
@@ -1067,7 +1100,8 @@ export default function InspectionWizard({
                   capture="environment"
                   onChange={handleCameraCapture}
                   className="hidden"
-                  disabled={photos.length >= getPhotoLimitForEntitlement(entitlement) || uploading}
+                  disabled={uploadDisabled}
+                  data-testid="privacy-camera-file-input"
                 />
                 <input
                   ref={galleryInputRef}
@@ -1076,7 +1110,8 @@ export default function InspectionWizard({
                   multiple
                   onChange={handleGalleryUpload}
                   className="hidden"
-                  disabled={photos.length >= getPhotoLimitForEntitlement(entitlement) || uploading}
+                  disabled={uploadDisabled}
+                  data-testid="privacy-gallery-file-input"
                 />
 
                 {/* Upload Trigger Buttons */}
@@ -1084,9 +1119,10 @@ export default function InspectionWizard({
                   <button
                     type="button"
                     onClick={() => cameraInputRef.current?.click()}
-                    disabled={photos.length >= getPhotoLimitForEntitlement(entitlement) || uploading}
+                    disabled={uploadDisabled}
+                    data-testid="privacy-camera-upload-button"
                     className={`flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-3.5 py-2 rounded-xl shadow-xs transition-all active:scale-98 cursor-pointer h-9 ${
-                      photos.length >= getPhotoLimitForEntitlement(entitlement) || uploading ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''
+                      uploadDisabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''
                     }`}
                   >
                     <Camera className="w-4 h-4" />
@@ -1095,9 +1131,10 @@ export default function InspectionWizard({
                   <button
                     type="button"
                     onClick={() => galleryInputRef.current?.click()}
-                    disabled={photos.length >= getPhotoLimitForEntitlement(entitlement) || uploading}
+                    disabled={uploadDisabled}
+                    data-testid="privacy-gallery-upload-button"
                     className={`flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-3.5 py-2 rounded-xl shadow-xs transition-all active:scale-98 cursor-pointer h-9 ${
-                      photos.length >= getPhotoLimitForEntitlement(entitlement) || uploading ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''
+                      uploadDisabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''
                     }`}
                   >
                     <UploadCloud className="w-4 h-4" />
@@ -1139,14 +1176,15 @@ export default function InspectionWizard({
                     <p className="text-slate-500 text-xs max-w-md mb-6 leading-relaxed">
                       Durante a vistoria, tire fotos pelo celular ou selecione várias imagens já existentes. Cada foto será analisada individualmente pela IA e ficará vinculada ao cômodo selecionado.
                     </p>
-                    {photos.length < getPhotoLimitForEntitlement(entitlement) && (
+                    {photos.length < photoLimit && (
                       <div className="flex flex-col sm:flex-row gap-3">
                         <button
                           type="button"
                           onClick={() => cameraInputRef.current?.click()}
-                          disabled={uploading}
+                          disabled={uploadDisabled}
+                          data-testid="privacy-empty-camera-upload-button"
                           className={`bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs px-4 py-2.5 rounded-xl cursor-pointer transition-colors flex items-center justify-center gap-1.5 ${
-                            uploading ? 'pointer-events-none' : ''
+                            uploadDisabled ? 'pointer-events-none' : ''
                           }`}
                         >
                           <Camera className="w-4 h-4" />
@@ -1155,9 +1193,10 @@ export default function InspectionWizard({
                         <button
                           type="button"
                           onClick={() => galleryInputRef.current?.click()}
-                          disabled={uploading}
+                          disabled={uploadDisabled}
+                          data-testid="privacy-empty-gallery-upload-button"
                           className={`bg-slate-100 hover:bg-slate-200 disabled:opacity-50 disabled:cursor-not-allowed text-indigo-700 font-bold text-xs px-4 py-2.5 rounded-xl cursor-pointer transition-colors flex items-center justify-center gap-1.5 ${
-                            uploading ? 'pointer-events-none' : ''
+                            uploadDisabled ? 'pointer-events-none' : ''
                           }`}
                         >
                           <UploadCloud className="w-4 h-4" />

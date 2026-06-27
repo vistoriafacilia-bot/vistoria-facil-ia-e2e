@@ -26,6 +26,7 @@
     "qa:uat-core-certification": "node scripts/run-uat-real-complete.mjs --mode=core-certification",
     "qa:uat-ai-controlled": "node scripts/run-uat-ai-controlled-contract.mjs",
     "qa:production-certification": "node scripts/run-production-certification-contract.mjs",
+    "qa:privacy-guard": "node scripts/run-privacy-guard.mjs",
     "qa:uat-real-complete": "node scripts/run-uat-real-complete.mjs",
     "e2e:local": "playwright test --config=playwright.config.ts",
     "e2e:staging": "npm run qa:supabase-storage-auth",
