@@ -21,11 +21,13 @@ import {
 import { getPhotoLimitForEntitlement } from '../lib/entitlements';
 import { getRemainingPhotoSlots, canAddPhotoBatch } from '../lib/photoRules';
 import { APP_VERSION } from '../lib/appVersion';
+import { DEFAULT_INSPECTION_ROOMS, isEmptyInspectionDraft } from '../lib/inspectionLifecycle';
 import { formatQaGateIssues, validateInspectionCompletionGate } from '../lib/qaGates';
 import { getCurrentUser } from '../lib/services/authService';
-import { createInspection, updateInspection } from '../lib/services/inspectionService';
+import { createInspection, deleteInspection, updateInspection } from '../lib/services/inspectionService';
 import { deleteRoom, listRooms, newRoomId, saveRoom, updateRoom } from '../lib/services/roomService';
 import { deletePhoto, listPhotos, newPhotoId, savePhoto, updatePhoto } from '../lib/services/photoService';
+import { listReports } from '../lib/services/reportService';
 import { buildPhotoStoragePath, deleteFile, uploadFile } from '../lib/services/storageService';
 
 interface InspectionWizardProps {
@@ -37,17 +39,7 @@ interface InspectionWizardProps {
   entitlement?: Entitlement | null;
 }
 
-const DEFAULT_ROOMS = [
-  'Sala',
-  'Quarto 1',
-  'Quarto 2',
-  'Banheiro',
-  'Cozinha',
-  'Área de Serviço',
-  'Varanda',
-  'Garagem',
-  'Outros'
-];
+const DEFAULT_ROOMS = DEFAULT_INSPECTION_ROOMS;
 
 export default function InspectionWizard({ 
   property, 
@@ -785,6 +777,38 @@ export default function InspectionWizard({
     }
   };
 
+  const handleBackToHistory = async () => {
+    if (!activeInspection) {
+      onBack();
+      return;
+    }
+
+    try {
+      const currentUser = await getCurrentUser();
+      const [persistedRooms, persistedPhotos, persistedReports] = await Promise.all([
+        listRooms(activeInspection.id),
+        listPhotos(activeInspection.id),
+        listReports(activeInspection.id),
+      ]);
+      if (isEmptyInspectionDraft({
+        inspection: activeInspection,
+        rooms: persistedRooms,
+        photoCount: persistedPhotos.length,
+        reportCount: persistedReports.length,
+      })) {
+        await deleteInspection(activeInspection.id);
+        await safeCreateAuditEvent(currentUser?.uid || 'unknown', 'inspection_empty_draft_discard', {
+          inspectionId: activeInspection.id,
+          propertyId: property.id,
+        });
+      }
+    } catch (error) {
+      console.warn('Nao foi possivel descartar automaticamente o rascunho vazio:', error);
+    }
+
+    onBack();
+  };
+
   // Get photos for current room
   const currentRoomPhotos = selectedRoom ? photos.filter(p => p.roomId === selectedRoom.id) : [];
   const photoLimit = getPhotoLimitForEntitlement(entitlement);
@@ -800,7 +824,7 @@ export default function InspectionWizard({
           <button 
             type="button"
             aria-label="Voltar para histórico"
-            onClick={onBack} 
+            onClick={onBack}
             className="p-1.5 hover:bg-slate-200 rounded-lg text-slate-500 cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -875,7 +899,7 @@ export default function InspectionWizard({
           <button 
             type="button"
             aria-label="Voltar para histórico"
-            onClick={onBack} 
+            onClick={handleBackToHistory}
             className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />

@@ -1,0 +1,190 @@
+{
+  "status": "PASS",
+  "branch": "stabilization/persistence-p0",
+  "url": "http://127.0.0.1:4291",
+  "runId": "inspection_lifecycle_p0_1782566765046",
+  "startedAt": "2026-06-27T13:26:05.047Z",
+  "finishedAt": "2026-06-27T13:26:39.432Z",
+  "failureReproduced": false,
+  "rootCause": "EMPTY_DRAFT_CREATED_ON_START_WAS_NOT_DISCARDED_AND_HISTORY_DID_NOT_FILTER_DEFAULT_ONLY_DRAFTS_BEFORE_FIX",
+  "diagnosis": {
+    "roomEditSavedInSupabase": "YES",
+    "savedOnCorrectInspectionId": "YES",
+    "uiLocalStateHydrationIssue": "NO_REPRODUCED",
+    "defaultsOverwritePersistedRooms": "NO",
+    "newInspectionCreatesDraftImmediately": "TRANSIENT_ONLY_DISCARDED_ON_BACK",
+    "cancelLeavesOrphanDraft": "NO",
+    "historyOrderingFiltering": "YES_BY_EXPLICIT_INSPECTION_ID",
+    "resumesWrongInspection": "NO",
+    "supabaseUiDivergence": "NO"
+  },
+  "matrix": [
+    {
+      "phase": "setup usuario tecnico",
+      "status": "PASS",
+      "evidence": "Usuario e entitlement criados por admin local isolado"
+    },
+    {
+      "phase": "base limpa local",
+      "status": "PASS",
+      "evidence": "Vite local http://127.0.0.1:4291"
+    },
+    {
+      "phase": "login tecnico",
+      "status": "PASS",
+      "evidence": "Login abriu Meus Imoveis"
+    },
+    {
+      "phase": "imovel criar/listar/persistir",
+      "status": "PASS",
+      "evidence": "property_id=20c301c9-b2ea-404a-bb2b-b982bea73c91"
+    },
+    {
+      "phase": "Nova Vistoria + voltar antes de comecar",
+      "status": "PASS",
+      "evidence": "Nenhuma inspection criada antes do botao Comecar Vistoria"
+    },
+    {
+      "phase": "Comecar Vistoria + voltar sem acao real",
+      "status": "PASS",
+      "evidence": "Rascunho vazio fe8176b9-6857-46ce-9f93-b96444e8599c removido; rooms/photos/ai/reports/storage sem leftovers"
+    },
+    {
+      "phase": "vistoria criar/abrir",
+      "status": "PASS",
+      "evidence": "inspection_id=bcd36d48-7175-471b-9e2a-70ec8d78d249"
+    },
+    {
+      "phase": "comodo existente editar",
+      "status": "PASS",
+      "evidence": "Sala Editada P0 765046 visivel e persistido"
+    },
+    {
+      "phase": "sair/voltar/continuar rascunho correto",
+      "status": "PASS",
+      "evidence": "Card localizado por inspection_id; alteracao permaneceu"
+    },
+    {
+      "phase": "reload/retomada",
+      "status": "PASS",
+      "evidence": "Comodo editado permaneceu"
+    },
+    {
+      "phase": "logout/login/retomada",
+      "status": "PASS",
+      "evidence": "Comodo editado permaneceu na vistoria correta"
+    },
+    {
+      "phase": "comodos criar/editar/deletar",
+      "status": "PASS",
+      "evidence": "Comodo Novo Editado P0 765046 persistido; Comodo Temporario P0 765046 removido"
+    },
+    {
+      "phase": "matriz final de persistencia",
+      "status": "PASS",
+      "evidence": "Criado/editado/deletado preservado em back, reload e logout/login"
+    },
+    {
+      "phase": "Nova Vistoria + voltar",
+      "status": "PASS",
+      "evidence": "inspections before=1; after=1"
+    },
+    {
+      "phase": "historico identifica vistoria correta",
+      "status": "PASS",
+      "evidence": "Rascunho aberto por codigo bcd36d48-7175-471b-9e2a-70ec8d78d249"
+    },
+    {
+      "phase": "Supabase x UI",
+      "status": "PASS",
+      "evidence": "10 rooms vinculados ao inspection_id correto; fotos=0; IA=0"
+    }
+  ],
+  "supabase": {
+    "propertyId": "20c301c9-b2ea-404a-bb2b-b982bea73c91",
+    "inspectionId": "bcd36d48-7175-471b-9e2a-70ec8d78d249",
+    "roomNames": [
+      "Sala Editada P0 765046",
+      "Quarto 1",
+      "Quarto 2",
+      "Banheiro",
+      "Cozinha",
+      "Área de Serviço",
+      "Varanda",
+      "Garagem",
+      "Outros",
+      "Comodo Novo Editado P0 765046"
+    ]
+  },
+  "photoCount": 0,
+  "emptyDraftGuard": "PASS",
+  "emptyDraftChildState": {
+    "beforeDiscard": {
+      "status": "em_andamento",
+      "rooms": 9,
+      "photos": 0,
+      "aiAnalysisRows": 0,
+      "reports": 0,
+      "storagePhotos": 0,
+      "storageReports": 0
+    },
+    "afterDiscard": {
+      "inspection": 0,
+      "rooms": 0,
+      "photos": 0,
+      "aiAnalysisRows": 0,
+      "reports": 0,
+      "storagePhotos": 0,
+      "storageReports": 0
+    }
+  },
+  "meaningfulDraftChildState": {
+    "inspection": 1,
+    "rooms": 10,
+    "photos": 0,
+    "aiAnalysisRows": 0,
+    "reports": 0,
+    "storagePhotos": 0,
+    "storageReports": 0
+  },
+  "openAiCalls": 0,
+  "tokens": 0,
+  "openAiCostBrl": 0,
+  "runtime": {
+    "consoleErrors": [],
+    "pageErrors": [],
+    "failedRequests": [
+      {
+        "phase": "logout_login_resume",
+        "failure": "net::ERR_ABORTED",
+        "url": "https://hovnpnddvjnfotgmylvp.supabase.co/auth/v1/logout"
+      },
+      {
+        "phase": "final_resume_matrix",
+        "failure": "net::ERR_ABORTED",
+        "url": "https://hovnpnddvjnfotgmylvp.supabase.co/auth/v1/logout"
+      }
+    ],
+    "httpErrors": [],
+    "aiRequests": [],
+    "phase": "supabase_validation"
+  },
+  "cleanup": "PASS",
+  "cleanupDetails": {
+    "ok": true,
+    "leftovers": {
+      "propertiesRows": 0,
+      "inspectionsRows": 0,
+      "roomsRows": 0,
+      "photosRows": 0,
+      "reportsRows": 0,
+      "entitlementsRows": 0,
+      "eventsRows": 0,
+      "profileRows": 0,
+      "authUserExists": false
+    },
+    "errors": []
+  },
+  "screenshots": [],
+  "error": null
+}

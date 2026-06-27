@@ -9,9 +9,18 @@ import PlanGate from './components/PlanGate';
 import { ClipboardList, Plus, History, Trash2, FileText, Play, ChevronLeft, ArrowRight, ShieldCheck, Sparkles, Building2 } from 'lucide-react';
 import { APP_VERSION } from './lib/appVersion';
 import { getOrCreateUserEntitlement } from './lib/entitlements';
+import { isEmptyInspectionDraft } from './lib/inspectionLifecycle';
 import { safeCreateAuditEvent } from './lib/auditEvents';
 import { loginWithEmailPassword, loginWithGoogle, onAuthStateChanged, resetPasswordForEmail, signUpWithEmailPassword, upsertProfile } from './lib/services/authService';
 import { deleteInspection, listInspections } from './lib/services/inspectionService';
+import { listPhotos } from './lib/services/photoService';
+import { listReports } from './lib/services/reportService';
+import { listRooms } from './lib/services/roomService';
+
+type HistoryInspection = Inspection & {
+  roomCount?: number;
+  photoCount?: number;
+};
 
 export default function App() {
   const [user, setUser] = useState<AppUser | null>(null);
@@ -36,7 +45,7 @@ export default function App() {
   // Selected Contexts
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [selectedInspection, setSelectedInspection] = useState<Inspection | null>(null);
-  const [inspections, setInspections] = useState<Inspection[]>([]);
+  const [inspections, setInspections] = useState<HistoryInspection[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
   // Admin and Metrics Control
@@ -84,9 +93,29 @@ export default function App() {
     }
   }, [user]);
 
-  const loadPropertyInspections = async (property: Property): Promise<Inspection[]> => {
+  const loadPropertyInspections = async (property: Property): Promise<HistoryInspection[]> => {
     if (!user) return [];
-    return listInspections(user.uid, property.id);
+    const list = await listInspections(user.uid, property.id);
+    const enriched = await Promise.all(list.map(async (inspection) => {
+      const [rooms, photos, reports] = await Promise.all([
+        listRooms(inspection.id),
+        listPhotos(inspection.id),
+        listReports(inspection.id),
+      ]);
+      return {
+        ...inspection,
+        roomCount: rooms.length,
+        photoCount: photos.length,
+        reportCount: reports.length,
+        isEmptyDraft: isEmptyInspectionDraft({
+          inspection,
+          rooms,
+          photoCount: photos.length,
+          reportCount: reports.length,
+        }),
+      };
+    }));
+    return enriched.filter((inspection) => !inspection.isEmptyDraft);
   };
 
   // Fetch past inspections for selected property
@@ -564,6 +593,10 @@ export default function App() {
                             {new Date(insp.completedAt).toLocaleDateString('pt-BR')}
                           </p>
                         )}
+                        <p>
+                          <span className="font-semibold text-slate-700">Conteudo:</span>{' '}
+                          {insp.roomCount ?? 0} comodos - {insp.photoCount ?? 0} fotos
+                        </p>
                         <p className="text-[10px] font-mono text-slate-400 truncate max-w-[250px]">
                           Código: {insp.id}
                         </p>

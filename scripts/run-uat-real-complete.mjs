@@ -42,6 +42,13 @@ function loadEnvLocal() {
   return values;
 }
 
+function resolveRuntimeEnv() {
+  return {
+    ...loadEnvLocal(),
+    ...process.env,
+  };
+}
+
 function sanitizeMessage(value) {
   const text = String(value || '').replace(/\u001b\[[0-9;]*m/g, '');
   if (/token|key|password|service_role|authorization|secret/i.test(text)) return '[redacted sensitive message]';
@@ -741,9 +748,9 @@ async function run() {
     return;
   }
 
-  const env = loadEnvLocal();
+  const env = resolveRuntimeEnv();
   const missing = ['VITE_SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'].filter((key) => !env[key]);
-  if (missing.length) throw new Error(`missing ${missing.join(', ')} in .env.local`);
+  if (missing.length) throw new Error(`missing required env: ${missing.join(', ')}`);
 
   const admin = createClient(env.VITE_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },

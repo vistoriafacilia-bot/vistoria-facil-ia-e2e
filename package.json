@@ -29,6 +29,8 @@
     "qa:report-no-cost-diagnostic": "node scripts/run-report-no-cost-diagnostic.mjs",
     "qa:production-certification": "node scripts/run-production-certification-contract.mjs",
     "qa:privacy-guard": "node scripts/run-privacy-guard.mjs",
+    "qa:persistence-p0": "node scripts/run-persistence-p0.mjs",
+    "qa:inspection-lifecycle-p0": "node scripts/run-persistence-p0.mjs --inspection-lifecycle",
     "qa:uat-real-complete": "node scripts/run-uat-real-complete.mjs",
     "e2e:local": "playwright test --config=playwright.config.ts",
     "e2e:staging": "npm run qa:supabase-storage-auth",
