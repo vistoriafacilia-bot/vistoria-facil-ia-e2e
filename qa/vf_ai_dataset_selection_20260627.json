@@ -1,0 +1,130 @@
+{
+  "status": "DATASET_READY_FOR_APPROVAL",
+  "generated_at": "2026-06-27",
+  "photo_root": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes",
+  "total_rooms": 10,
+  "total_valid_candidate_photos": 158,
+  "selected_photos": 10,
+  "selection": [
+    {
+      "room": "Area Externa",
+      "file_path": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191457.jpg",
+      "file_name": "20171027_191457.jpg",
+      "reason": "Piso e ralo; bom para avaliar acabamento/estado do piso sem expor pessoas ou documentos.",
+      "visual_risk": "baixo",
+      "privacy_note": "Revisao visual por miniatura nao identificou pessoas, rostos, documentos, correspondencias, telas, placas, dados bancarios/medicos, criancas ou informacao pessoal/sensivel aparente.",
+      "recommendation": "aprovado",
+      "sha256": "5c6f4b83886d6ab98cde32d0e84010c24a136e3f81d84e3c35e77f12abb7df21"
+    },
+    {
+      "room": "Banheiro 1",
+      "file_path": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 1\\20171027_185051.jpg",
+      "file_name": "20171027_185051.jpg",
+      "reason": "Revestimento de parede; enquadramento neutro e sem itens pessoais identificaveis.",
+      "visual_risk": "baixo",
+      "privacy_note": "Revisao visual por miniatura nao identificou pessoas, rostos, documentos, correspondencias, telas, placas, dados bancarios/medicos, criancas ou informacao pessoal/sensivel aparente.",
+      "recommendation": "aprovado",
+      "sha256": "e52d38e57a1da15e9f292a2346e1ad0b0156323c26a369a4efd2a334abd39761"
+    },
+    {
+      "room": "Banheiro 2",
+      "file_path": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 2\\20171027_185147.jpg",
+      "file_name": "20171027_185147.jpg",
+      "reason": "Revestimento de parede; baixo risco visual e suficiente para testar sugestao de vistoria.",
+      "visual_risk": "baixo",
+      "privacy_note": "Revisao visual por miniatura nao identificou pessoas, rostos, documentos, correspondencias, telas, placas, dados bancarios/medicos, criancas ou informacao pessoal/sensivel aparente.",
+      "recommendation": "aprovado",
+      "sha256": "d4f52dd8605d6bcf7caf72e48825ac3e1df540f52e141decf3a6a96977ef3b87"
+    },
+    {
+      "room": "Banheiro 3",
+      "file_path": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 3\\20171027_191003.jpg",
+      "file_name": "20171027_191003.jpg",
+      "reason": "Parede/revestimento; sem objetos pessoais aparentes.",
+      "visual_risk": "baixo",
+      "privacy_note": "Revisao visual por miniatura nao identificou pessoas, rostos, documentos, correspondencias, telas, placas, dados bancarios/medicos, criancas ou informacao pessoal/sensivel aparente.",
+      "recommendation": "aprovado",
+      "sha256": "b6e9f041507959010b56481e0ef5fb8d2c493c9999508a1149e8d7e7a8f6a40c"
+    },
+    {
+      "room": "Cozinha",
+      "file_path": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184714.jpg",
+      "file_name": "20171027_184714.jpg",
+      "reason": "Parede/revestimento neutro; evita bancada com utensilios ou itens pessoais.",
+      "visual_risk": "baixo",
+      "privacy_note": "Revisao visual por miniatura nao identificou pessoas, rostos, documentos, correspondencias, telas, placas, dados bancarios/medicos, criancas ou informacao pessoal/sensivel aparente.",
+      "recommendation": "aprovado",
+      "sha256": "a73fd2244f54dad445855dd678aacae45fc84dd5c9de4a4c21798e61c0fb3fca"
+    },
+    {
+      "room": "Quarto 2",
+      "file_path": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 2\\20171027_185235.jpg",
+      "file_name": "20171027_185235.jpg",
+      "reason": "Teto/ventilador; imagem de instalacao fixa, sem objetos pessoais aparentes.",
+      "visual_risk": "baixo",
+      "privacy_note": "Revisao visual por miniatura nao identificou pessoas, rostos, documentos, correspondencias, telas, placas, dados bancarios/medicos, criancas ou informacao pessoal/sensivel aparente.",
+      "recommendation": "aprovado",
+      "sha256": "3424b8b51e94fafb5f99d9f040b77f44df4500a42effa06378ed9010d0859428"
+    },
+    {
+      "room": "Quarto 3",
+      "file_path": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Quarto 3\\20171027_190851.jpg",
+      "file_name": "20171027_190851.jpg",
+      "reason": "Parede/rodape; area neutra e sem dados pessoais aparentes.",
+      "visual_risk": "baixo",
+      "privacy_note": "Revisao visual por miniatura nao identificou pessoas, rostos, documentos, correspondencias, telas, placas, dados bancarios/medicos, criancas ou informacao pessoal/sensivel aparente.",
+      "recommendation": "aprovado",
+      "sha256": "5b89d7410ff60660f6b8578adc348bcadcd8fcb8ef48150df043f73c8d2b6376"
+    },
+    {
+      "room": "Sala Piso 2",
+      "file_path": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Piso 2\\20171027_190629.jpg",
+      "file_name": "20171027_190629.jpg",
+      "reason": "Parede com acabamento/interruptor; sem pessoas ou documentos aparentes.",
+      "visual_risk": "baixo",
+      "privacy_note": "Revisao visual por miniatura nao identificou pessoas, rostos, documentos, correspondencias, telas, placas, dados bancarios/medicos, criancas ou informacao pessoal/sensivel aparente.",
+      "recommendation": "aprovado",
+      "sha256": "d757d082604842fb709ac90a2bfceeb285928c3d8ecd4b71bcfd5b5a8d3b4f33"
+    },
+    {
+      "room": "Sala Sala Piso 1",
+      "file_path": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Sala Sala Piso 1\\20171027_184928.jpg",
+      "file_name": "20171027_184928.jpg",
+      "reason": "Parede/revestimento decorativo; baixo risco visual e util para observacao de acabamento.",
+      "visual_risk": "baixo",
+      "privacy_note": "Revisao visual por miniatura nao identificou pessoas, rostos, documentos, correspondencias, telas, placas, dados bancarios/medicos, criancas ou informacao pessoal/sensivel aparente.",
+      "recommendation": "aprovado",
+      "sha256": "0f0bdb2e663a974f949656fbf70579957c42967fc4b3f731aa9e1f0df087966c"
+    },
+    {
+      "room": "Varanda Sala",
+      "file_path": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Varanda Sala\\20171027_185651.jpg",
+      "file_name": "20171027_185651.jpg",
+      "reason": "Piso/ralo; imagem de area construtiva sem informacao pessoal aparente.",
+      "visual_risk": "baixo",
+      "privacy_note": "Revisao visual por miniatura nao identificou pessoas, rostos, documentos, correspondencias, telas, placas, dados bancarios/medicos, criancas ou informacao pessoal/sensivel aparente.",
+      "recommendation": "aprovado",
+      "sha256": "db8322c2b81c3bf7a0661efc71044927bf3dc0bafae042703dcd9ef6ead1bb4b"
+    }
+  ],
+  "future_cost_estimate_brl": {
+    "base": 1.5,
+    "stress": 2.5,
+    "formula_base": "10 x R$ 0,15",
+    "formula_stress": "10 x R$ 0,25"
+  },
+  "openai_called": 0,
+  "tokens": 0,
+  "current_openai_cost_brl": 0.0,
+  "actions_not_performed": [
+    "OpenAI call",
+    "photo upload",
+    "qa:uat-ai-controlled",
+    "Supabase/app data creation"
+  ],
+  "reports": {
+    "md": "qa\\vf_ai_dataset_selection_20260627.md",
+    "json": "qa\\vf_ai_dataset_selection_20260627.json",
+    "contact_sheet": "qa\\vf_ai_dataset_selection_contact_sheet_20260627.jpg"
+  }
+}

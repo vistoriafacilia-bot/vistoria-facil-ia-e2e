@@ -1,0 +1,72 @@
+{
+  "status": "PASS",
+  "classification": "REPORT_GENERATED_NOT_DETECTED",
+  "url": "https://glittery-boba-2b3367.netlify.app",
+  "runId": "report_no_cost_1782559740313",
+  "matrix": [
+    {
+      "phase": "1",
+      "caso": "Login tecnico",
+      "esperado": "Entrar no app publico sem IA",
+      "status": "PASS",
+      "evidencia": "Meus Imoveis visivel"
+    },
+    {
+      "phase": "2",
+      "caso": "Setup vistoria",
+      "esperado": "Criar imovel, vistoria e comodos sem upload/IA",
+      "status": "PASS",
+      "evidencia": "inspectionId=1a6dc478-b12d-48ed-9715-93329619a03a"
+    },
+    {
+      "phase": "3",
+      "caso": "Foto sintetica sem custo",
+      "esperado": "Criar pre-condicao minima de relatorio sem upload e sem OpenAI",
+      "status": "PASS",
+      "evidencia": "report_no_cost_photo_report_no_cost_1782559740313"
+    },
+    {
+      "phase": "4",
+      "caso": "Transicao para relatorio",
+      "esperado": "Clicar Concluir & Revisar e observar tela/estado",
+      "status": "PASS",
+      "evidencia": "REPORT_GENERATED_NOT_DETECTED"
+    }
+  ],
+  "screenshots": [
+    "test-results\\report-no-cost-diagnostic\\report_no_cost_1782559740313_before_report_click.png",
+    "test-results\\report-no-cost-diagnostic\\report_no_cost_1782559740313_after_report_click.png"
+  ],
+  "buttonsAfter": [
+    "Vistoria Fácil IAV0.4.0-rc2",
+    "Baixar Relatório PDF",
+    "WhatsApp",
+    "E-mail"
+  ],
+  "visibleTextAfter": "Vistoria Fácil IA V0.4.0-rc2 E e2e-report-no-cost-report_no_cost_1782559740313@vistoriafacilia.com e2e-report-no-cost-report_no_cost_1782559740313@vistoriafacilia.com Beta pago Visualizar Relatório Relatorio Sem Custo report_no_cost_1782559740313 • Vistoria Concluída Resumo Geral da Vistoria Escreva observações globais de entrada/saída que farão parte da folha de introdução do PDF. Aviso de Responsabilidade Legal “Este relatório é um registro organizacional de vistoria feito pelo usuário com apoio de inteligência artificial. Não substitui laudo técnico, parecer jurídico, vistoria profissional ou avaliação especializada.” Itens e fotos catalogados Sala 1 foto(s) com análise de IA Revisado Pronto para gerar Gere o documento final e envie para as partes interessadas. Baixar Relatório PDF MENSAGEM PARA ENVIO \"Olá, estou enviando o relatório de vistoria de entrada do imóvel (Relatorio Sem Custo report_no_cost_1782559740313 - Rua Relatorio report_no_cost_1782559740313, Nº 101), com registros fotográficos e observações realizadas na data indicada. Peço, por gentileza, confirmação de recebimento para fins de registro.\" WhatsApp E-mail",
+  "dialogs": [],
+  "openAiCalls": 0,
+  "tokens": 0,
+  "openAiCostBrl": 0,
+  "reportTitleVisible": true,
+  "reportButtonVisible": true,
+  "urlAfter": "https://glittery-boba-2b3367.netlify.app/?report_no_cost=report_no_cost_1782559740313",
+  "inspectionId": "1a6dc478-b12d-48ed-9715-93329619a03a",
+  "inspectionStatusAfter": "concluida",
+  "cleanupOk": true,
+  "cleanupDetails": {
+    "ok": true,
+    "errors": [],
+    "leftovers": {
+      "propertiesRows": 0,
+      "inspectionsRows": 0,
+      "roomsRows": 0,
+      "photosRows": 0,
+      "reportsRows": 0,
+      "entitlementsRows": 0,
+      "eventsRows": 0,
+      "authUserExists": false
+    }
+  },
+  "error": null
+}

@@ -25,6 +25,8 @@
     "qa:uat-core-discovery": "node scripts/run-uat-real-complete.mjs --mode=core-discovery",
     "qa:uat-core-certification": "node scripts/run-uat-real-complete.mjs --mode=core-certification",
     "qa:uat-ai-controlled": "node scripts/run-uat-ai-controlled-contract.mjs",
+    "qa:uat-ai-controlled:dry": "node scripts/run-uat-ai-controlled-contract.mjs --dry",
+    "qa:report-no-cost-diagnostic": "node scripts/run-report-no-cost-diagnostic.mjs",
     "qa:production-certification": "node scripts/run-production-certification-contract.mjs",
     "qa:privacy-guard": "node scripts/run-privacy-guard.mjs",
     "qa:uat-real-complete": "node scripts/run-uat-real-complete.mjs",
