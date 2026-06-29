@@ -1,4 +1,4 @@
-﻿import { PaymentV1Error, sanitizeForPaymentLog } from './paymentErrors.mjs';
+import { PaymentV1Error, sanitizeForPaymentLog } from './paymentErrors.mjs';
 
 const jsonHeaders = (config) => ({
   apikey: config.serviceRoleKey,
@@ -216,6 +216,50 @@ export const createPaymentOrderStore = ({ env = process.env, fetchImpl = globalT
     }
   };
 
+  const listActiveCreditsForUser = async ({ userId }) => {
+    if (!userId) {
+      throw new PaymentV1Error('Payment V1 status requires user_id.', {
+        debugCode: 'invalid_auth_token',
+        statusCode: 401,
+      });
+    }
+    const rows = await requestSupabase({
+      config,
+      fetchImpl,
+      path: `payment_v1_credits?user_id=eq.${encodeURIComponent(userId)}&status=eq.active&order=created_at.desc&select=id,order_id,plan_code,analysis_limit,analysis_used,status,created_at,finalized_at`,
+      debugCode: 'status_lookup_failed',
+    });
+    return Array.isArray(rows) ? rows : [];
+  };
+
+  const listRecentOrdersForUser = async ({ userId }) => {
+    if (!userId) {
+      throw new PaymentV1Error('Payment V1 status requires user_id.', {
+        debugCode: 'invalid_auth_token',
+        statusCode: 401,
+      });
+    }
+    const rows = await requestSupabase({
+      config,
+      fetchImpl,
+      path: `payment_v1_orders?user_id=eq.${encodeURIComponent(userId)}&order=created_at.desc&limit=20&select=id,plan_code,provider_checkout_id,checkout_url,external_reference,status,amount_cents,analysis_limit,paid_at,created_at,updated_at`,
+      debugCode: 'status_lookup_failed',
+    });
+    return Array.isArray(rows) ? rows : [];
+  };
+
+  const getPaymentStatusForUser = async ({ userId }) => {
+    const [activeCredits, recentOrders] = await Promise.all([
+      listActiveCreditsForUser({ userId }),
+      listRecentOrdersForUser({ userId }),
+    ]);
+    return {
+      activeCredits,
+      pendingOrders: recentOrders.filter((order) => order.status === 'pending'),
+      paidOrders: recentOrders.filter((order) => order.status === 'paid'),
+    };
+  };
+
   return {
     createPendingOrder,
     updateOrderCheckout,
@@ -223,5 +267,8 @@ export const createPaymentOrderStore = ({ env = process.env, fetchImpl = globalT
     recordWebhookEvent,
     updateOrderStatus,
     createCreditForOrderOnce,
+    listActiveCreditsForUser,
+    listRecentOrdersForUser,
+    getPaymentStatusForUser,
   };
 };

@@ -1,4 +1,4 @@
-Ôªøimport { getCurrentAccessToken } from './authService';
+import { getCurrentAccessToken } from './authService';
 
 export type PaymentV1PlanCode = 'report_50_beta' | 'report_100' | 'report_150';
 
@@ -13,7 +13,41 @@ export interface PaymentV1PlanOption {
 export interface PaymentV1CheckoutResponse {
   checkoutUrl: string;
   checkoutId: string;
+  orderId: string;
   planCode: PaymentV1PlanCode;
+  requestId?: string;
+}
+
+export interface PaymentV1CreditStatus {
+  id: string;
+  orderId: string;
+  planCode: PaymentV1PlanCode;
+  analysisLimit: number;
+  analysisUsed: number;
+  status: 'active' | 'finalized' | 'revoked';
+  createdAt?: string;
+  finalizedAt?: string | null;
+}
+
+export interface PaymentV1OrderStatus {
+  id: string;
+  planCode: PaymentV1PlanCode;
+  providerCheckoutId?: string | null;
+  checkoutUrl?: string | null;
+  externalReference: string;
+  status: 'pending' | 'paid' | 'canceled' | 'expired' | 'refused' | 'failed';
+  amountCents: number;
+  analysisLimit: number;
+  paidAt?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface PaymentV1StatusResponse {
+  hasActiveCredit: boolean;
+  activeCredits: PaymentV1CreditStatus[];
+  pendingOrders: PaymentV1OrderStatus[];
+  paidOrders: PaymentV1OrderStatus[];
   requestId?: string;
 }
 
@@ -27,34 +61,47 @@ export interface PaymentV1ErrorResponse {
 export const PAYMENT_V1_PLANS: PaymentV1PlanOption[] = [
   {
     code: 'report_50_beta',
-    name: 'Relat√≥rio 50',
-    description: 'Relat√≥rio beta com at√© 50 an√°lises',
+    name: 'RelatÛrio 50',
+    description: 'RelatÛrio beta com atÈ 50 an·lises',
     priceLabel: 'R$ 49,90',
     analysisLimit: 50,
   },
   {
     code: 'report_100',
-    name: 'Relat√≥rio 100',
-    description: 'Relat√≥rio beta com at√© 100 an√°lises',
+    name: 'RelatÛrio 100',
+    description: 'RelatÛrio beta com atÈ 100 an·lises',
     priceLabel: 'R$ 99,90',
     analysisLimit: 100,
   },
   {
     code: 'report_150',
-    name: 'Relat√≥rio 150',
-    description: 'Relat√≥rio beta com at√© 150 an√°lises',
+    name: 'RelatÛrio 150',
+    description: 'RelatÛrio beta com atÈ 150 an·lises',
     priceLabel: 'R$ 149,90',
     analysisLimit: 150,
   },
 ];
 
-export const createPaymentV1Checkout = async (planCode: PaymentV1PlanCode): Promise<PaymentV1CheckoutResponse> => {
+const getRequiredAccessToken = async () => {
   const accessToken = await getCurrentAccessToken();
   if (!accessToken) {
-    const error = new Error('Sess√£o expirada. Entre novamente para continuar.') as Error & PaymentV1ErrorResponse;
+    const error = new Error('Sess„o expirada. Entre novamente para continuar.') as Error & PaymentV1ErrorResponse;
     error.debugCode = 'missing_auth_header';
     throw error;
   }
+  return accessToken;
+};
+
+const buildPaymentV1Error = (body: Partial<PaymentV1ErrorResponse>, fallbackMessage: string, fallbackDebugCode: string) => {
+  const error = new Error(body.error || fallbackMessage) as Error & PaymentV1ErrorResponse;
+  error.debugCode = body.debugCode || fallbackDebugCode;
+  error.requestId = body.requestId;
+  error.asaasStatus = body.asaasStatus;
+  return error;
+};
+
+export const createPaymentV1Checkout = async (planCode: PaymentV1PlanCode): Promise<PaymentV1CheckoutResponse> => {
+  const accessToken = await getRequiredAccessToken();
 
   const response = await fetch('/.netlify/functions/payment-v1-create-checkout', {
     method: 'POST',
@@ -67,15 +114,10 @@ export const createPaymentV1Checkout = async (planCode: PaymentV1PlanCode): Prom
 
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const errorBody = body as Partial<PaymentV1ErrorResponse>;
-    const error = new Error(errorBody.error || 'N√£o foi poss√≠vel iniciar o checkout.') as Error & PaymentV1ErrorResponse;
-    error.debugCode = errorBody.debugCode || 'payment_v1_frontend_checkout_failed';
-    error.requestId = errorBody.requestId;
-    error.asaasStatus = errorBody.asaasStatus;
-    throw error;
+    throw buildPaymentV1Error(body, 'N„o foi possÌvel iniciar o checkout.', 'payment_v1_frontend_checkout_failed');
   }
 
-  if (!body.checkoutUrl || !body.checkoutId || !body.planCode) {
+  if (!body.checkoutUrl || !body.checkoutId || !body.orderId || !body.planCode) {
     const error = new Error('Resposta de checkout incompleta.') as Error & PaymentV1ErrorResponse;
     error.debugCode = 'payment_v1_frontend_invalid_response';
     error.requestId = body.requestId;
@@ -83,4 +125,29 @@ export const createPaymentV1Checkout = async (planCode: PaymentV1PlanCode): Prom
   }
 
   return body as PaymentV1CheckoutResponse;
+};
+
+export const getPaymentV1Status = async (): Promise<PaymentV1StatusResponse> => {
+  const accessToken = await getRequiredAccessToken();
+
+  const response = await fetch('/.netlify/functions/payment-v1-status', {
+    method: 'GET',
+    headers: {
+      authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw buildPaymentV1Error(body, 'N„o foi possÌvel consultar o pagamento.', 'payment_v1_frontend_status_failed');
+  }
+
+  if (!Array.isArray(body.activeCredits) || !Array.isArray(body.pendingOrders) || !Array.isArray(body.paidOrders)) {
+    const error = new Error('Resposta de status incompleta.') as Error & PaymentV1ErrorResponse;
+    error.debugCode = 'payment_v1_frontend_invalid_status_response';
+    error.requestId = body.requestId;
+    throw error;
+  }
+
+  return body as PaymentV1StatusResponse;
 };
