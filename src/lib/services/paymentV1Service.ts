@@ -149,5 +149,11 @@ export const getPaymentV1Status = async (): Promise<PaymentV1StatusResponse> => 
     throw error;
   }
 
-  return body as PaymentV1StatusResponse;
+  return {
+    hasActiveCredit: Boolean(body.hasActiveCredit),
+    activeCredits: body.activeCredits,
+    pendingOrders: body.pendingOrders,
+    paidOrders: body.paidOrders,
+    requestId: body.requestId,
+  } as PaymentV1StatusResponse;
 };

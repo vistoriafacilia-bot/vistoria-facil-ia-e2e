@@ -22,17 +22,18 @@ export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntit
   const [loadingPlan, setLoadingPlan] = useState<PaymentV1PlanCode | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<PaymentV1StatusResponse | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [statusWarning, setStatusWarning] = useState<string | null>(null);
 
   const refreshPaymentStatus = useCallback(async () => {
     setStatusLoading(true);
     try {
       const status = await getPaymentV1Status();
       setPaymentStatus(status);
-      setErrorMessage(null);
+      setStatusWarning(null);
     } catch (error: any) {
       const debugCode = error?.debugCode || 'payment_v1_status_failed';
-      setErrorMessage(`${error?.message || 'Não foi possível consultar o pagamento.'} debugCode=${debugCode}`);
+      setStatusWarning(`Não foi possível confirmar pagamentos anteriores agora. Os planos continuam disponíveis. debugCode=${debugCode}`);
     } finally {
       setStatusLoading(false);
     }
@@ -43,15 +44,14 @@ export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntit
     setStatusLoading(true);
     getPaymentV1Status()
       .then((status) => {
-        if (active) {
-          setPaymentStatus(status);
-          setErrorMessage(null);
-        }
+        if (!active) return;
+        setPaymentStatus(status);
+        setStatusWarning(null);
       })
       .catch((error: any) => {
         if (!active) return;
         const debugCode = error?.debugCode || 'payment_v1_status_failed';
-        setErrorMessage(`${error?.message || 'Não foi possível consultar o pagamento.'} debugCode=${debugCode}`);
+        setStatusWarning(`Não foi possível confirmar pagamentos anteriores agora. Os planos continuam disponíveis. debugCode=${debugCode}`);
       })
       .finally(() => {
         if (active) setStatusLoading(false);
@@ -63,14 +63,13 @@ export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntit
 
   const handleCheckout = async (planCode: PaymentV1PlanCode) => {
     setLoadingPlan(planCode);
-    setErrorMessage(null);
+    setCheckoutError(null);
     try {
       const checkout = await createPaymentV1Checkout(planCode);
-      await refreshPaymentStatus();
       window.location.href = checkout.checkoutUrl;
     } catch (error: any) {
       const debugCode = error?.debugCode || 'payment_v1_checkout_failed';
-      setErrorMessage(`${error?.message || 'Não foi possível iniciar o pagamento.'} debugCode=${debugCode}`);
+      setCheckoutError(`${error?.message || 'Não foi possível iniciar o pagamento.'} debugCode=${debugCode}`);
     } finally {
       setLoadingPlan(null);
     }
@@ -80,9 +79,7 @@ export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntit
   const hasPendingOrder = Boolean(paymentStatus?.pendingOrders?.length);
   const statusText = hasActiveCredit
     ? 'Pagamento confirmado. Relatório liberado.'
-    : hasPendingOrder
-      ? 'Pagamento em confirmação.'
-      : 'Consultando pagamento...';
+    : 'Pagamento em confirmação.';
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-5 space-y-5">
@@ -98,7 +95,7 @@ export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntit
         </div>
       </div>
 
-      {(hasActiveCredit || hasPendingOrder || statusLoading) && (
+      {(hasActiveCredit || hasPendingOrder) && (
         <div className={`border rounded-lg px-3 py-2 text-sm flex items-start justify-between gap-3 ${
           hasActiveCredit
             ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
@@ -108,11 +105,9 @@ export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntit
             {hasActiveCredit ? (
               <CheckCircle className="w-4 h-4 mt-0.5 shrink-0" />
             ) : (
-              <Loader2 className={`w-4 h-4 mt-0.5 shrink-0 ${statusLoading ? 'animate-spin' : ''}`} />
+              <Loader2 className="w-4 h-4 mt-0.5 shrink-0" />
             )}
-            <span>
-              {statusText}
-            </span>
+            <span>{statusText}</span>
           </div>
           <button
             type="button"
@@ -126,10 +121,25 @@ export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntit
         </div>
       )}
 
-      {errorMessage && (
+      {statusWarning && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-3 py-2 text-xs flex items-start justify-between gap-3">
+          <span>{statusWarning}</span>
+          <button
+            type="button"
+            onClick={refreshPaymentStatus}
+            disabled={statusLoading}
+            className="shrink-0 font-semibold hover:underline disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-1"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${statusLoading ? 'animate-spin' : ''}`} />
+            Atualizar
+          </button>
+        </div>
+      )}
+
+      {checkoutError && (
         <div className="bg-rose-50 border border-rose-200 text-rose-700 rounded-lg px-3 py-2 text-sm flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
-          <span>{errorMessage}</span>
+          <span>{checkoutError}</span>
         </div>
       )}
 

@@ -17,9 +17,15 @@ export const buildPaymentV1ExternalReference = ({ planCode, now = Date.now, rand
 };
 
 export const resolveSupabasePaymentConfig = (env = process.env) => {
-  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
-    throw new PaymentV1Error('Supabase Payment V1 configuration is missing.', {
-      debugCode: 'order_create_failed',
+  if (!env.SUPABASE_URL) {
+    throw new PaymentV1Error('Supabase URL is missing.', {
+      debugCode: 'missing_supabase_url',
+      statusCode: 500,
+    });
+  }
+  if (!env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new PaymentV1Error('Supabase service role key is missing.', {
+      debugCode: 'missing_supabase_service_role_key',
       statusCode: 500,
     });
   }
@@ -40,11 +46,21 @@ const parseJsonResponse = async (response) => {
 };
 
 const requestSupabase = async ({ config, fetchImpl, path, method = 'GET', body, debugCode }) => {
-  const response = await fetchImpl(`${config.url}/rest/v1/${path}`, {
-    method,
-    headers: jsonHeaders(config),
-    body: body === undefined ? undefined : JSON.stringify(body),
-  });
+  let response;
+  try {
+    response = await fetchImpl(`${config.url}/rest/v1/${path}`, {
+      method,
+      headers: jsonHeaders(config),
+      body: body === undefined ? undefined : JSON.stringify(body),
+    });
+  } catch (error) {
+    throw new PaymentV1Error('Payment V1 database request failed.', {
+      debugCode,
+      statusCode: 500,
+      details: sanitizeForPaymentLog(error?.message || String(error)),
+    });
+  }
+
   const payload = await parseJsonResponse(response);
   if (!response.ok) {
     const error = new PaymentV1Error('Payment V1 database request failed.', {
@@ -58,10 +74,19 @@ const requestSupabase = async ({ config, fetchImpl, path, method = 'GET', body, 
   return payload;
 };
 
+const requireStatusUserId = (userId) => {
+  if (!userId) {
+    throw new PaymentV1Error('Payment V1 status requires user_id.', {
+      debugCode: 'invalid_auth_token',
+      statusCode: 401,
+    });
+  }
+};
+
 export const createPaymentOrderStore = ({ env = process.env, fetchImpl = globalThis.fetch } = {}) => {
   if (typeof fetchImpl !== 'function') {
     throw new PaymentV1Error('Fetch implementation is not available.', {
-      debugCode: 'order_create_failed',
+      debugCode: 'status_unexpected_error',
       statusCode: 500,
     });
   }
@@ -217,42 +242,30 @@ export const createPaymentOrderStore = ({ env = process.env, fetchImpl = globalT
   };
 
   const listActiveCreditsForUser = async ({ userId }) => {
-    if (!userId) {
-      throw new PaymentV1Error('Payment V1 status requires user_id.', {
-        debugCode: 'invalid_auth_token',
-        statusCode: 401,
-      });
-    }
+    requireStatusUserId(userId);
     const rows = await requestSupabase({
       config,
       fetchImpl,
       path: `payment_v1_credits?user_id=eq.${encodeURIComponent(userId)}&status=eq.active&order=created_at.desc&select=id,order_id,plan_code,analysis_limit,analysis_used,status,created_at,finalized_at`,
-      debugCode: 'status_lookup_failed',
+      debugCode: 'credits_query_failed',
     });
     return Array.isArray(rows) ? rows : [];
   };
 
   const listRecentOrdersForUser = async ({ userId }) => {
-    if (!userId) {
-      throw new PaymentV1Error('Payment V1 status requires user_id.', {
-        debugCode: 'invalid_auth_token',
-        statusCode: 401,
-      });
-    }
+    requireStatusUserId(userId);
     const rows = await requestSupabase({
       config,
       fetchImpl,
       path: `payment_v1_orders?user_id=eq.${encodeURIComponent(userId)}&order=created_at.desc&limit=20&select=id,plan_code,provider_checkout_id,checkout_url,external_reference,status,amount_cents,analysis_limit,paid_at,created_at,updated_at`,
-      debugCode: 'status_lookup_failed',
+      debugCode: 'orders_query_failed',
     });
     return Array.isArray(rows) ? rows : [];
   };
 
   const getPaymentStatusForUser = async ({ userId }) => {
-    const [activeCredits, recentOrders] = await Promise.all([
-      listActiveCreditsForUser({ userId }),
-      listRecentOrdersForUser({ userId }),
-    ]);
+    const activeCredits = await listActiveCreditsForUser({ userId });
+    const recentOrders = await listRecentOrdersForUser({ userId });
     return {
       activeCredits,
       pendingOrders: recentOrders.filter((order) => order.status === 'pending'),

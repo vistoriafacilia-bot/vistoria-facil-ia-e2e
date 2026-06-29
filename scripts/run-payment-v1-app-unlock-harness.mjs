@@ -1,5 +1,10 @@
 import assert from 'node:assert/strict';
 
+const originalConsole = { ...console };
+console.info = () => {};
+console.warn = () => {};
+console.error = () => {};
+
 const tests = [];
 const test = (name, fn) => tests.push({ name, fn });
 
@@ -10,6 +15,16 @@ const statusModule = await import('../netlify/functions/payment-v1-status.mjs');
 
 const USER_A = '00000000-0000-4000-8000-000000000001';
 const USER_B = '00000000-0000-4000-8000-000000000002';
+const SUPABASE_ENV = {
+  SUPABASE_URL: 'https://supabase.example.test',
+  SUPABASE_SERVICE_ROLE_KEY: 'service_role_key_not_printed',
+};
+
+const jsonResponse = (status, body) => ({
+  ok: status >= 200 && status < 300,
+  status,
+  text: async () => JSON.stringify(body),
+});
 
 const makeStore = () => {
   const state = { orders: [], events: new Set(), credits: [] };
@@ -83,6 +98,21 @@ const makeStore = () => {
   };
 };
 
+const makeSupabaseStatusStore = ({ credits = [], orders = [], failCredits = false, failOrders = false } = {}) => ordersModule.createPaymentOrderStore({
+  env: SUPABASE_ENV,
+  fetchImpl: async (url) => {
+    if (url.includes('payment_v1_credits')) {
+      if (failCredits) return jsonResponse(500, { message: 'credits query failed', authorization: 'Bearer should_not_leak' });
+      return jsonResponse(200, credits);
+    }
+    if (url.includes('payment_v1_orders')) {
+      if (failOrders) return jsonResponse(500, { message: 'orders query failed', apikey: 'should_not_leak' });
+      return jsonResponse(200, orders);
+    }
+    return jsonResponse(404, { message: 'unexpected path' });
+  },
+});
+
 const createCheckout = async (store, userId = USER_A, planCode = 'report_50_beta') => {
   const handler = checkoutModule.createHandler({
     paymentOrders: store,
@@ -104,11 +134,16 @@ const createCheckout = async (store, userId = USER_A, planCode = 'report_50_beta
   return JSON.parse(response.body);
 };
 
-const statusForUser = async (store, userId = USER_A) => {
+const statusResponseForUser = async (store, userId = USER_A) => {
   const handler = statusModule.createHandler({ paymentOrders: store, authenticateRequest: async () => ({ userId }) });
   const response = await handler({ httpMethod: 'GET' });
+  return { response, body: JSON.parse(response.body) };
+};
+
+const statusForUser = async (store, userId = USER_A) => {
+  const { response, body } = await statusResponseForUser(store, userId);
   assert.equal(response.statusCode, 200);
-  return JSON.parse(response.body);
+  return body;
 };
 
 const webhookEvent = (payload, token = 'test_webhook_token') => ({
@@ -142,11 +177,35 @@ test('statusRequiresAuth', async () => {
   assert.equal(body.debugCode, 'missing_auth_header');
 });
 
+test('statusNoCreditReturnsSuccess', async () => {
+  const body = await statusForUser(makeStore(), USER_A);
+  assert.equal(body.hasActiveCredit, false);
+  assert.deepEqual(body.activeCredits, []);
+});
+
+test('statusNoOrdersReturnsSuccess', async () => {
+  const body = await statusForUser(makeStore(), USER_A);
+  assert.deepEqual(body.pendingOrders, []);
+  assert.deepEqual(body.paidOrders, []);
+});
+
 test('statusShowsNoCreditBeforePayment', async () => {
   const store = makeStore();
   const body = await statusForUser(store, USER_A);
   assert.equal(body.hasActiveCredit, false);
   assert.deepEqual(body.activeCredits, []);
+  assert.deepEqual(body.pendingOrders, []);
+  assert.deepEqual(body.paidOrders, []);
+});
+
+test('creditsEmptyArrayIsNotError', async () => {
+  const body = await statusForUser(makeSupabaseStatusStore({ credits: [], orders: [] }), USER_A);
+  assert.equal(body.hasActiveCredit, false);
+  assert.deepEqual(body.activeCredits, []);
+});
+
+test('ordersEmptyArrayIsNotError', async () => {
+  const body = await statusForUser(makeSupabaseStatusStore({ credits: [], orders: [] }), USER_A);
   assert.deepEqual(body.pendingOrders, []);
   assert.deepEqual(body.paidOrders, []);
 });
@@ -158,6 +217,16 @@ test('paidWebhookCreatesActiveCredit', async () => {
   assert.equal(store.state.orders[0].status, 'paid');
   assert.equal(store.state.credits.length, 1);
   assert.equal(store.state.credits[0].status, 'active');
+});
+
+test('activeCreditShowsUnlocked', async () => {
+  const store = makeStore();
+  await createCheckout(store, USER_A);
+  await runPaidWebhook(store, store.state.orders[0]);
+  const body = await statusForUser(store, USER_A);
+  assert.equal(body.hasActiveCredit, true);
+  assert.equal(body.activeCredits.length, 1);
+  assert.equal(body.activeCredits[0].analysisLimit, 50);
 });
 
 test('statusShowsActiveCreditAfterWebhook', async () => {
@@ -191,6 +260,15 @@ test('crossUserCannotSeeCredit', async () => {
   assert.equal(body.paidOrders.length, 0);
 });
 
+test('pendingOrderShowsConfirmation', async () => {
+  const store = makeStore();
+  await createCheckout(store, USER_A);
+  const body = await statusForUser(store, USER_A);
+  assert.equal(body.hasActiveCredit, false);
+  assert.equal(body.pendingOrders.length, 1);
+  assert.equal(body.pendingOrders[0].status, 'pending');
+});
+
 test('pendingOrderShowsPaymentInConfirmation', async () => {
   const store = makeStore();
   await createCheckout(store, USER_A);
@@ -198,6 +276,48 @@ test('pendingOrderShowsPaymentInConfirmation', async () => {
   assert.equal(body.hasActiveCredit, false);
   assert.equal(body.pendingOrders.length, 1);
   assert.equal(body.pendingOrders[0].status, 'pending');
+});
+
+test('statusMissingSupabaseUrlHasSpecificDebugCode', async () => {
+  const handler = statusModule.createHandler({
+    env: { SUPABASE_SERVICE_ROLE_KEY: 'service_role_key_not_printed' },
+    authenticateRequest: async () => ({ userId: USER_A }),
+  });
+  const response = await handler({ httpMethod: 'GET' });
+  const body = JSON.parse(response.body);
+  assert.equal(response.statusCode, 500);
+  assert.equal(body.debugCode, 'missing_supabase_url');
+});
+
+test('statusMissingSupabaseServiceRoleKeyHasSpecificDebugCode', async () => {
+  const handler = statusModule.createHandler({
+    env: { SUPABASE_URL: 'https://supabase.example.test' },
+    authenticateRequest: async () => ({ userId: USER_A }),
+  });
+  const response = await handler({ httpMethod: 'GET' });
+  const body = JSON.parse(response.body);
+  assert.equal(response.statusCode, 500);
+  assert.equal(body.debugCode, 'missing_supabase_service_role_key');
+});
+test('statusQueryFailureHasSpecificDebugCode', async () => {
+  const { response, body } = await statusResponseForUser(makeSupabaseStatusStore({ failCredits: true }), USER_A);
+  assert.equal(response.statusCode, 500);
+  assert.equal(body.debugCode, 'credits_query_failed');
+});
+
+test('noUnexpectedErrorForEmptyState', async () => {
+  const { response, body } = await statusResponseForUser(makeSupabaseStatusStore({ credits: [], orders: [] }), USER_A);
+  assert.equal(response.statusCode, 200);
+  assert.equal(body.debugCode, undefined);
+  assert.equal(body.hasActiveCredit, false);
+});
+
+test('checkoutStillAvailableWhenNoCredit', async () => {
+  const store = makeStore();
+  const status = await statusForUser(store, USER_A);
+  assert.equal(status.hasActiveCredit, false);
+  const checkout = await createCheckout(store, USER_A);
+  assert.ok(checkout.checkoutUrl.startsWith('https://sandbox.asaas.com/checkoutSession/show/chk_'));
 });
 
 test('noGenericErrorWithoutDebugCode', async () => {
@@ -208,8 +328,7 @@ test('noGenericErrorWithoutDebugCode', async () => {
   const response = await handler({ httpMethod: 'GET' });
   const body = JSON.parse(response.body);
   assert.equal(response.statusCode, 500);
-  assert.equal(typeof body.debugCode, 'string');
-  assert.notEqual(body.debugCode.length, 0);
+  assert.equal(body.debugCode, 'status_unexpected_error');
 });
 
 const results = [];
@@ -223,5 +342,5 @@ for (const { name, fn } of tests) {
 }
 
 const failed = results.filter((result) => result.status === 'FAIL');
-console.log(JSON.stringify({ status: failed.length === 0 ? 'PASS' : 'FAIL', total: results.length, passed: results.length - failed.length, failed: failed.length, results }, null, 2));
+originalConsole.log(JSON.stringify({ status: failed.length === 0 ? 'PASS' : 'FAIL', total: results.length, passed: results.length - failed.length, failed: failed.length, results }, null, 2));
 if (failed.length > 0) process.exitCode = 1;
