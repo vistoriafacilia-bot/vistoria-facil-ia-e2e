@@ -5,7 +5,7 @@ import PropertyManager from './components/PropertyManager';
 import InspectionWizard from './components/InspectionWizard';
 import ReportPdfGenerator from './components/ReportPdfGenerator';
 import DashboardMetrics from './components/DashboardMetrics';
-import PaymentQuarantineGate from './components/PaymentQuarantineGate';
+import PaymentV1Gate from './components/PaymentV1Gate';
 import { ClipboardList, Plus, History, Trash2, FileText, Play, ChevronLeft, ArrowRight, ShieldCheck, Sparkles, Building2 } from 'lucide-react';
 import { APP_VERSION } from './lib/appVersion';
 import { getOrCreateUserEntitlement } from './lib/entitlements';
@@ -724,7 +724,7 @@ export default function App() {
               </div>
             </div>
             {user && (
-              <PaymentQuarantineGate 
+              <PaymentV1Gate 
                 user={user}
                 autoContinueOnActiveEntitlement={false}
                 onReady={(updatedEnt) => {

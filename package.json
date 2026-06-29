@@ -42,7 +42,8 @@
     "e2e:headed": "playwright test --config=playwright.config.ts --headed",
     "e2e:report": "playwright show-report",
     "qa:local-e2e": "npm run lint && npm run test:ci && npm run build && npm run e2e:local",
-    "qa:staging-real": "npm run lint && npm run test:ci && npm run build && npm run qa:supabase-storage-auth"
+    "qa:staging-real": "npm run lint && npm run test:ci && npm run build && npm run qa:supabase-storage-auth",
+    "qa:payment-v1:minimal-checkout": "node scripts/run-payment-v1-minimal-checkout-harness.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.2",

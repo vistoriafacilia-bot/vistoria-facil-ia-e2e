@@ -1,1 +1,1 @@
-export { default } from './PaymentQuarantineGate';
+export { default } from './PaymentV1Gate';
