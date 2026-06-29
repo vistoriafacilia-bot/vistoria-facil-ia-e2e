@@ -1,5 +1,6 @@
 ﻿import crypto from 'node:crypto';
 import { createAsaasCheckout } from './_paymentV1/asaasClient.mjs';
+import { authenticatePaymentV1Request } from './_paymentV1/paymentAuth.mjs';
 import { errorResponseBody, PaymentV1Error, toPaymentV1Error } from './_paymentV1/paymentErrors.mjs';
 import { buildPaymentV1ExternalReference, createPaymentOrderStore } from './_paymentV1/paymentOrders.mjs';
 import { getPaymentV1Plan } from './_paymentV1/paymentPlans.mjs';
@@ -27,8 +28,9 @@ const parseBody = (event) => {
 
 export const createHandler = ({
   asaasClient = { createAsaasCheckout },
-  paymentOrders = createPaymentOrderStore(),
+  paymentOrders = null,
   buildExternalReference = buildPaymentV1ExternalReference,
+  authenticateRequest = authenticatePaymentV1Request,
 } = {}) => async (event = {}) => {
   const requestId = crypto.randomUUID();
   try {
@@ -38,6 +40,8 @@ export const createHandler = ({
         statusCode: 405,
       });
     }
+
+    const authUser = await authenticateRequest({ event });
 
     const { planCode } = parseBody(event);
     if (!planCode) {
@@ -55,10 +59,11 @@ export const createHandler = ({
       });
     }
 
+    const orderStore = paymentOrders || createPaymentOrderStore();
     const externalReference = buildExternalReference({ planCode: plan.code });
-    const order = await paymentOrders.createPendingOrder({ plan, externalReference, userId: null });
+    const order = await orderStore.createPendingOrder({ plan, externalReference, userId: authUser.userId });
     const checkout = await asaasClient.createAsaasCheckout({ plan, externalReference });
-    await paymentOrders.updateOrderCheckout({
+    await orderStore.updateOrderCheckout({
       orderId: order.id,
       checkoutId: checkout.checkoutId,
       checkoutUrl: checkout.checkoutUrl,

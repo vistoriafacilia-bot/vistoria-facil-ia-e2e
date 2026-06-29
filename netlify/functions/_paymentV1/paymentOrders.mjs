@@ -67,7 +67,13 @@ export const createPaymentOrderStore = ({ env = process.env, fetchImpl = globalT
   }
   const config = resolveSupabasePaymentConfig(env);
 
-  const createPendingOrder = async ({ plan, externalReference, userId = null }) => {
+  const createPendingOrder = async ({ plan, externalReference, userId }) => {
+    if (!userId) {
+      throw new PaymentV1Error('Payment V1 order requires user_id.', {
+        debugCode: 'invalid_auth_token',
+        statusCode: 401,
+      });
+    }
     const rows = await requestSupabase({
       config,
       fetchImpl,
@@ -173,6 +179,12 @@ export const createPaymentOrderStore = ({ env = process.env, fetchImpl = globalT
   };
 
   const createCreditForOrderOnce = async ({ order }) => {
+    if (!order?.user_id) {
+      throw new PaymentV1Error('Payment V1 credit requires order user_id.', {
+        debugCode: 'credit_create_failed',
+        statusCode: 500,
+      });
+    }
     try {
       const rows = await requestSupabase({
         config,
@@ -180,7 +192,7 @@ export const createPaymentOrderStore = ({ env = process.env, fetchImpl = globalT
         path: 'payment_v1_credits?select=*',
         method: 'POST',
         body: {
-          user_id: order.user_id || null,
+          user_id: order.user_id,
           order_id: order.id,
           plan_code: order.plan_code,
           analysis_limit: order.analysis_limit,

@@ -1,4 +1,6 @@
-﻿export type PaymentV1PlanCode = 'report_50_beta' | 'report_100' | 'report_150';
+﻿import { getCurrentAccessToken } from './authService';
+
+export type PaymentV1PlanCode = 'report_50_beta' | 'report_100' | 'report_150';
 
 export interface PaymentV1PlanOption {
   code: PaymentV1PlanCode;
@@ -47,10 +49,18 @@ export const PAYMENT_V1_PLANS: PaymentV1PlanOption[] = [
 ];
 
 export const createPaymentV1Checkout = async (planCode: PaymentV1PlanCode): Promise<PaymentV1CheckoutResponse> => {
+  const accessToken = await getCurrentAccessToken();
+  if (!accessToken) {
+    const error = new Error('Sessão expirada. Entre novamente para continuar.') as Error & PaymentV1ErrorResponse;
+    error.debugCode = 'missing_auth_header';
+    throw error;
+  }
+
   const response = await fetch('/.netlify/functions/payment-v1-create-checkout', {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
+      authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify({ planCode }),
   });

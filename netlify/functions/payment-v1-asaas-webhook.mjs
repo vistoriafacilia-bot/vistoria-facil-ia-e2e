@@ -40,9 +40,12 @@ export const extractAsaasWebhookFacts = (payload = {}) => {
   const checkout = payload.checkout || payload.checkoutSession || payload.object?.checkout || {};
   const payment = payload.payment || payload.object?.payment || payload.data || {};
   const checkoutId = checkout.id || payload.checkoutId || payload.checkout_id || payment.checkoutId || payment.checkout_id || payment.checkout?.id || null;
+  const paymentId = payment.id || payload.paymentId || payload.payment_id || payload.object?.payment?.id || null;
   const externalReference = checkout.externalReference || checkout.external_reference || payload.externalReference || payload.external_reference || payment.externalReference || payment.external_reference || null;
-  const eventId = payload.id || payload.eventId || payload.event_id || `${eventType || 'UNKNOWN'}:${externalReference || checkoutId || crypto.createHash('sha256').update(JSON.stringify(payload)).digest('hex').slice(0, 24)}`;
-  return { eventType, checkoutId, externalReference, eventId };
+  const deterministicId = `asaas:${eventType || 'UNKNOWN'}:${checkoutId || paymentId || 'no-provider-id'}:${externalReference || 'no-external-reference'}`;
+  const fallbackHash = crypto.createHash('sha256').update(deterministicId).digest('hex').slice(0, 24);
+  const eventId = payload.id || payload.eventId || payload.event_id || `${deterministicId}:${fallbackHash}`;
+  return { eventType, checkoutId, paymentId, externalReference, eventId };
 };
 
 export const mapAsaasEventStatus = (eventType) => {
@@ -52,7 +55,7 @@ export const mapAsaasEventStatus = (eventType) => {
   return 'ignored';
 };
 
-export const createHandler = ({ paymentOrders = createPaymentOrderStore(), env = process.env } = {}) => async (event = {}) => {
+export const createHandler = ({ paymentOrders = null, env = process.env } = {}) => async (event = {}) => {
   const requestId = crypto.randomUUID();
   try {
     if (event.httpMethod && event.httpMethod !== 'POST') {
@@ -70,11 +73,12 @@ export const createHandler = ({ paymentOrders = createPaymentOrderStore(), env =
       });
     }
 
+    const orderStore = paymentOrders || createPaymentOrderStore();
     const payload = parseWebhookPayload(event);
     const facts = extractAsaasWebhookFacts(payload);
     const eventStatus = mapAsaasEventStatus(facts.eventType);
     const sanitizedPayload = sanitizeForPaymentLog(payload);
-    const eventRecord = await paymentOrders.recordWebhookEvent({
+    const eventRecord = await orderStore.recordWebhookEvent({
       eventId: facts.eventId,
       eventType: facts.eventType,
       checkoutId: facts.checkoutId,
@@ -98,7 +102,7 @@ export const createHandler = ({ paymentOrders = createPaymentOrderStore(), env =
       });
     }
 
-    const order = await paymentOrders.findOrderForWebhook({
+    const order = await orderStore.findOrderForWebhook({
       externalReference: facts.externalReference,
       checkoutId: facts.checkoutId,
     });
@@ -112,8 +116,14 @@ export const createHandler = ({ paymentOrders = createPaymentOrderStore(), env =
     }
 
     if (eventStatus === 'paid') {
-      const paidOrder = await paymentOrders.updateOrderStatus({ orderId: order.id, status: 'paid' });
-      const creditResult = await paymentOrders.createCreditForOrderOnce({ order: paidOrder || order });
+      if (!order.user_id) {
+        throw new PaymentV1Error('Payment V1 order has no user_id.', {
+          debugCode: 'credit_create_failed',
+          statusCode: 500,
+        });
+      }
+      const paidOrder = await orderStore.updateOrderStatus({ orderId: order.id, status: 'paid' });
+      const creditResult = await orderStore.createCreditForOrderOnce({ order: paidOrder || order });
       return json(200, {
         status: 'paid',
         orderId: order.id,
@@ -122,7 +132,7 @@ export const createHandler = ({ paymentOrders = createPaymentOrderStore(), env =
       });
     }
 
-    await paymentOrders.updateOrderStatus({ orderId: order.id, status: eventStatus });
+    await orderStore.updateOrderStatus({ orderId: order.id, status: eventStatus });
     return json(200, {
       status: eventStatus,
       orderId: order.id,

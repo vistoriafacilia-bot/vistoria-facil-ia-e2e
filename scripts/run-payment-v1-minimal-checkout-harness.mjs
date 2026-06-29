@@ -16,23 +16,10 @@ const jsonResponse = (status, body) => ({
   text: async () => JSON.stringify(body),
 });
 
-const withProcessEnv = async (nextEnv, fn) => {
-  const previous = { ...process.env };
-  process.env.ASAAS_ENV = nextEnv.ASAAS_ENV;
-  process.env.ASAAS_API_KEY = nextEnv.ASAAS_API_KEY;
-  process.env.ASAAS_SUCCESS_URL = nextEnv.ASAAS_SUCCESS_URL;
-  process.env.ASAAS_CANCEL_URL = nextEnv.ASAAS_CANCEL_URL;
-  process.env.ASAAS_EXPIRED_URL = nextEnv.ASAAS_EXPIRED_URL;
-  try {
-    return await fn();
-  } finally {
-    process.env = previous;
-  }
-};
-
 const makeMockPaymentOrders = () => ({
   orders: [],
-  async createPendingOrder({ plan, externalReference, userId = null }) {
+  async createPendingOrder({ plan, externalReference, userId }) {
+    if (!userId) throw Object.assign(new Error('user required'), { debugCode: 'invalid_auth_token', statusCode: 401 });
     const order = {
       id: `order_${this.orders.length + 1}`,
       user_id: userId,
@@ -63,7 +50,7 @@ test('paymentV1ModulesLoad', () => {
   assert.equal(typeof clientModule.createAsaasCheckout, 'function');
   assert.equal(typeof errorsModule.PaymentV1Error, 'function');
   assert.equal(plan50.value, 49.9);
-  assert.equal(typeof functionModule.handler, 'function');
+  assert.equal(typeof functionModule.createHandler, 'function');
 });
 
 test('sandboxEnvUsesSandboxBase', () => {
@@ -77,17 +64,11 @@ test('productionEnvUsesProductionBase', () => {
 });
 
 test('invalidEnvFailsClosed', () => {
-  assert.throws(
-    () => clientModule.resolveAsaasConfig({ ...envFixture, ASAAS_ENV: 'staging' }),
-    (error) => error.debugCode === 'asaas_env_invalid'
-  );
+  assert.throws(() => clientModule.resolveAsaasConfig({ ...envFixture, ASAAS_ENV: 'staging' }), (error) => error.debugCode === 'asaas_env_invalid');
 });
 
 test('missingApiKeyFailsClosed', () => {
-  assert.throws(
-    () => clientModule.resolveAsaasConfig({ ...envFixture, ASAAS_API_KEY: '' }),
-    (error) => error.debugCode === 'missing_asaas_api_key'
-  );
+  assert.throws(() => clientModule.resolveAsaasConfig({ ...envFixture, ASAAS_API_KEY: '' }), (error) => error.debugCode === 'missing_asaas_api_key');
 });
 
 test('checkoutPayloadHasPixAndCreditCard', async () => {
@@ -153,11 +134,7 @@ test('checkoutFallsBackToIdUrl', async () => {
 
 test('checkoutMissingLinkAndIdFailsWithDebugCode', async () => {
   await assert.rejects(
-    () => clientModule.createAsaasCheckout({
-      plan: plan50,
-      env: envFixture,
-      fetchImpl: async () => jsonResponse(200, { status: 'ok' }),
-    }),
+    () => clientModule.createAsaasCheckout({ plan: plan50, env: envFixture, fetchImpl: async () => jsonResponse(200, { status: 'ok' }) }),
     (error) => error.debugCode === 'asaas_response_missing_id'
   );
 });
@@ -166,22 +143,16 @@ test('functionReturnsCheckoutUrl', async () => {
   const paymentOrders = makeMockPaymentOrders();
   const handler = functionModule.createHandler({
     paymentOrders,
+    authenticateRequest: async () => ({ userId: '00000000-0000-4000-8000-000000000001' }),
     asaasClient: {
       async createAsaasCheckout({ plan, externalReference }) {
         assert.equal(plan.code, 'report_50_beta');
         assert.ok(externalReference.startsWith('vf-payment-v1-report_50_beta-'));
-        return {
-          checkoutUrl: 'https://sandbox.asaas.com/checkoutSession/show/chk_fn',
-          checkoutId: 'chk_fn',
-          planCode: plan.code,
-        };
+        return { checkoutUrl: 'https://sandbox.asaas.com/checkoutSession/show/chk_fn', checkoutId: 'chk_fn', planCode: plan.code };
       },
     },
   });
-  const response = await handler({
-    httpMethod: 'POST',
-    body: JSON.stringify({ planCode: 'report_50_beta' }),
-  });
+  const response = await handler({ httpMethod: 'POST', body: JSON.stringify({ planCode: 'report_50_beta' }) });
   const body = JSON.parse(response.body);
   assert.equal(response.statusCode, 200);
   assert.equal(body.checkoutUrl, 'https://sandbox.asaas.com/checkoutSession/show/chk_fn');
@@ -191,11 +162,11 @@ test('functionReturnsCheckoutUrl', async () => {
 });
 
 test('noGenericErrorWithoutDebugCode', async () => {
-  const handler = functionModule.createHandler({ paymentOrders: makeMockPaymentOrders() });
-  const response = await handler({
-    httpMethod: 'POST',
-    body: JSON.stringify({ planCode: 'unknown' }),
+  const handler = functionModule.createHandler({
+    paymentOrders: makeMockPaymentOrders(),
+    authenticateRequest: async () => ({ userId: '00000000-0000-4000-8000-000000000001' }),
   });
+  const response = await handler({ httpMethod: 'POST', body: JSON.stringify({ planCode: 'unknown' }) });
   const body = JSON.parse(response.body);
   assert.equal(response.statusCode, 400);
   assert.equal(body.debugCode, 'plan_not_found');
@@ -213,12 +184,5 @@ for (const { name, fn } of tests) {
 }
 
 const failed = results.filter((result) => result.status === 'FAIL');
-console.log(JSON.stringify({
-  status: failed.length === 0 ? 'PASS' : 'FAIL',
-  total: results.length,
-  passed: results.length - failed.length,
-  failed: failed.length,
-  results,
-}, null, 2));
-
+console.log(JSON.stringify({ status: failed.length === 0 ? 'PASS' : 'FAIL', total: results.length, passed: results.length - failed.length, failed: failed.length, results }, null, 2));
 if (failed.length > 0) process.exitCode = 1;
