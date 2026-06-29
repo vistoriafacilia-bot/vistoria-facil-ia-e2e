@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Property, Inspection, Room, Photo, AiAnalysis, ReviewedStatus, Entitlement, ReportCredit } from '../types';
+import { Property, Inspection, Room, Photo, AiAnalysis, ReviewedStatus, Entitlement } from '../types';
 import { safeCreateAuditEvent } from '../lib/auditEvents';
 import { 
   ArrowLeft, 
@@ -28,7 +28,6 @@ import { deleteRoom, listRooms, newRoomId, saveRoom, updateRoom } from '../lib/s
 import { deletePhoto, listPhotos, newPhotoId, savePhoto, updatePhoto } from '../lib/services/photoService';
 import { listReports } from '../lib/services/reportService';
 import { buildPhotoStoragePath, deleteFile, uploadFile } from '../lib/services/storageService';
-import { assignReportCredit, consumeReportCreditAnalysis, listReportCredits } from '../lib/services/reportCreditService';
 
 interface InspectionWizardProps {
   property: Property;
@@ -74,10 +73,6 @@ export default function InspectionWizard({
   const [privacyGuardAccepted, setPrivacyGuardAccepted] = useState(false);
   const [roomFeedbackMessage, setRoomFeedbackMessage] = useState<string | null>(null);
   const [roomError, setRoomError] = useState<string | null>(null);
-  const [reportCredits, setReportCredits] = useState<ReportCredit[]>([]);
-  const [activeReportCredit, setActiveReportCredit] = useState<ReportCredit | null>(null);
-  const [creditMessage, setCreditMessage] = useState<string | null>(null);
-  const [creditError, setCreditError] = useState<string | null>(null);
 
   // Refs for camera and gallery file inputs
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -92,26 +87,8 @@ export default function InspectionWizard({
   useEffect(() => {
     if (activeInspection) {
       fetchRoomsAndPhotos(activeInspection.id);
-      void refreshReportCredits(activeInspection.id);
     }
   }, [activeInspection]);
-
-  const refreshReportCredits = async (inspectionId = activeInspection?.id) => {
-    if (!inspectionId) return;
-    const currentUser = await getCurrentUser();
-    if (!currentUser) return;
-    try {
-      const credits = await listReportCredits(currentUser.uid);
-      setReportCredits(credits);
-      setActiveReportCredit(credits.find(credit =>
-        credit.inspectionId === inspectionId
-        && ['assigned', 'in_progress', 'finalized'].includes(credit.status)
-      ) || null);
-    } catch (error) {
-      console.error('Erro ao carregar creditos de relatorio:', error);
-      setCreditError('Nao foi possivel carregar seus creditos de relatorio agora.');
-    }
-  };
 
   const fetchRoomsAndPhotos = async (inspectionId: string) => {
     setLoading(true);
@@ -182,27 +159,6 @@ export default function InspectionWizard({
       setRoomError('Falha ao criar vistoria. Tente novamente.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleApplyReportCredit = async (creditId: string) => {
-    if (!activeInspection) return;
-    if (activeInspection.status === 'pdf_gerado' || activeInspection.status === 'finalizado') {
-      setCreditError('Relatorio finalizado nao aceita novo credito.');
-      return;
-    }
-    setCreditError(null);
-    setCreditMessage('Aplicando credito a esta vistoria...');
-    try {
-      const credit = await assignReportCredit(creditId, activeInspection.id);
-      setActiveReportCredit(credit);
-      await refreshReportCredits(activeInspection.id);
-      setCreditMessage('Credito aplicado. O limite desta vistoria agora segue o pacote comprado.');
-    } catch (error) {
-      console.error('Erro ao aplicar credito:', error);
-      setCreditError('Nao foi possivel aplicar este credito. Ele pode ja estar usado em outra vistoria.');
-    } finally {
-      window.setTimeout(() => setCreditMessage(null), 3500);
     }
   };
 
@@ -372,10 +328,10 @@ export default function InspectionWizard({
   };
 
   const getPhotoLimitBlockMessage = (imageCount: number): string | null => {
-    const photoLimit = activeReportCredit?.analysisLimit || getPhotoLimitForEntitlement(entitlement);
-    const usedAnalyses = activeReportCredit?.analysisUsed ?? photos.length;
+    const photoLimit = getPhotoLimitForEntitlement(entitlement);
+    const usedAnalyses = photos.length;
     const remainingSlots = getRemainingPhotoSlots(usedAnalyses, photoLimit);
-    const planLabel = activeReportCredit ? 'credito aplicado' : photoLimit === 10 ? 'plano gratuito' : 'plano atual';
+    const planLabel = photoLimit === 10 ? 'plano gratuito' : 'plano atual';
     const formatPhotoCount = (count: number) => `${count} ${count === 1 ? 'foto' : 'fotos'}`;
     const formatSlotCount = (count: number) => count === 1 ? 'resta apenas 1 vaga' : `restam ${count} vagas`;
 
@@ -498,10 +454,6 @@ export default function InspectionWizard({
         await safeCreateAuditEvent(currentUser.uid, 'ai_analysis_request', { photoId, roomName: roomNameVal, inspectionId: activeInspection.id });
 
         try {
-          if (activeReportCredit) {
-            const consumedCredit = await consumeReportCreditAnalysis(activeInspection.id);
-            setActiveReportCredit(consumedCredit);
-          }
 
           const response = await fetch('/.netlify/functions/analyze-photo', {
             method: 'POST',
@@ -560,11 +512,6 @@ export default function InspectionWizard({
           } : p));
         } catch (error: any) {
           const errorMessage = String(error?.message || error);
-          if (/REPORT_CREDIT_LIMIT_REACHED|REPORT_CREDIT_NOT_ASSIGNED/i.test(errorMessage)) {
-            setUploadInfoMessage(null);
-            setUploadError('Nao foi possivel enviar a foto para analise: o credito de IA desta vistoria nao esta disponivel ou atingiu o limite.');
-            continue;
-          }
           console.error(`Erro ao analisar a foto ${photoId}:`, error);
           setUploadInfoMessage('Foto salva. A análise automática não está disponível agora. Revise manualmente.');
 
@@ -663,7 +610,7 @@ export default function InspectionWizard({
 
   // Open Edit Mode for Photo
   const handleStartEditPhoto = (photo: Photo) => {
-    if (activeInspection?.status === 'pdf_gerado' || activeInspection?.status === 'finalizado' || activeReportCredit?.status === 'finalized') return;
+    if (activeInspection?.status === 'pdf_gerado' || activeInspection?.status === 'finalizado') return;
     setEditingPhotoId(photo.id);
     setEditCaption(photo.caption);
     setEditCondition(photo.aiAnalysis?.condicao_sugerida || 'OK');
@@ -718,7 +665,7 @@ export default function InspectionWizard({
   // Approve AI suggestion directly
   const handleApprovePhotoAi = async (photoId: string) => {
     if (!activeInspection) return;
-    if (activeInspection.status === 'pdf_gerado' || activeInspection.status === 'finalizado' || activeReportCredit?.status === 'finalized') return;
+    if (activeInspection.status === 'pdf_gerado' || activeInspection.status === 'finalizado') return;
     try {
       const photo = photos.find(p => p.id === photoId);
       if (!photo) return;
@@ -822,7 +769,7 @@ export default function InspectionWizard({
   // Delete Photo
   const handleDeletePhoto = async (photoId: string) => {
     if (!activeInspection) return;
-    if (activeInspection.status === 'pdf_gerado' || activeInspection.status === 'finalizado' || activeReportCredit?.status === 'finalized') return;
+    if (activeInspection.status === 'pdf_gerado' || activeInspection.status === 'finalizado') return;
     try {
       const photo = photos.find(item => item.id === photoId);
       if (photo?.storagePath) {
@@ -848,7 +795,7 @@ export default function InspectionWizard({
       property,
       rooms,
       photos,
-      photoLimit: activeReportCredit?.analysisLimit || getPhotoLimitForEntitlement(entitlement),
+      photoLimit: getPhotoLimitForEntitlement(entitlement),
       userId: currentUser?.uid,
     });
 
@@ -907,12 +854,11 @@ export default function InspectionWizard({
 
   // Get photos for current room
   const currentRoomPhotos = selectedRoom ? photos.filter(p => p.roomId === selectedRoom.id) : [];
-  const photoLimit = activeReportCredit?.analysisLimit || getPhotoLimitForEntitlement(entitlement);
-  const analysisUsed = activeReportCredit?.analysisUsed ?? photos.length;
+  const photoLimit = getPhotoLimitForEntitlement(entitlement);
+  const analysisUsed = photos.length;
   const photoLimitReached = analysisUsed >= photoLimit;
   const uploadBlockedByPrivacy = !privacyGuardAccepted;
-  const availableReportCredits = reportCredits.filter(credit => credit.status === 'available');
-  const reportFinalized = activeInspection?.status === 'pdf_gerado' || activeInspection?.status === 'finalizado' || activeReportCredit?.status === 'finalized';
+  const reportFinalized = activeInspection?.status === 'pdf_gerado' || activeInspection?.status === 'finalizado';
   const uploadDisabled = photoLimitReached || uploading || uploadBlockedByPrivacy || reportFinalized;
 
   // Initial State: Prompt for inspection type
@@ -1064,32 +1010,20 @@ export default function InspectionWizard({
           </div>
         </div>
 
-        {activeReportCredit ? (
-          <div className="text-[11px] bg-emerald-50 border border-emerald-100 text-emerald-800 px-3 py-2 rounded-xl">
-            Credito aplicado: {activeReportCredit.planId} ({activeReportCredit.status}).
+        <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900">Relatório beta</h3>
+              <p className="text-sm text-gray-600">
+                Pagamento em reestruturação. Para liberar relatório beta, entre em contato.
+              </p>
+            </div>
+            <span className="text-xs font-medium text-gray-600 bg-gray-100 rounded-full px-3 py-1 self-start sm:self-auto">
+              {analysisUsed}/{photoLimit} análises
+            </span>
           </div>
-        ) : availableReportCredits.length > 0 ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[11px] font-semibold text-slate-500">Creditos disponiveis:</span>
-            {availableReportCredits.map(credit => (
-              <button
-                key={credit.id}
-                type="button"
-                onClick={() => handleApplyReportCredit(credit.id)}
-                className="text-[11px] font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 px-3 py-1.5 rounded-lg"
-              >
-                Aplicar {credit.planId} ({credit.analysisLimit} analises)
-              </button>
-            ))}
-          </div>
-        ) : (
-          <div className="text-[11px] bg-slate-50 border border-slate-100 text-slate-600 px-3 py-2 rounded-xl">
-            Sem credito pago aplicado. Esta vistoria usa a degustacao gratuita de 10 analises/fotos.
-          </div>
-        )}
+        </div>
 
-        {creditMessage && <div className="text-[11px] text-emerald-700 font-semibold">{creditMessage}</div>}
-        {creditError && <div className="text-[11px] text-rose-700 font-semibold">{creditError}</div>}
         {reportFinalized && (
           <div className="text-[11px] bg-slate-100 border border-slate-200 text-slate-700 px-3 py-2 rounded-xl">
             Relatorio finalizado: fotos e descricoes ficam disponiveis para consulta, mas nao podem ser editadas neste credito.

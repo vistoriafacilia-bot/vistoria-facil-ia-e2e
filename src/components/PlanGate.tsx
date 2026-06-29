@@ -1,1 +1,1 @@
-﻿export { default } from './ReportCreditGate';
+export { default } from './PaymentQuarantineGate';

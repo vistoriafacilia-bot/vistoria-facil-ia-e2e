@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Property, Inspection, Room, Photo, Entitlement, ReportCredit } from '../types';
+import { Property, Inspection, Room, Photo, Entitlement } from '../types';
 import { jsPDF } from 'jspdf';
 import { 
   ArrowLeft, 
@@ -27,7 +27,6 @@ import { listPhotos } from '../lib/services/photoService';
 import { saveReport } from '../lib/services/reportService';
 import { listRooms } from '../lib/services/roomService';
 import { buildReportStoragePath, uploadFile } from '../lib/services/storageService';
-import { finalizeReportCredit, listReportCredits } from '../lib/services/reportCreditService';
 
 interface ReportPdfGeneratorProps {
   property: Property;
@@ -45,7 +44,6 @@ export default function ReportPdfGenerator({ property, inspection, onBack, onReo
   const [pdfDownloaded, setPdfDownloaded] = useState(false);
   const [pdfError, setPdfError] = useState<string | null>(null);
   const [reopeningInspection, setReopeningInspection] = useState(false);
-  const [reportCredit, setReportCredit] = useState<ReportCredit | null>(null);
   const [gateResult, setGateResult] = useState<QaGateResult | null>(null);
   const [generalSummary, setGeneralSummary] = useState(
     inspection.summary || 
@@ -65,19 +63,13 @@ export default function ReportPdfGenerator({ property, inspection, onBack, onReo
 
       const photosList = await listPhotos(inspection.id);
       setPhotos(photosList);
-      let currentCredit: ReportCredit | null = null;
-      if (currentUser?.uid) {
-        const credits = await listReportCredits(currentUser.uid);
-        currentCredit = credits.find(credit => credit.inspectionId === inspection.id) || null;
-        setReportCredit(currentCredit);
-      }
 
       const gate = validateReportGenerationGate({
         inspection,
         property,
         rooms: roomsList,
         photos: photosList,
-        photoLimit: currentCredit?.analysisLimit || getPhotoLimitForEntitlement(entitlement),
+        photoLimit: getPhotoLimitForEntitlement(entitlement),
         userId: currentUser?.uid,
         entitlement
       });
@@ -107,8 +99,8 @@ export default function ReportPdfGenerator({ property, inspection, onBack, onReo
 
   const handleReopenInspection = async () => {
     if (reopeningInspection) return;
-    if (inspection.status === 'pdf_gerado' || inspection.status === 'finalizado' || reportCredit?.status === 'finalized') {
-      setPdfError('Relatorio finalizado nao pode ser reaberto neste credito.');
+    if (inspection.status === 'pdf_gerado' || inspection.status === 'finalizado') {
+      setPdfError('Relatorio finalizado nao pode ser reaberto.');
       return;
     }
     setPdfError(null);
@@ -134,7 +126,7 @@ export default function ReportPdfGenerator({ property, inspection, onBack, onReo
   const generatePDF = async () => {
     if (pdfGenerating) return;
     setPdfError(null);
-    if (inspection.status === 'pdf_gerado' || inspection.status === 'finalizado' || reportCredit?.status === 'finalized') {
+    if (inspection.status === 'pdf_gerado' || inspection.status === 'finalizado') {
       setPdfError('Este relatorio ja foi finalizado. Ele permanece disponivel para consulta/download, mas nao pode gerar nova versao com o mesmo credito.');
       return;
     }
@@ -148,7 +140,7 @@ export default function ReportPdfGenerator({ property, inspection, onBack, onReo
       property,
       rooms,
       photos,
-      photoLimit: reportCredit?.analysisLimit || getPhotoLimitForEntitlement(entitlement),
+      photoLimit: getPhotoLimitForEntitlement(entitlement),
       userId: currentUser?.uid,
       entitlement
     });
@@ -522,11 +514,6 @@ export default function ReportPdfGenerator({ property, inspection, onBack, onReo
         });
       }
 
-      if (reportCredit) {
-        const finalized = await finalizeReportCredit(inspection.id);
-        setReportCredit(finalized);
-      }
-
       // Record Audit Event
       await safeCreateAuditEvent(userId || 'unknown', 'pdf_generation', { propertyId: property.id, inspectionId: inspection.id });
 
@@ -548,7 +535,7 @@ export default function ReportPdfGenerator({ property, inspection, onBack, onReo
     );
   }
 
-  const isFinalizedReport = inspection.status === 'pdf_gerado' || inspection.status === 'finalizado' || reportCredit?.status === 'finalized';
+  const isFinalizedReport = inspection.status === 'pdf_gerado' || inspection.status === 'finalizado';
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">

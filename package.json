@@ -32,8 +32,6 @@
     "qa:persistence-p0": "node scripts/run-persistence-p0.mjs",
     "qa:inspection-lifecycle-p0": "node scripts/run-persistence-p0.mjs --inspection-lifecycle",
     "qa:app-invariants-core-p0": "node scripts/run-item4-gate-runner.mjs --gate=app-invariants-core-p0",
-    "qa:payment-report-credit-sandbox": "node scripts/run-payment-report-credit-sandbox.mjs",
-    "qa:payment-report-credit-asaas-checkout-sandbox": "node scripts/run-payment-report-credit-asaas-checkout-sandbox.mjs",
     "qa:photo-storage-no-ai-p0": "node scripts/run-photo-storage-no-ai-p0.mjs",
     "qa:ai-review-p0": "node scripts/run-item4-gate-runner.mjs --gate=ai-review-p0",
     "qa:report-p0-certification": "node scripts/run-item4-gate-runner.mjs --gate=report-p0-certification",

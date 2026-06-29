@@ -1,4 +1,4 @@
-import { AppUser, Entitlement, Inspection, Photo, Property, ReportCredit, Room, SystemEvent } from '../types';
+import { AppUser, Entitlement, Inspection, Photo, Property, Room, SystemEvent } from '../types';
 
 type LocalTable =
   | 'profiles'
@@ -7,7 +7,7 @@ type LocalTable =
   | 'rooms'
   | 'photos'
   | 'entitlements'
-  | 'reportCredits'
+ 
   | 'events'
   | 'reports';
 
@@ -74,7 +74,6 @@ function defaultState(): LocalState {
     rooms: [],
     photos: [],
     entitlements: [freeEntitlement],
-    reportCredits: [],
     events: [],
     reports: [],
   };
@@ -179,9 +178,6 @@ function toPathDump(state: LocalState) {
   });
   state.entitlements.forEach((entitlement: Entitlement) => {
     dump[`entitlements/${entitlement.id}`] = entitlement;
-  });
-  state.reportCredits.forEach((credit: ReportCredit) => {
-    dump[`reportCredits/${credit.id}`] = credit;
   });
   state.events.forEach((event: SystemEvent & { id?: string }) => {
     dump[`events/${event.id || `${event.event}-${event.createdAt}`}`] = event;
