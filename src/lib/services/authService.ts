@@ -24,6 +24,14 @@ export async function getCurrentUser(): Promise<AppUser | null> {
   return toAppUser(data.user);
 }
 
+export async function getCurrentAccessToken(): Promise<string | null> {
+  if (isLocalE2EMode()) return 'local-e2e-token';
+  requireSupabaseConfigured();
+  const { data, error } = await supabase.auth.getSession();
+  throwIfSupabaseError(error, 'Supabase Auth getSession');
+  return data.session?.access_token || null;
+}
+
 export async function loginWithEmailPassword(email: string, password: string): Promise<AppUser> {
   if (isLocalE2EMode()) return localTestUser;
   requireSupabaseConfigured();

@@ -1,0 +1,44 @@
+{
+  "status": "BLOCKED_ENV",
+  "repoPath": "C:\\Users\\gusta\\OneDrive\\Documentos\\Growth Agent - Vistoria Facil\\vistoria-facil-ia-app-invariants-20260627142620",
+  "branch": "qa/app-invariants-core-p0-20260627142620",
+  "head": "34ecea9",
+  "environmentVisibleInCodexProcess": {
+    "VITE_SUPABASE_URL": "MISSING",
+    "VITE_SUPABASE_ANON_KEY": "MISSING",
+    "SUPABASE_SERVICE_ROLE_KEY": "MISSING",
+    "UAT_AI_CONTROLLED_DATASET_PATH": "MISSING",
+    "UAT_AI_CONTROLLED_MAX_PHOTOS": "MISSING",
+    "UAT_AI_CONTROLLED_MAX_CALLS": "MISSING",
+    "UAT_AI_CONTROLLED_COST_LIMIT_BRL_BASE": "MISSING",
+    "UAT_AI_CONTROLLED_COST_LIMIT_BRL_STRESS": "MISSING"
+  },
+  "dataset": {
+    "envPath": "MISSING",
+    "fallbackPath": "qa/vf_ai_dataset_selection_3photos_20260627.json",
+    "fallbackExists": true,
+    "fallbackStatus": "DATASET_3PHOTOS_APPROVED_FOR_1F",
+    "fallbackCount": 3,
+    "fallbackMaxCalls": 3
+  },
+  "gatesExecuted": [],
+  "blockedBeforeGates": true,
+  "openAiCalls": 0,
+  "tokens": 0,
+  "estimatedOpenAiCostBrl": 0,
+  "supabaseTouched": false,
+  "storageTouched": false,
+  "dataCreated": false,
+  "cleanupNeeded": false,
+  "safety": {
+    "productCodeChanged": false,
+    "envLocalStaged": false,
+    "envLocalTracked": false,
+    "envLocalIgnored": true,
+    "secretsPrinted": false,
+    "commit": false,
+    "push": false,
+    "deploy": false
+  },
+  "recommendation": "Make the secure variables available to the actual Codex command process, or execute 1F in the same PowerShell process where they were set."
+}

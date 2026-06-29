@@ -1,0 +1,62 @@
+{
+  "status": "BLOCKED_ENV",
+  "repoPath": "C:\\Users\\gusta\\OneDrive\\Documentos\\Growth Agent - Vistoria Facil\\vistoria-facil-ia-app-invariants-20260627142620",
+  "branch": "qa/app-invariants-core-p0-20260627142620",
+  "head": "34ecea9",
+  "gitStatusBefore": [
+    " M package.json",
+    " M scripts/run-uat-ai-controlled-contract.mjs",
+    "?? docs/governance/vistoria_facil_ia_uat_manual_rc_itens_1_2_3_consolidado.md",
+    "?? qa/vf_gate_design_fix_1c_20260627.json",
+    "?? qa/vf_gate_design_fix_1c_20260627.md",
+    "?? qa/vf_gate_preparation_1a_20260627.json",
+    "?? qa/vf_gate_preparation_1a_20260627.md",
+    "?? qa/vf_gate_revalidation_1e_20260627.json",
+    "?? qa/vf_gate_revalidation_1e_20260627.md",
+    "?? qa/vf_photo_storage_gate_1d_20260627.json",
+    "?? qa/vf_photo_storage_gate_1d_20260627.md",
+    "?? scripts/run-item4-gate-contract.mjs",
+    "?? scripts/run-item4-gate-runner.mjs",
+    "?? scripts/run-photo-storage-no-ai-p0.mjs"
+  ],
+  "initialControls": {
+    "sameWorktreeAs1A1E": true,
+    "oldDirtyQuarantineFolderUsed": false,
+    "envLocalStaged": false,
+    "envLocalTracked": false,
+    "envLocalIgnored": true,
+    "productCodeChangedBy1F": false
+  },
+  "environment": {
+    "VITE_SUPABASE_URL": "MISSING",
+    "SUPABASE_SERVICE_ROLE_KEY": "MISSING",
+    "VITE_SUPABASE_ANON_KEY": "MISSING"
+  },
+  "dataset": {
+    "path": "qa/vf_ai_dataset_selection_20260627.json",
+    "status": "DATASET_READY_FOR_APPROVAL",
+    "selectionCount": 10,
+    "requiredMaxPhotos": 3,
+    "secondaryStatus": "BLOCKED_COST_NEEDS_AUTH"
+  },
+  "gatesExecuted": [],
+  "blockedBeforeGates": true,
+  "openAiCalls": 0,
+  "tokens": 0,
+  "estimatedOpenAiCostBrl": 0,
+  "supabaseTouched": false,
+  "storageTouched": false,
+  "dataCreated": false,
+  "cleanupNeeded": false,
+  "p0p1p2gaps": [
+    {
+      "status": "BLOCKED_ENV",
+      "detail": "Supabase environment variables required by the real gates are unavailable in this worktree/process."
+    },
+    {
+      "status": "BLOCKED_COST_NEEDS_AUTH",
+      "detail": "Available approved dataset has 10 photos, while 1F requires at most 3."
+    }
+  ],
+  "recommendation": "Load Supabase environment variables securely and provide an approved 3-photo IA dataset or explicit compatible dataset path before rerunning 1F."
+}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Property, Inspection, Room, Photo, Entitlement } from '../types';
+import { Property, Inspection, Room, Photo, Entitlement, ReportCredit } from '../types';
 import { jsPDF } from 'jspdf';
 import { 
   ArrowLeft, 
@@ -8,6 +8,7 @@ import {
   MessageSquare, 
   Share2, 
   Check, 
+  Edit3,
   AlertTriangle, 
   Info, 
   Signature, 
@@ -26,20 +27,25 @@ import { listPhotos } from '../lib/services/photoService';
 import { saveReport } from '../lib/services/reportService';
 import { listRooms } from '../lib/services/roomService';
 import { buildReportStoragePath, uploadFile } from '../lib/services/storageService';
+import { finalizeReportCredit, listReportCredits } from '../lib/services/reportCreditService';
 
 interface ReportPdfGeneratorProps {
   property: Property;
   inspection: Inspection;
   onBack: () => void;
+  onReopenInspection: (inspection: Inspection) => void;
   entitlement?: Entitlement | null;
 }
 
-export default function ReportPdfGenerator({ property, inspection, onBack, entitlement }: ReportPdfGeneratorProps) {
+export default function ReportPdfGenerator({ property, inspection, onBack, onReopenInspection, entitlement }: ReportPdfGeneratorProps) {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [photos, setPhotos] = useState<Photo[]>([]);
   const [loading, setLoading] = useState(true);
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [pdfDownloaded, setPdfDownloaded] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const [reopeningInspection, setReopeningInspection] = useState(false);
+  const [reportCredit, setReportCredit] = useState<ReportCredit | null>(null);
   const [gateResult, setGateResult] = useState<QaGateResult | null>(null);
   const [generalSummary, setGeneralSummary] = useState(
     inspection.summary || 
@@ -59,13 +65,19 @@ export default function ReportPdfGenerator({ property, inspection, onBack, entit
 
       const photosList = await listPhotos(inspection.id);
       setPhotos(photosList);
+      let currentCredit: ReportCredit | null = null;
+      if (currentUser?.uid) {
+        const credits = await listReportCredits(currentUser.uid);
+        currentCredit = credits.find(credit => credit.inspectionId === inspection.id) || null;
+        setReportCredit(currentCredit);
+      }
 
       const gate = validateReportGenerationGate({
         inspection,
         property,
         rooms: roomsList,
         photos: photosList,
-        photoLimit: getPhotoLimitForEntitlement(entitlement),
+        photoLimit: currentCredit?.analysisLimit || getPhotoLimitForEntitlement(entitlement),
         userId: currentUser?.uid,
         entitlement
       });
@@ -93,9 +105,41 @@ export default function ReportPdfGenerator({ property, inspection, onBack, entit
     window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
   };
 
+  const handleReopenInspection = async () => {
+    if (reopeningInspection) return;
+    if (inspection.status === 'pdf_gerado' || inspection.status === 'finalizado' || reportCredit?.status === 'finalized') {
+      setPdfError('Relatorio finalizado nao pode ser reaberto neste credito.');
+      return;
+    }
+    setPdfError(null);
+    setReopeningInspection(true);
+    try {
+      await updateInspection(inspection.id, {
+        status: 'em_andamento'
+      });
+
+      onReopenInspection({
+        ...inspection,
+        status: 'em_andamento'
+      });
+    } catch (error) {
+      console.error('Error reopening inspection:', error);
+      setPdfError('Nao foi possivel reabrir a vistoria para edicao. Tente novamente.');
+    } finally {
+      setReopeningInspection(false);
+    }
+  };
+
   // Render PDF using jsPDF
   const generatePDF = async () => {
     if (pdfGenerating) return;
+    setPdfError(null);
+    if (inspection.status === 'pdf_gerado' || inspection.status === 'finalizado' || reportCredit?.status === 'finalized') {
+      setPdfError('Este relatorio ja foi finalizado. Ele permanece disponivel para consulta/download, mas nao pode gerar nova versao com o mesmo credito.');
+      return;
+    }
+    const confirmed = window.confirm('Apos fechar este relatorio, ele ficara disponivel para consulta e download, mas nao podera mais ser editado. Para gerar outro relatorio, sera necessario adquirir um novo credito.');
+    if (!confirmed) return;
     const currentUser = await getCurrentUser();
 
     // Gate validation check
@@ -104,14 +148,14 @@ export default function ReportPdfGenerator({ property, inspection, onBack, entit
       property,
       rooms,
       photos,
-      photoLimit: getPhotoLimitForEntitlement(entitlement),
+      photoLimit: reportCredit?.analysisLimit || getPhotoLimitForEntitlement(entitlement),
       userId: currentUser?.uid,
       entitlement
     });
 
     if (!currentGate.passed) {
       const errorMsg = currentGate.issues.map(e => e.message).join('\n');
-      alert(`Impossível gerar relatório devido aos seguintes bloqueios:\n\n${errorMsg}`);
+      setPdfError(`Nao foi possivel gerar o relatorio: ${errorMsg}`);
       return;
     }
 
@@ -126,9 +170,33 @@ export default function ReportPdfGenerator({ property, inspection, onBack, entit
       const primaryColor = [79, 70, 229]; // Indigo Hex: #4f46e5
       const secondaryColor = [30, 41, 59]; // Slate Hex: #1e293b
       const neutralLight = [248, 250, 252]; // Slate-50
+      const headerAddressLine = `${property.address.street}, N. ${property.address.number}${property.address.complement ? `, ${property.address.complement}` : ''}`;
+      const headerLocationLine = `${property.address.neighborhood} - ${property.address.city}/${property.address.state} | CEP: ${property.address.zipCode}`;
 
       // Add fonts support and custom styles helper
       const addHeaderFooter = (pageNum: number, totalPages: number) => {
+        const headerInfoLine = `${headerAddressLine} | ${headerLocationLine}`;
+        const headerInfo = docPdf.splitTextToSize(headerInfoLine, 132)[0] || headerInfoLine;
+
+        docPdf.setFillColor(255, 255, 255);
+        docPdf.rect(0, 0, 210, 14, 'F');
+        docPdf.setDrawColor(226, 232, 240);
+        docPdf.line(0, 14, 210, 14);
+        docPdf.setFont('helvetica', 'bold');
+        docPdf.setFontSize(8);
+        docPdf.setTextColor(30, 41, 59);
+        docPdf.text(property.nickname, 12, 5.5);
+        docPdf.setFont('helvetica', 'normal');
+        docPdf.setFontSize(7);
+        docPdf.setTextColor(71, 85, 105);
+        docPdf.text(headerInfo, 12, 10);
+        docPdf.setFont('helvetica', 'bold');
+        docPdf.setTextColor(79, 70, 229);
+        docPdf.text(`Vistoria de ${inspection.inspectionType === 'entrada' ? 'Entrada' : 'Saida'}`, 160, 5.5);
+        docPdf.setFont('helvetica', 'normal');
+        docPdf.setTextColor(100, 116, 139);
+        docPdf.text(new Date(inspection.startedAt).toLocaleDateString('pt-BR'), 160, 10);
+
         docPdf.setFillColor(241, 245, 249);
         docPdf.rect(0, 287, 210, 10, 'F');
         docPdf.setFont('helvetica', 'normal');
@@ -454,13 +522,18 @@ export default function ReportPdfGenerator({ property, inspection, onBack, entit
         });
       }
 
+      if (reportCredit) {
+        const finalized = await finalizeReportCredit(inspection.id);
+        setReportCredit(finalized);
+      }
+
       // Record Audit Event
       await safeCreateAuditEvent(userId || 'unknown', 'pdf_generation', { propertyId: property.id, inspectionId: inspection.id });
 
       setPdfDownloaded(true);
     } catch (err) {
       console.error('Error creating PDF Document:', err);
-      alert('Erro ao gerar relatório em PDF.');
+      setPdfError('Erro ao gerar relatorio em PDF. Tente novamente.');
     } finally {
       setPdfGenerating(false);
     }
@@ -474,6 +547,8 @@ export default function ReportPdfGenerator({ property, inspection, onBack, entit
       </div>
     );
   }
+
+  const isFinalizedReport = inspection.status === 'pdf_gerado' || inspection.status === 'finalizado' || reportCredit?.status === 'finalized';
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
@@ -512,7 +587,8 @@ export default function ReportPdfGenerator({ property, inspection, onBack, entit
               rows={4}
               value={generalSummary}
               onChange={(e) => setGeneralSummary(e.target.value)}
-              className="w-full text-xs border border-slate-200 focus:border-indigo-500 rounded-xl p-3 outline-none resize-none leading-relaxed"
+              disabled={isFinalizedReport}
+              className="w-full text-xs border border-slate-200 focus:border-indigo-500 disabled:bg-slate-50 disabled:text-slate-500 rounded-xl p-3 outline-none resize-none leading-relaxed"
             />
           </div>
 
@@ -574,20 +650,50 @@ export default function ReportPdfGenerator({ property, inspection, onBack, entit
               </div>
             ) : (
               <div>
-                <h4 className="font-bold text-slate-800 text-sm">Pronto para gerar</h4>
-                <p className="text-xs text-slate-400 mt-1">Gere o documento final e envie para as partes interessadas.</p>
+                <h4 className="font-bold text-slate-800 text-sm">{isFinalizedReport ? 'Relatorio finalizado' : 'Pronto para gerar'}</h4>
+                <p className="text-xs text-slate-400 mt-1">
+                  {isFinalizedReport ? 'Disponivel para consulta e download, sem edicao neste credito.' : 'Gere o documento final e envie para as partes interessadas.'}
+                </p>
+              </div>
+            )}
+
+            {pdfError && (
+              <div className="bg-rose-50 text-rose-700 p-3 rounded-xl border border-rose-100 text-[10px] font-semibold text-left">
+                {pdfError}
               </div>
             )}
 
             <button
               type="button"
+              onClick={handleReopenInspection}
+              disabled={reopeningInspection || pdfGenerating || isFinalizedReport}
+              className="w-full bg-white hover:bg-slate-50 disabled:bg-slate-100 border border-slate-200 text-slate-700 font-semibold text-xs py-2.5 rounded-xl transition-all active:scale-98 cursor-pointer h-10 flex items-center justify-center gap-1.5"
+            >
+              <Edit3 className="w-4 h-4" />
+              {reopeningInspection ? 'Reabrindo...' : 'Editar vistoria'}
+            </button>
+
+            <button
+              type="button"
               onClick={generatePDF}
-              disabled={pdfGenerating || (gateResult !== null && !gateResult.passed)}
+              disabled={isFinalizedReport || pdfGenerating || (gateResult !== null && !gateResult.passed)}
               className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white font-semibold text-xs py-2.5 rounded-xl shadow-md transition-all active:scale-98 cursor-pointer h-10 flex items-center justify-center gap-1.5"
             >
               <Download className="w-4 h-4" />
               {pdfGenerating ? 'Gerando PDF...' : 'Baixar Relatório PDF'}
             </button>
+
+            {inspection.pdfUrl && (
+              <a
+                href={inspection.pdfUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs py-2.5 rounded-xl transition-all h-10 flex items-center justify-center gap-1.5"
+              >
+                <Download className="w-4 h-4" />
+                Abrir relatorio final
+              </a>
+            )}
 
             {pdfDownloaded && (
               <div className="bg-emerald-50 text-emerald-700 p-2.5 rounded-xl border border-emerald-100 text-[10px] font-semibold">

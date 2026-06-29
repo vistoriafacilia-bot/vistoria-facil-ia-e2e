@@ -4,9 +4,9 @@ STATUS FINAL: PASS
 
 Branch: stabilization/persistence-p0
 Base URL: http://127.0.0.1:4291
-Run ID: inspection_lifecycle_p0_1782566765046
-Inicio: 2026-06-27T13:26:05.047Z
-Fim: 2026-06-27T13:26:39.432Z
+Run ID: inspection_lifecycle_p0_1782603235512
+Inicio: 2026-06-27T23:33:55.513Z
+Fim: 2026-06-27T23:34:49.134Z
 
 ## Reproducao
 
@@ -32,25 +32,25 @@ Fim: 2026-06-27T13:26:39.432Z
 | setup usuario tecnico | PASS | Usuario e entitlement criados por admin local isolado |
 | base limpa local | PASS | Vite local http://127.0.0.1:4291 |
 | login tecnico | PASS | Login abriu Meus Imoveis |
-| imovel criar/listar/persistir | PASS | property_id=20c301c9-b2ea-404a-bb2b-b982bea73c91 |
+| imovel criar/listar/persistir | PASS | property_id=96b5490b-ee99-40e9-88fe-84f759a41304 |
 | Nova Vistoria + voltar antes de comecar | PASS | Nenhuma inspection criada antes do botao Comecar Vistoria |
-| Comecar Vistoria + voltar sem acao real | PASS | Rascunho vazio fe8176b9-6857-46ce-9f93-b96444e8599c removido; rooms/photos/ai/reports/storage sem leftovers |
-| vistoria criar/abrir | PASS | inspection_id=bcd36d48-7175-471b-9e2a-70ec8d78d249 |
-| comodo existente editar | PASS | Sala Editada P0 765046 visivel e persistido |
+| Comecar Vistoria + voltar sem acao real | PASS | Rascunho vazio 3e781c0f-26fc-458c-b990-2b267bd947e0 removido; rooms/photos/ai/reports/storage sem leftovers |
+| vistoria criar/abrir | PASS | inspection_id=ec05b72b-2bf1-40f5-8a6b-836e59570bdc |
+| comodo existente editar | PASS | Sala Editada P0 235512 visivel e persistido |
 | sair/voltar/continuar rascunho correto | PASS | Card localizado por inspection_id; alteracao permaneceu |
 | reload/retomada | PASS | Comodo editado permaneceu |
 | logout/login/retomada | PASS | Comodo editado permaneceu na vistoria correta |
-| comodos criar/editar/deletar | PASS | Comodo Novo Editado P0 765046 persistido; Comodo Temporario P0 765046 removido |
+| comodos criar/editar/deletar | PASS | Comodo Novo Editado P0 235512 persistido; Comodo Temporario P0 235512 removido |
 | matriz final de persistencia | PASS | Criado/editado/deletado preservado em back, reload e logout/login |
 | Nova Vistoria + voltar | PASS | inspections before=1; after=1 |
-| historico identifica vistoria correta | PASS | Rascunho aberto por codigo bcd36d48-7175-471b-9e2a-70ec8d78d249 |
+| historico identifica vistoria correta | PASS | Rascunho aberto por codigo ec05b72b-2bf1-40f5-8a6b-836e59570bdc |
 | Supabase x UI | PASS | 10 rooms vinculados ao inspection_id correto; fotos=0; IA=0 |
 
 ## Estado Supabase/UI
 
-- Property ID: 20c301c9-b2ea-404a-bb2b-b982bea73c91
-- Inspection ID: bcd36d48-7175-471b-9e2a-70ec8d78d249
-- Rooms finais: Sala Editada P0 765046, Quarto 1, Quarto 2, Banheiro, Cozinha, Área de Serviço, Varanda, Garagem, Outros, Comodo Novo Editado P0 765046
+- Property ID: 96b5490b-ee99-40e9-88fe-84f759a41304
+- Inspection ID: ec05b72b-2bf1-40f5-8a6b-836e59570bdc
+- Rooms finais: Sala Editada P0 235512, Quarto 1, Quarto 2, Banheiro, Cozinha, Área de Serviço, Varanda, Garagem, Outros, Comodo Novo Editado P0 235512
 - Total de fotos criadas: 0
 - Rascunho vazio removido/oculto: PASS
 - Rascunho vazio antes do descarte: {"status":"em_andamento","rooms":9,"photos":0,"aiAnalysisRows":0,"reports":0,"storagePhotos":0,"storageReports":0}

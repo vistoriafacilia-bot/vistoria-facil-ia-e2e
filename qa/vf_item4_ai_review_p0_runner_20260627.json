@@ -1,0 +1,35 @@
+{
+  "gate": "ai-review-p0",
+  "status": "BLOCKED_GATE_COVERAGE",
+  "startedAt": "2026-06-27T23:34:51.709Z",
+  "finishedAt": "2026-06-27T23:34:56.815Z",
+  "executionPlan": [
+    "Run scripts/run-uat-ai-controlled-contract.mjs with UAT_AI_CONTROLLED_MAX_PHOTOS=3.",
+    "Use approved dataset path from UAT_AI_CONTROLLED_DATASET_PATH or the script default.",
+    "Fail on more than 3 photos, more than 3 OpenAI calls, fallback, missing useful suggestion, missing persistence, or cleanup failure."
+  ],
+  "antiFalsePass": [
+    "The child IA runner performs dataset governance before upload.",
+    "The wrapper forces the Item 4 limit to 3 photos/calls.",
+    "The gate cannot pass in dry-run mode because this wrapper does not pass --dry."
+  ],
+  "steps": [
+    {
+      "name": "qa:ai-review-p0.real-runner",
+      "status": "BLOCKED",
+      "detail": "exitCode=2"
+    },
+    {
+      "name": "qa:ai-review-p0",
+      "status": "BLOCKED_GATE_COVERAGE",
+      "detail": "qa:ai-review-p0.real-runner BLOCKED exitCode=2"
+    }
+  ],
+  "openAiAllowed": true,
+  "openAiCallsObserved": 0,
+  "touchesSupabaseOrStorage": true,
+  "reports": {
+    "json": "qa/vf_item4_ai_review_p0_runner_20260627.json",
+    "md": "qa/vf_item4_ai_review_p0_runner_20260627.md"
+  }
+}

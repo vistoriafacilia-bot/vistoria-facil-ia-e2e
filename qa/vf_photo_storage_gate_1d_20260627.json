@@ -1,0 +1,68 @@
+{
+  "status": "PHOTO_STORAGE_GATE_READY",
+  "repoPath": "C:\\Users\\gusta\\OneDrive\\Documentos\\Growth Agent - Vistoria Facil\\vistoria-facil-ia-app-invariants-20260627142620",
+  "branch": "qa/app-invariants-core-p0-20260627142620",
+  "head": "34ecea9",
+  "gitStatusBefore": [
+    " M package.json",
+    " M scripts/run-uat-ai-controlled-contract.mjs",
+    "?? docs/governance/vistoria_facil_ia_uat_manual_rc_itens_1_2_3_consolidado.md",
+    "?? qa/vf_gate_design_fix_1c_20260627.json",
+    "?? qa/vf_gate_design_fix_1c_20260627.md",
+    "?? qa/vf_gate_preparation_1a_20260627.json",
+    "?? qa/vf_gate_preparation_1a_20260627.md",
+    "?? scripts/run-item4-gate-contract.mjs",
+    "?? scripts/run-item4-gate-runner.mjs"
+  ],
+  "filesChanged": [
+    "package.json",
+    "scripts/run-item4-gate-runner.mjs",
+    "scripts/run-photo-storage-no-ai-p0.mjs",
+    "qa/vf_photo_storage_gate_1d_20260627.md",
+    "qa/vf_photo_storage_gate_1d_20260627.json"
+  ],
+  "mapping": {
+    "qa:photo-storage-no-ai-p0": "node scripts/run-photo-storage-no-ai-p0.mjs",
+    "qa:uat-release-candidate": "runs qa:photo-storage-no-ai-p0 through npm"
+  },
+  "coverage": {
+    "upload": true,
+    "listingReopen": true,
+    "uiSupabaseStorageConsistency": true,
+    "links": [
+      "user_id",
+      "property_id via inspection",
+      "inspection_id",
+      "room_id",
+      "photo_id",
+      "storage_path"
+    ],
+    "deleteUi": "validated when present; GAP_PRODUCT_DECISION if absent",
+    "cleanup": true,
+    "orphanChecks": true
+  },
+  "antiIaGuard": {
+    "requestRouting": true,
+    "blocksOpenAiAnalyzePhotoVisionUrls": true,
+    "costGuardOnAnyIaAttempt": true,
+    "openAiCostBrl": 0
+  },
+  "safeValidationsExecuted": [
+    "node --check scripts/run-photo-storage-no-ai-p0.mjs",
+    "node --check scripts/run-item4-gate-runner.mjs",
+    "package.json mapping check",
+    "sensitive-pattern scan",
+    ".env.local ignore check"
+  ],
+  "safety": {
+    "productCodeChanged": false,
+    "openAiCalled": false,
+    "supabaseStorageTouchedDuring1D": false,
+    "envLocalTouched": false,
+    "secretsPrinted": false,
+    "commit": false,
+    "push": false,
+    "deploy": false
+  },
+  "recommendation": "Ready for Comando 1E revalidation of the overall gate design."
+}

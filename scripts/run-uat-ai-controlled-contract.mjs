@@ -16,7 +16,7 @@ const RUN_ID = `ai_controlled_${Date.now()}`;
 const TEST_EMAIL = `e2e-ai-controlled-${RUN_ID}@vistoriafacilia.com`;
 const TEST_PASSWORD = `AiControlled-${RUN_ID}!`;
 const VALID_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp']);
-const MAX_AI_PHOTOS = 10;
+const MAX_AI_PHOTOS = Number.parseInt(process.env.UAT_AI_CONTROLLED_MAX_PHOTOS || '10', 10);
 const MAX_PHOTOS_PER_ROOM = 1;
 const COST_BASE_PER_PHOTO_BRL = 0.15;
 const COST_STRESS_PER_PHOTO_BRL = 0.25;
@@ -460,7 +460,7 @@ async function queryAiState(admin, userId, inspectionId) {
 
 function renderReport(result) {
   const lines = [
-    '# VF UAT IA Controlada - 10 Fotos Reais - 2026-06-27',
+    `# VF UAT IA Controlada - ${MAX_AI_PHOTOS} Fotos Reais - 2026-06-27`,
     '',
     `STATUS FINAL: ${result.status}`,
     '',
@@ -541,7 +541,7 @@ async function run() {
     result.status = 'FAIL_DATASET_GOVERNANCE';
     result.error = inventory.governanceErrors.join('; ');
     result.bugs.push(...inventory.governanceErrors);
-    addCase(result, '0', 'Governanca do dataset aprovado', 'JSON aprovado com exatamente 10 fotos, 1 por comodo, caminhos validos e hashes coerentes', 'FAIL', result.error);
+    addCase(result, '0', 'Governanca do dataset aprovado', `JSON aprovado com exatamente ${MAX_AI_PHOTOS} fotos, 1 por comodo, caminhos validos e hashes coerentes`, 'FAIL', result.error);
     result.finishedAt = new Date().toISOString();
     writeFileSync(REPORT_PATH, renderReport(result), 'utf8');
     writeFileSync(REPORT_JSON_PATH, JSON.stringify(result, null, 2), 'utf8');
@@ -599,7 +599,7 @@ async function run() {
     process.exitCode = 2;
     return;
   }
-  addCase(result, '0', 'COST_GUARD inicial', '10 comodos, 1 foto por comodo, maximo 10 chamadas IA', 'PASS', 'Amostra 10/10; base R$ 1.50; stress R$ 2.50');
+  addCase(result, '0', 'COST_GUARD inicial', `${MAX_AI_PHOTOS} fotos, 1 foto por comodo, maximo ${MAX_AI_PHOTOS} chamadas IA`, 'PASS', `Amostra ${MAX_AI_PHOTOS}/${MAX_AI_PHOTOS}; base R$ ${(MAX_AI_PHOTOS * COST_BASE_PER_PHOTO_BRL).toFixed(2)}; stress R$ ${(MAX_AI_PHOTOS * COST_STRESS_PER_PHOTO_BRL).toFixed(2)}`);
 
   const env = loadEnvLocal();
   const missing = ['VITE_SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'].filter((key) => !env[key]);
@@ -703,7 +703,7 @@ async function run() {
       useful: usefulSuggestion(photo),
     }));
     if (result.openAiRequestCount !== MAX_AI_PHOTOS) throw new Error(`OPENAI_CALL_COUNT_MISMATCH: expected ${MAX_AI_PHOTOS}, got ${result.openAiRequestCount}`);
-    addCase(result, '4', 'Persistencia Supabase/Storage', '10 fotos completas, sugestoes uteis, condicao/confianca e storage validos', 'PASS', `tokens=${result.usage.totalTokens}`);
+    addCase(result, '4', 'Persistencia Supabase/Storage', `${MAX_AI_PHOTOS} fotos completas, sugestoes uteis, condicao/confianca e storage validos`, 'PASS', `tokens=${result.usage.totalTokens}`);
 
     await page.reload({ waitUntil: 'networkidle', timeout: 60_000 });
     await page.getByText(/Meus Im.veis/i).waitFor({ state: 'visible', timeout: 45_000 });

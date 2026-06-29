@@ -5,7 +5,7 @@ import PropertyManager from './components/PropertyManager';
 import InspectionWizard from './components/InspectionWizard';
 import ReportPdfGenerator from './components/ReportPdfGenerator';
 import DashboardMetrics from './components/DashboardMetrics';
-import PlanGate from './components/PlanGate';
+import ReportCreditGate from './components/ReportCreditGate';
 import { ClipboardList, Plus, History, Trash2, FileText, Play, ChevronLeft, ArrowRight, ShieldCheck, Sparkles, Building2 } from 'lucide-react';
 import { APP_VERSION } from './lib/appVersion';
 import { getOrCreateUserEntitlement } from './lib/entitlements';
@@ -341,27 +341,21 @@ export default function App() {
             <form
               onSubmit={handleEmailLogin}
               data-testid="public-email-auth-form"
-              className="border-t border-slate-800 pt-5 space-y-3 text-left"
+              className="border-t border-slate-800 pt-5 space-y-4 text-left"
             >
-              <div className="grid grid-cols-2 gap-2 rounded-xl bg-slate-950/70 p-1">
-                <button
-                  type="button"
-                  onClick={() => switchAuthMode('login')}
-                  className={`rounded-lg px-3 py-2 text-xs font-bold transition-colors ${authMode === 'login' ? 'bg-indigo-500 text-white' : 'text-slate-400 hover:text-white'}`}
-                >
-                  Entrar
-                </button>
-                <button
-                  type="button"
-                  onClick={() => switchAuthMode('signup')}
-                  className={`rounded-lg px-3 py-2 text-xs font-bold transition-colors ${authMode === 'signup' ? 'bg-indigo-500 text-white' : 'text-slate-400 hover:text-white'}`}
-                >
-                  Criar conta
-                </button>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-indigo-200">
+                  {authMode === 'login' ? 'Acesse sua conta' : 'Novo acesso'}
+                </p>
+                <h2 className="text-lg font-bold text-white">
+                  {authMode === 'login' ? 'Entrar' : 'Criar conta'}
+                </h2>
+                <p className="text-xs leading-relaxed text-slate-400">
+                  {authMode === 'login'
+                    ? 'Use seu e-mail e senha para continuar suas vistorias.'
+                    : 'Crie uma conta para salvar imoveis, vistorias e relatorios.'}
+                </p>
               </div>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                {authMode === 'login' ? 'Entrar com e-mail' : 'Criar conta com e-mail'}
-              </p>
               <div className="space-y-1.5">
                 <label htmlFor="email-auth-email" className="block text-[11px] font-semibold text-slate-300">
                   E-mail
@@ -433,6 +427,17 @@ export default function App() {
                   Esqueci minha senha
                 </button>
               )}
+              <div className="rounded-xl border border-slate-800 bg-slate-950/60 px-3.5 py-3 text-center text-xs text-slate-400">
+                {authMode === 'login' ? 'Ainda nao tem conta?' : 'Ja tem conta?'}
+                <button
+                  type="button"
+                  onClick={() => switchAuthMode(authMode === 'login' ? 'signup' : 'login')}
+                  disabled={emailAuthSubmitting}
+                  className="ml-1 font-bold text-indigo-200 transition-colors hover:text-white disabled:text-slate-600"
+                >
+                  {authMode === 'login' ? 'Criar conta' : 'Entrar'}
+                </button>
+              </div>
             </form>
         </div>
 
@@ -445,6 +450,11 @@ export default function App() {
       </div>
     );
   }
+
+  const activeDraftInspection = inspections.find((inspection) => (
+    inspection.propertyId === selectedProperty?.id
+    && (inspection.status === 'rascunho' || inspection.status === 'em_andamento')
+  ));
 
   // 2. DASHBOARD (LOGGED IN APP STATE)
   return (
@@ -477,10 +487,10 @@ export default function App() {
               <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-4 sm:p-5 border border-indigo-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
                   <h3 className="font-bold text-xs text-indigo-900 uppercase tracking-wider flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-indigo-600 animate-pulse" /> Versão Beta Limitada a 10 Fotos
+                    <Sparkles className="w-3.5 h-3.5 text-indigo-600 animate-pulse" /> Degustacao limitada a 10 fotos
                   </h3>
                   <p className="text-slate-600 text-xs mt-1 leading-relaxed">
-                    Sua conta atual permite vistorias de até 10 fotos no total. Faça o upgrade para a versão premium e gere relatórios de até 50 fotos com PDFs em alta definição e suporte dedicado.
+                    Sua conta atual permite ate 10 analises/fotos. Compre um credito avulso para gerar 1 relatorio final com limite ampliado.
                   </p>
                 </div>
                 <button
@@ -520,14 +530,30 @@ export default function App() {
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={() => handleStartNewInspection(selectedProperty)}
-                className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-3.5 py-2.5 rounded-xl shadow-xs transition-all active:scale-98 cursor-pointer h-10"
-              >
-                <Plus className="w-4 h-4" />
-                Nova Vistoria
-              </button>
+              <div className="flex items-center gap-2">
+                {activeDraftInspection && (
+                  <button
+                    type="button"
+                    onClick={() => handleOpenDraft(activeDraftInspection)}
+                    className="flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-3.5 py-2.5 rounded-xl shadow-xs transition-all active:scale-98 cursor-pointer h-10"
+                  >
+                    <Play className="w-4 h-4" />
+                    Continuar Vistoria em Andamento
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleStartNewInspection(selectedProperty)}
+                  className={`flex items-center gap-1.5 font-semibold text-xs px-3.5 py-2.5 rounded-xl transition-all active:scale-98 cursor-pointer h-10 ${
+                    activeDraftInspection
+                      ? 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
+                      : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs'
+                  }`}
+                >
+                  <Plus className="w-4 h-4" />
+                  Nova Vistoria
+                </button>
+              </div>
             </div>
 
             {/* Inspections Table / List */}
@@ -571,13 +597,13 @@ export default function App() {
                         </span>
 
                         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${
-                          insp.status === 'pdf_gerado' 
+                          insp.status === 'pdf_gerado' || insp.status === 'finalizado'
                             ? 'bg-blue-50 text-blue-700 border border-blue-200'
                             : insp.status === 'concluida'
                             ? 'bg-emerald-50 text-emerald-700'
                             : 'bg-amber-50 text-amber-700'
                         }`}>
-                          {insp.status === 'pdf_gerado' ? 'PDF Disponível' : insp.status === 'concluida' ? 'Concluída' : 'Rascunho'}
+                          {insp.status === 'pdf_gerado' || insp.status === 'finalizado' ? 'PDF Disponível' : insp.status === 'concluida' ? 'Concluída' : 'Rascunho'}
                         </span>
                       </div>
 
@@ -614,7 +640,7 @@ export default function App() {
                         <Trash2 className="w-4 h-4" />
                       </button>
 
-                      {insp.status === 'pdf_gerado' || insp.status === 'concluida' ? (
+                      {insp.status === 'pdf_gerado' || insp.status === 'finalizado' || insp.status === 'concluida' ? (
                         <button
                           type="button"
                           onClick={() => handleOpenPdfView(insp)}
@@ -672,6 +698,10 @@ export default function App() {
               fetchPropertyInspections(selectedProperty);
               setCurrentView('inspections_history');
             }}
+            onReopenInspection={(reopened) => {
+              setSelectedInspection(reopened);
+              setCurrentView('inspection_wizard');
+            }}
             entitlement={entitlement}
           />
         )}
@@ -689,12 +719,12 @@ export default function App() {
                 <ChevronLeft className="w-5 h-5" />
               </button>
               <div>
-                <h2 className="text-lg font-bold text-slate-800 leading-none">Planos de Assinatura</h2>
-                <p className="text-xs text-slate-500">Escolha a melhor opção para seu negócio imobiliário</p>
+                <h2 className="text-lg font-bold text-slate-800 leading-none">Creditos de relatorio</h2>
+                <p className="text-xs text-slate-500">Compre um credito avulso para liberar analises de IA neste relatorio</p>
               </div>
             </div>
             {user && (
-              <PlanGate 
+              <ReportCreditGate 
                 user={user}
                 autoContinueOnActiveEntitlement={false}
                 onReady={(updatedEnt) => {

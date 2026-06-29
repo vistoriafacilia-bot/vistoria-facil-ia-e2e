@@ -1,0 +1,40 @@
+{
+  "gate": "uat-release-candidate",
+  "status": "FAIL_CORE",
+  "startedAt": "2026-06-27T23:34:58.175Z",
+  "finishedAt": "2026-06-27T23:34:58.177Z",
+  "executionPlan": [
+    "Run npm run lint.",
+    "Run npm run build.",
+    "Run npm run qa:app-invariants-core-p0.",
+    "Run npm run qa:inspection-lifecycle-p0.",
+    "Run npm run qa:photo-storage-no-ai-p0.",
+    "Run npm run qa:ai-review-p0.",
+    "Run npm run qa:report-p0-certification.",
+    "Stop on first failing or blocked mandatory gate."
+  ],
+  "antiFalsePass": [
+    "This runner never returns PASS only because a contract was generated.",
+    "Any missing executable coverage returns BLOCKED_GATE_COVERAGE.",
+    "Any failed mandatory child gate prevents success."
+  ],
+  "steps": [
+    {
+      "name": "lint",
+      "status": "FAIL",
+      "detail": "spawnSync npm.cmd EINVAL"
+    },
+    {
+      "name": "qa:uat-release-candidate",
+      "status": "FAIL_CORE",
+      "detail": "lint failed to start: spawnSync npm.cmd EINVAL"
+    }
+  ],
+  "openAiAllowed": true,
+  "openAiCallsObserved": 0,
+  "touchesSupabaseOrStorage": true,
+  "reports": {
+    "json": "qa/vf_item4_uat_release_candidate_runner_20260627.json",
+    "md": "qa/vf_item4_uat_release_candidate_runner_20260627.md"
+  }
+}

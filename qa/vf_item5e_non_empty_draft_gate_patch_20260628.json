@@ -1,0 +1,38 @@
+{
+  "status": "PATCH_READY_FOR_GATE_RETRY",
+  "scope": {
+    "productChanged": false,
+    "qaGateChanged": true,
+    "changedFile": "scripts/run-uat-real-complete.mjs",
+    "supabaseSchemaChanged": false,
+    "storageTouchedOutsideGate": false,
+    "openAiCalls": 0,
+    "envLocalChanged": false,
+    "commitPushDeploy": false
+  },
+  "confirmedCause": "The gate created an empty draft with only default rooms and no meaningful content, then expected Continuar Rascunho after returning to history. Current product UX removes or filters empty drafts.",
+  "patchApplied": {
+    "strategy": "Rename one default room before returning to history so the draft is non-empty under the existing lifecycle rule.",
+    "roomMarker": "Sala Rascunho <run suffix>",
+    "productRuleChanged": false,
+    "laterRoomMappingAdjusted": true
+  },
+  "validation": {
+    "command": "npm run qa:app-invariants-core-p0",
+    "appInvariantsStatus": "BLOCKED_GATE_COVERAGE",
+    "childGate": "qa:uat-core-certification",
+    "childStatus": "BLOCKED",
+    "childExitCode": 2,
+    "reachedPatchedContinuarRascunhoPath": false,
+    "newFunctionalFailureCaptured": false,
+    "note": "Validation blocked before inventory/matrix execution and before the patched draft resume path."
+  },
+  "evidence": [
+    "qa/vf_item4_app_invariants_core_p0_runner_20260627.json",
+    "qa/vf_item4_app_invariants_core_p0_runner_20260627.md",
+    "qa/vf_uat_core_certification_20260627.json",
+    "qa/vf_uat_core_certification_20260627.md",
+    "qa/vf_item5e_non_empty_draft_gate_patch_20260628.md",
+    "qa/vf_item5e_non_empty_draft_gate_patch_20260628.json"
+  ]
+}

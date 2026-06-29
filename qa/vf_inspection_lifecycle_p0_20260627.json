@@ -2,9 +2,9 @@
   "status": "PASS",
   "branch": "stabilization/persistence-p0",
   "url": "http://127.0.0.1:4291",
-  "runId": "inspection_lifecycle_p0_1782566765046",
-  "startedAt": "2026-06-27T13:26:05.047Z",
-  "finishedAt": "2026-06-27T13:26:39.432Z",
+  "runId": "inspection_lifecycle_p0_1782603235512",
+  "startedAt": "2026-06-27T23:33:55.513Z",
+  "finishedAt": "2026-06-27T23:34:49.134Z",
   "failureReproduced": false,
   "rootCause": "EMPTY_DRAFT_CREATED_ON_START_WAS_NOT_DISCARDED_AND_HISTORY_DID_NOT_FILTER_DEFAULT_ONLY_DRAFTS_BEFORE_FIX",
   "diagnosis": {
@@ -37,7 +37,7 @@
     {
       "phase": "imovel criar/listar/persistir",
       "status": "PASS",
-      "evidence": "property_id=20c301c9-b2ea-404a-bb2b-b982bea73c91"
+      "evidence": "property_id=96b5490b-ee99-40e9-88fe-84f759a41304"
     },
     {
       "phase": "Nova Vistoria + voltar antes de comecar",
@@ -47,17 +47,17 @@
     {
       "phase": "Comecar Vistoria + voltar sem acao real",
       "status": "PASS",
-      "evidence": "Rascunho vazio fe8176b9-6857-46ce-9f93-b96444e8599c removido; rooms/photos/ai/reports/storage sem leftovers"
+      "evidence": "Rascunho vazio 3e781c0f-26fc-458c-b990-2b267bd947e0 removido; rooms/photos/ai/reports/storage sem leftovers"
     },
     {
       "phase": "vistoria criar/abrir",
       "status": "PASS",
-      "evidence": "inspection_id=bcd36d48-7175-471b-9e2a-70ec8d78d249"
+      "evidence": "inspection_id=ec05b72b-2bf1-40f5-8a6b-836e59570bdc"
     },
     {
       "phase": "comodo existente editar",
       "status": "PASS",
-      "evidence": "Sala Editada P0 765046 visivel e persistido"
+      "evidence": "Sala Editada P0 235512 visivel e persistido"
     },
     {
       "phase": "sair/voltar/continuar rascunho correto",
@@ -77,7 +77,7 @@
     {
       "phase": "comodos criar/editar/deletar",
       "status": "PASS",
-      "evidence": "Comodo Novo Editado P0 765046 persistido; Comodo Temporario P0 765046 removido"
+      "evidence": "Comodo Novo Editado P0 235512 persistido; Comodo Temporario P0 235512 removido"
     },
     {
       "phase": "matriz final de persistencia",
@@ -92,7 +92,7 @@
     {
       "phase": "historico identifica vistoria correta",
       "status": "PASS",
-      "evidence": "Rascunho aberto por codigo bcd36d48-7175-471b-9e2a-70ec8d78d249"
+      "evidence": "Rascunho aberto por codigo ec05b72b-2bf1-40f5-8a6b-836e59570bdc"
     },
     {
       "phase": "Supabase x UI",
@@ -101,10 +101,10 @@
     }
   ],
   "supabase": {
-    "propertyId": "20c301c9-b2ea-404a-bb2b-b982bea73c91",
-    "inspectionId": "bcd36d48-7175-471b-9e2a-70ec8d78d249",
+    "propertyId": "96b5490b-ee99-40e9-88fe-84f759a41304",
+    "inspectionId": "ec05b72b-2bf1-40f5-8a6b-836e59570bdc",
     "roomNames": [
-      "Sala Editada P0 765046",
+      "Sala Editada P0 235512",
       "Quarto 1",
       "Quarto 2",
       "Banheiro",
@@ -113,7 +113,7 @@
       "Varanda",
       "Garagem",
       "Outros",
-      "Comodo Novo Editado P0 765046"
+      "Comodo Novo Editado P0 235512"
     ]
   },
   "photoCount": 0,

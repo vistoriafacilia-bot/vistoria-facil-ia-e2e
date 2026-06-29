@@ -1,0 +1,30 @@
+{
+  "gate": "report-p0-certification",
+  "status": "BLOCKED_GATE_COVERAGE",
+  "startedAt": "2026-06-27T23:34:57.463Z",
+  "finishedAt": "2026-06-27T23:34:57.464Z",
+  "executionPlan": [
+    "Validate fresh report evidence emitted by the authorized IA/review gate.",
+    "Require reportWorked=true, status=PASS, cleanupOk=true, and no cost guard breach.",
+    "Reject stale evidence unless ITEM4_ALLOW_REPORT_EVIDENCE_REUSE=true is explicitly set."
+  ],
+  "antiFalsePass": [
+    "This runner never returns PASS only because a contract was generated.",
+    "Any missing executable coverage returns BLOCKED_GATE_COVERAGE.",
+    "Any failed mandatory child gate prevents success."
+  ],
+  "steps": [
+    {
+      "name": "fresh-report-evidence",
+      "status": "BLOCKED_GATE_COVERAGE",
+      "detail": "REPORT_EVIDENCE_FRESHNESS_REQUIRED: run through qa:uat-release-candidate or set ITEM4_RC_STARTED_AT"
+    }
+  ],
+  "openAiAllowed": false,
+  "openAiCallsObserved": 0,
+  "touchesSupabaseOrStorage": false,
+  "reports": {
+    "json": "qa/vf_item4_report_p0_certification_runner_20260627.json",
+    "md": "qa/vf_item4_report_p0_certification_runner_20260627.md"
+  }
+}

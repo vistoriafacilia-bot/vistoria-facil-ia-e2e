@@ -1,0 +1,69 @@
+{
+  "status": "DIAGNOSIS_READY",
+  "scope": {
+    "gatesExecuted": false,
+    "productChanged": false,
+    "testChanged": false,
+    "supabaseOrStorageTouched": false,
+    "openAiCalls": 0,
+    "envLocalModified": false,
+    "commitPushDeploy": false
+  },
+  "gate": "qa:uat-core-certification",
+  "afterPatch": "5E",
+  "currentObservedResult": {
+    "childStatus": "BLOCKED",
+    "childExitCode": 2,
+    "parentStatus": "BLOCKED_GATE_COVERAGE",
+    "matrixEmpty": true,
+    "runtimeExpectedHttpResponses": 0,
+    "startedAndFinishedSameInstant": true
+  },
+  "exactBlockPoint": {
+    "file": "scripts/run-uat-real-complete.mjs",
+    "primaryLines": "751-753",
+    "description": "Runtime env is resolved and the script throws if VITE_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY is missing."
+  },
+  "responsibleReferences": [
+    {
+      "file": "scripts/run-uat-real-complete.mjs",
+      "lines": "751-753",
+      "reason": "Missing required env check."
+    },
+    {
+      "file": "scripts/run-uat-real-complete.mjs",
+      "lines": "52-55",
+      "reason": "Broad redaction hides the missing env variable names because SERVICE_ROLE_KEY matches sensitive keywords."
+    },
+    {
+      "file": "scripts/run-uat-real-complete.mjs",
+      "lines": "1039-1064",
+      "reason": "Outer catch writes fallback evidence with empty inventory and matrix."
+    }
+  ],
+  "environmentSignalsWithoutValues": {
+    "processEnv": {
+      "VITE_SUPABASE_URL": false,
+      "SUPABASE_SERVICE_ROLE_KEY": false,
+      "UAT_REAL_COMPLETE_PHOTO_ROOT": false
+    },
+    "envLocalExists": false,
+    "defaultPhotoRootAvailable": true,
+    "defaultPhotoRootJpgCount": 158,
+    "defaultPhotoRootZipCount": 1
+  },
+  "probableCause": "Missing VITE_SUPABASE_URL and/or SUPABASE_SERVICE_ROLE_KEY for the qa:uat-core-certification process, with the actionable missing variable names hidden by redaction.",
+  "classification": {
+    "environment": true,
+    "gateInstrumentation": true,
+    "redaction": true,
+    "testData": false,
+    "authLogin": false,
+    "publicUrl": false,
+    "productP0Functional": false,
+    "schema": false
+  },
+  "patch5EStillValid": true,
+  "patch5EPathReached": false,
+  "minimalNextAction": "Provide VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to the qa:uat-core-certification process without printing values, then rerun only the allowed gate. If instrumentation changes are authorized, report missing env names without values and preserve safe startup inventory in the outer catch."
+}

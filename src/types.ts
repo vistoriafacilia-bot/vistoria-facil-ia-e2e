@@ -31,7 +31,7 @@ export interface AppUser {
 }
 
 export type InspectionType = 'entrada' | 'saida';
-export type InspectionStatus = 'rascunho' | 'em_andamento' | 'concluida' | 'pdf_gerado';
+export type InspectionStatus = 'rascunho' | 'em_andamento' | 'concluida' | 'pdf_gerado' | 'finalizado';
 
 export interface Inspection {
   id: string;
@@ -138,4 +138,38 @@ export interface Entitlement {
   createdAt: string;
   updatedAt: string;
   expiresAt?: string | null;
+}
+
+export type ReportCreditPlanId = 'report_50_beta_4990' | 'report_100_9990' | 'report_150_14990';
+export type ReportCreditStatus = 'available' | 'assigned' | 'in_progress' | 'finalized' | 'canceled' | 'refunded';
+
+export interface ReportCreditPlan {
+  id: ReportCreditPlanId;
+  name: string;
+  description: string;
+  priceCents: number;
+  regularPriceCents?: number | null;
+  currency: string;
+  analysisLimit: number;
+  badge: string;
+  active: boolean;
+}
+
+export interface ReportCredit {
+  id: string;
+  userId: string;
+  planId: ReportCreditPlanId;
+  orderId?: string | null;
+  paymentId?: string | null;
+  preferenceId?: string | null;
+  inspectionId?: string | null;
+  status: ReportCreditStatus;
+  analysisLimit: number;
+  analysisUsed: number;
+  priceCents: number;
+  currency: string;
+  createdAt: string;
+  updatedAt: string;
+  assignedAt?: string | null;
+  finalizedAt?: string | null;
 }

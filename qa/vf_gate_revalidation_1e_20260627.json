@@ -1,0 +1,78 @@
+{
+  "status": "GATE_DESIGN_READY_FOR_ITEM4_EXECUTION",
+  "repoPath": "C:\\Users\\gusta\\OneDrive\\Documentos\\Growth Agent - Vistoria Facil\\vistoria-facil-ia-app-invariants-20260627142620",
+  "branch": "qa/app-invariants-core-p0-20260627142620",
+  "head": "34ecea9",
+  "gitStatus": [
+    " M package.json",
+    " M scripts/run-uat-ai-controlled-contract.mjs",
+    "?? docs/governance/vistoria_facil_ia_uat_manual_rc_itens_1_2_3_consolidado.md",
+    "?? qa/vf_gate_design_fix_1c_20260627.json",
+    "?? qa/vf_gate_design_fix_1c_20260627.md",
+    "?? qa/vf_gate_preparation_1a_20260627.json",
+    "?? qa/vf_gate_preparation_1a_20260627.md",
+    "?? qa/vf_photo_storage_gate_1d_20260627.json",
+    "?? qa/vf_photo_storage_gate_1d_20260627.md",
+    "?? scripts/run-item4-gate-contract.mjs",
+    "?? scripts/run-item4-gate-runner.mjs",
+    "?? scripts/run-photo-storage-no-ai-p0.mjs"
+  ],
+  "gates": {
+    "qa:app-invariants-core-p0": {
+      "command": "node scripts/run-item4-gate-runner.mjs --gate=app-invariants-core-p0",
+      "realRunner": "npm run qa:uat-core-certification",
+      "falsePassGuard": "child non-zero exit prevents PASS"
+    },
+    "qa:inspection-lifecycle-p0": {
+      "command": "node scripts/run-persistence-p0.mjs --inspection-lifecycle",
+      "realRunner": "scripts/run-persistence-p0.mjs",
+      "falsePassGuard": "existing real lifecycle gate"
+    },
+    "qa:photo-storage-no-ai-p0": {
+      "command": "node scripts/run-photo-storage-no-ai-p0.mjs",
+      "realRunner": "scripts/run-photo-storage-no-ai-p0.mjs",
+      "falsePassGuard": "requires upload/list/link/storage/delete-or-gap/cleanup and returns COST_GUARD on any IA request"
+    },
+    "qa:ai-review-p0": {
+      "command": "node scripts/run-item4-gate-runner.mjs --gate=ai-review-p0",
+      "realRunner": "scripts/run-uat-ai-controlled-contract.mjs",
+      "falsePassGuard": "forces UAT_AI_CONTROLLED_MAX_PHOTOS=3 and does not use dry-run"
+    },
+    "qa:report-p0-certification": {
+      "command": "node scripts/run-item4-gate-runner.mjs --gate=report-p0-certification",
+      "realRunner": "fresh evidence validator",
+      "falsePassGuard": "requires fresh PASS evidence with reportWorked=true cleanupOk=true and <=3 photos/calls"
+    },
+    "qa:uat-release-candidate": {
+      "command": "node scripts/run-item4-gate-runner.mjs --gate=uat-release-candidate",
+      "realRunner": "orchestrates lint, build, app-invariants, lifecycle, photo-storage, ai-review, report",
+      "falsePassGuard": "stops on first failed or blocked mandatory gate"
+    }
+  },
+  "safeValidationsExecuted": [
+    "node --check scripts/run-item4-gate-runner.mjs",
+    "node --check scripts/run-photo-storage-no-ai-p0.mjs",
+    "node --check scripts/run-uat-ai-controlled-contract.mjs",
+    "node --check scripts/run-persistence-p0.mjs",
+    "node --check scripts/run-item4-gate-contract.mjs",
+    "package.json mapping check",
+    "contract-runner usage check",
+    "sensitive-pattern scan"
+  ],
+  "safety": {
+    "productCodeChanged": false,
+    "openAiCalled": false,
+    "supabaseStorageTouched": false,
+    "envLocalTouched": false,
+    "secretsPrinted": false,
+    "commit": false,
+    "push": false,
+    "deploy": false
+  },
+  "remainingRisks": [
+    "Actual execution requires environment credentials and authorization.",
+    "AI review requires an approved 3-photo dataset or configured dataset path.",
+    "Report certification requires fresh evidence from the same controlled run."
+  ],
+  "recommendation": "Ready for Comando 1F controlled gate execution, subject to explicit authorization and required environment/dataset preconditions."
+}

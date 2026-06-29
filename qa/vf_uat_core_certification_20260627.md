@@ -1,13 +1,13 @@
 # VF UAT Funcional Real Completo - 2026-06-27
 
-STATUS FINAL: PASS_CORE_WITH_GAPS_NO_COST
+STATUS FINAL: FAIL_CORE
 
 URL testada: https://glittery-boba-2b3367.netlify.app
-Run ID: real_complete_1782554264206
-Inicio: 2026-06-27T09:57:44.207Z
-Fim: 2026-06-27T09:58:39.707Z
-FASE A - Core sem custo: PASS
-FASE B - IA controlada: NOT_EXECUTED_CORE_CERTIFICATION
+Run ID: real_complete_1782646209230
+Inicio: 2026-06-28T11:30:09.231Z
+Fim: 2026-06-28T11:30:56.310Z
+FASE A - Core sem custo: FAIL
+FASE B - IA controlada: PENDING
 Modo do gate: core-certification
 Fase B autorizada por ambiente: nao
 Modo Discovery sem custo: nao
@@ -45,21 +45,16 @@ Modo Discovery sem custo: nao
 | 0 | Inventario | Mapear subpastas e selecionar ate 5 fotos por comodo com maximo total 50 | Todos os comodos entram no core e amostra IA fica <= 50 | Acervo 158 fotos | PASS | 50 fotos selecionadas em 10 comodos |
 | 1 | Usuario UAT valido | Provisionar usuario tecnico e entitlement beta_paid_4990 | Usuario normal entra pelo frontend; service_role apenas setup/cleanup |  | PASS | Plano beta_paid_4990 com limite 50 |
 | 1 | Senha errada | Tentar login com senha invalida | Mensagem clara sem autenticar |  | PASS | Mensagem de credenciais invalidas exibida |
-| 1 | Esqueci senha | Solicitar recuperacao uma vez | Solicitacao aceita ou bloqueio externo documentado |  | GAP | P1/P2: rate limit Supabase Auth; Discovery continua |
+| 1 | Esqueci senha | Solicitar recuperacao uma vez | Solicitacao aceita ou bloqueio externo documentado |  | GAP | P1/P2: mensagem esperada nao apareceu; Discovery continua |
 | 1 | Esqueci e-mail | Procurar fluxo equivalente | Registrar suporte ou GAP funcional |  | NOT_SUPPORTED | Nao existe controle visivel de recuperar e-mail. |
 | 1 | Login valido | Entrar com usuario UAT | Abrir Meus Imoveis |  | PASS | Login por e-mail/senha abriu app autenticado |
 | 1 | Logout/login | Sair e entrar novamente | Sessao volta sem erro |  | PASS | Logout retornou ao auth e login reabriu app |
 | 2 | CRUD imovel | Criar, listar, alterar, reload, logout/login e deletar temporario | Imovel principal persiste e temporario some |  | PASS | UI validada; Supabase validado no fechamento |
-| 3 | CRUD vistoria | Criar entrada, listar/retomar, reload/logout-login e deletar temporaria | Vistoria principal persiste vinculada ao imovel |  | PASS_WITH_GATE_FALLBACK | inspectionId=fa5b4916-2aa5-4c6f-aa73-c6aaf41cd5c5; evidencias={"operational":true,"photoRegistry":true,"fileInputCount":2,"addRoomVisible":true,"roomRows":9,"backToHistory":true,"reviewButton":true,"url":"https://glittery-boba-2b3367.netlify.app/?uat_real_complete=real_complete_1782554264206"} |
-| 3 | Alterar vistoria | Procurar controle de edicao de metadados/status | Alterar se suportado |  | NOT_SUPPORTED | Sem UI dedicada alem do fluxo rascunho/concluir. |
-| 4 | CRUD comodos | Criar comodos por subpasta, editar um, deletar temporario, reload/logout-login | Todos os comodos persistem |  | PASS | 10 comodos validados |
-| A | Barreira custo zero FASE A | Validar Auth, imovel, vistoria, comodos, Supabase e nenhum uso de IA | 0 fotos, 0 tokens, 0 requests IA antes da FASE B |  | PASS | 10 comodos persistidos; custo OpenAI R$ 0.00 |
-| B | FASE B nao executada | Recalcular custo e manter IA bloqueada no gate core | Nao subir fotos nem chamar OpenAI |  | NOT_EXECUTED | Amostra IA 50/50; base R$ 7.50; stress R$ 12.50 |
 | 9 | Cleanup | Remover dados e fotos do teste | Sem leftovers no Supabase/Storage/Auth |  | PASS | Cleanup total confirmado |
 
 ## Totais
 
-- Quantidade de comodos criados/validados: 10
+- Quantidade de comodos criados/validados: 0
 - Quantidade de fotos processadas: 0
 - Quantidade de fotos analisadas por IA: 0
 - Uso total de tokens: 0
@@ -71,14 +66,13 @@ Modo Discovery sem custo: nao
 
 ## Gaps Funcionais
 
-- Esqueci senha bloqueado por rate limit Supabase Auth; nao bloqueia Discovery core.
+- Esqueci senha nao retornou mensagem esperada; nao bloqueia Discovery core.
 - Esqueci e-mail / recuperar e-mail nao existe na UI publica atual.
-- Gate aceitou vistoria temporaria por evidencia funcional sem texto Registro de Fotos. Screenshot: test-results\uat-governance\real_complete_1782554264206_temporaria_functional_evidence_without_photo_registry_text.png
-- Edicao de metadados/status de vistoria nao tem controle dedicado na UI atual.
+- Gate aceitou vistoria principal por evidencia funcional sem texto Registro de Fotos. Screenshot: test-results\uat-governance\real_complete_1782646209230_principal_functional_evidence_without_photo_registry_text.png
 
 ## Bugs Bloqueadores
 
-- Nenhum bug bloqueador registrado.
+- INSPECTION_PRIMARY_LOST: primary inspection 53faba07-dc38-4176-98be-98bf5c31bb29 not found after temp delete
 
 ## Runtime
 
@@ -99,6 +93,6 @@ Modo Discovery sem custo: nao
 - Relatorio MD: qa/vf_uat_core_certification_20260627.md
 - Relatorio JSON: qa/vf_uat_core_certification_20260627.json
 
-
+Erro principal: INSPECTION_PRIMARY_LOST: primary inspection 53faba07-dc38-4176-98be-98bf5c31bb29 not found after temp delete
 
 UAT nao foi liberado automaticamente.

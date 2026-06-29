@@ -1,0 +1,45 @@
+{
+  "status": "DIAGNOSIS_READY",
+  "scope": {
+    "gatesExecuted": false,
+    "productChanged": false,
+    "supabaseOrStorageTouched": false,
+    "openAiCalls": 0,
+    "envLocalOpenedOrModified": false,
+    "commitPushDeploy": false
+  },
+  "gate": "qa:uat-core-certification",
+  "mappedCommand": "node scripts/run-uat-real-complete.mjs --mode=core-certification",
+  "responsibleScript": "scripts/run-uat-real-complete.mjs",
+  "photoRoot": {
+    "source": "process.env.UAT_REAL_COMPLETE_PHOTO_ROOT || default path",
+    "defaultPath": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes",
+    "existsObserved": true,
+    "validJpgCountObserved": 158,
+    "otherZipCountObserved": 1,
+    "directoryCountObserved": 11
+  },
+  "requiredRuntimeConfig": [
+    "VITE_SUPABASE_URL",
+    "SUPABASE_SERVICE_ROLE_KEY"
+  ],
+  "currentProcessEnvPresenceCheckedWithoutValues": {
+    "VITE_SUPABASE_URL": false,
+    "SUPABASE_SERVICE_ROLE_KEY": false
+  },
+  "probableBlockedCause": "Missing required runtime env for core-certification, most likely VITE_SUPABASE_URL and/or SUPABASE_SERVICE_ROLE_KEY, with the actionable variable names hidden by over-broad redaction.",
+  "whyRoomsZeroIsLikelyFallback": "The outer run().catch writes a fallback evidence object with empty inventory and matrix for uncaught startup errors, so the failed evidence can show rooms=0 and matrix=[] even when local photo data exists.",
+  "phaseADependsOnPhotos": {
+    "uploadsPhotos": false,
+    "requiresPhotoRootForCurrentCoverage": true,
+    "reason": "Room names and inventory/cost metadata are derived from the local photo directory before core Fase A runs."
+  },
+  "classification": {
+    "environment": true,
+    "testData": false,
+    "gateCoverage": true,
+    "redaction": true,
+    "productBugConfirmed": false
+  },
+  "minimalNextAction": "Provide VITE_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY to the qa:uat-core-certification process without printing values, then retry the allowed gate. If a patch is authorized, preserve safe inventory in the global catch and report missing env variable names without values."
+}

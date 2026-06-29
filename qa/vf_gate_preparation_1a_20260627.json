@@ -1,0 +1,50 @@
+{
+  "status": "GATE_PREPARATION_READY",
+  "repoPath": "C:\\Users\\gusta\\OneDrive\\Documentos\\Growth Agent - Vistoria Facil\\vistoria-facil-ia-app-invariants-20260627142620",
+  "branch": "qa/app-invariants-core-p0-20260627142620",
+  "head": "34ecea9",
+  "gitStatusBefore": [
+    "?? docs/governance/vistoria_facil_ia_uat_manual_rc_itens_1_2_3_consolidado.md"
+  ],
+  "filesChanged": [
+    "package.json",
+    "scripts/run-item4-gate-contract.mjs",
+    "qa/vf_gate_preparation_1a_20260627.md",
+    "qa/vf_gate_preparation_1a_20260627.json"
+  ],
+  "gatesCreated": [
+    "qa:app-invariants-core-p0",
+    "qa:photo-storage-no-ai-p0",
+    "qa:ai-review-p0",
+    "qa:report-p0-certification",
+    "qa:uat-release-candidate"
+  ],
+  "gatesAdjusted": [
+    {
+      "name": "qa:inspection-lifecycle-p0",
+      "change": "Composed into the future qa:uat-release-candidate coverage contract without changing its existing command."
+    }
+  ],
+  "packageCommandsAdded": [
+    "qa:app-invariants-core-p0",
+    "qa:photo-storage-no-ai-p0",
+    "qa:ai-review-p0",
+    "qa:report-p0-certification",
+    "qa:uat-release-candidate"
+  ],
+  "safety": {
+    "productCodeChanged": false,
+    "openAiCalled": false,
+    "aiExecuted": false,
+    "supabaseDataCreated": false,
+    "storageDataCreated": false,
+    "envLocalTouched": false,
+    "secretsPrinted": false,
+    "secretsVersioned": false,
+    "commit": false,
+    "push": false,
+    "deploy": false,
+    "estimatedOpenAiCost": "R$ 0,00"
+  },
+  "recommendation": "Ready for Comando 1B / Floki review before executing Item 4."
+}

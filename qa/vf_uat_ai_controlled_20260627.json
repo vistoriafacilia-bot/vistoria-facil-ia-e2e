@@ -1,0 +1,105 @@
+{
+  "status": "COST_GUARD",
+  "url": "https://glittery-boba-2b3367.netlify.app",
+  "runId": "ai_controlled_1782603292355",
+  "startedAt": "2026-06-27T23:34:52.355Z",
+  "finishedAt": "2026-06-27T23:34:56.800Z",
+  "inventory": {
+    "photoRoot": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes",
+    "datasetPath": "qa/vf_ai_dataset_selection_3photos_20260627.json",
+    "datasetStatus": "DATASET_3PHOTOS_APPROVED_FOR_1F",
+    "totalRooms": 3,
+    "totalValidPhotos": 158,
+    "rooms": [
+      {
+        "name": "Area Externa",
+        "count": 1,
+        "files": [
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191457.jpg"
+        ],
+        "sampleFiles": [
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191457.jpg"
+        ],
+        "totalMb": 3.23,
+        "approvedFileName": "20171027_191457.jpg",
+        "visualRisk": "baixo",
+        "recommendation": "aprovado"
+      },
+      {
+        "name": "Banheiro 1",
+        "count": 1,
+        "files": [
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 1\\20171027_185051.jpg"
+        ],
+        "sampleFiles": [
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 1\\20171027_185051.jpg"
+        ],
+        "totalMb": 1.97,
+        "approvedFileName": "20171027_185051.jpg",
+        "visualRisk": "baixo",
+        "recommendation": "aprovado"
+      },
+      {
+        "name": "Cozinha",
+        "count": 1,
+        "files": [
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184714.jpg"
+        ],
+        "sampleFiles": [
+          "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184714.jpg"
+        ],
+        "totalMb": 2.31,
+        "approvedFileName": "20171027_184714.jpg",
+        "visualRisk": "baixo",
+        "recommendation": "aprovado"
+      }
+    ],
+    "sample": [
+      {
+        "room": "Area Externa",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191457.jpg",
+        "fileName": "20171027_191457.jpg"
+      },
+      {
+        "room": "Banheiro 1",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 1\\20171027_185051.jpg",
+        "fileName": "20171027_185051.jpg"
+      },
+      {
+        "room": "Cozinha",
+        "file": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184714.jpg",
+        "fileName": "20171027_184714.jpg"
+      }
+    ],
+    "samplePhotoCount": 3,
+    "costBase": 0.45,
+    "costStress": 0.75,
+    "governanceErrors": []
+  },
+  "matrix": [
+    {
+      "phase": "0",
+      "caso": "Governanca do dataset aprovado",
+      "esperado": "Usar exclusivamente qa/vf_ai_dataset_selection_20260627.json",
+      "status": "PASS",
+      "evidencia": "3 fotos aprovadas; 3 comodos; OpenAI=0 antes do upload"
+    }
+  ],
+  "photoEvidence": [],
+  "gaps": [],
+  "bugs": [
+    "Amostra invalida: rooms=3, photos=3"
+  ],
+  "photosUploaded": 0,
+  "photosAnalyzedByIa": 0,
+  "openAiRequestCount": 0,
+  "usage": {
+    "inputTokens": 0,
+    "outputTokens": 0,
+    "totalTokens": 0
+  },
+  "cleanupOk": false,
+  "cleanupDetails": null,
+  "reportWorked": false,
+  "error": "Amostra invalida: rooms=3, photos=3"
+}

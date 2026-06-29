@@ -238,7 +238,7 @@ export default function PropertyManager({ onSelectPropertyForInspection, onViewH
       fetchProperties();
     } catch (error) {
       console.error('Error deleting property:', error);
-      alert('Erro ao excluir imóvel.');
+      setSaveError('Erro ao excluir imovel. Tente novamente.');
     }
   };
 
@@ -591,12 +591,13 @@ export default function PropertyManager({ onSelectPropertyForInspection, onViewH
                 <div className="bg-slate-50 px-5 py-3.5 border-t border-slate-100 flex items-center justify-between gap-3">
                   <button
                     type="button"
+                    aria-label="Histórico - Vistorias iniciadas"
                     onClick={() => onViewHistory(property)}
                     data-testid={`property-history-${property.id}`}
                     className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-indigo-600 transition-colors cursor-pointer"
                   >
                     <FolderOpen className="w-4 h-4" />
-                    Histórico
+                    Vistorias iniciadas
                   </button>
 
                   <button

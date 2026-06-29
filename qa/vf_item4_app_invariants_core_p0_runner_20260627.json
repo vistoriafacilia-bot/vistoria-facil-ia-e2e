@@ -1,0 +1,35 @@
+{
+  "gate": "app-invariants-core-p0",
+  "status": "FAIL_CORE",
+  "startedAt": "2026-06-28T11:30:08.331Z",
+  "finishedAt": "2026-06-28T11:30:56.380Z",
+  "executionPlan": [
+    "Run npm run qa:uat-core-certification as the executable no-cost core invariant gate.",
+    "Fail immediately if the core gate fails, blocks, or reports unexpected cost.",
+    "Do not call OpenAI in this gate."
+  ],
+  "antiFalsePass": [
+    "This runner never returns PASS only because a contract was generated.",
+    "Any missing executable coverage returns BLOCKED_GATE_COVERAGE.",
+    "Any failed mandatory child gate prevents success."
+  ],
+  "steps": [
+    {
+      "name": "qa:uat-core-certification",
+      "status": "FAIL",
+      "detail": "exitCode=1"
+    },
+    {
+      "name": "app-invariants-core-p0",
+      "status": "FAIL_CORE",
+      "detail": "qa:uat-core-certification FAIL exitCode=1"
+    }
+  ],
+  "openAiAllowed": false,
+  "openAiCallsObserved": 0,
+  "touchesSupabaseOrStorage": true,
+  "reports": {
+    "json": "qa/vf_item4_app_invariants_core_p0_runner_20260627.json",
+    "md": "qa/vf_item4_app_invariants_core_p0_runner_20260627.md"
+  }
+}

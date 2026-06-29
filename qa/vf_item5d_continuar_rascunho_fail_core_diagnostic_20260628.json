@@ -1,0 +1,66 @@
+{
+  "status": "DIAGNOSIS_READY",
+  "scope": {
+    "gatesExecuted": false,
+    "productChanged": false,
+    "testChanged": false,
+    "supabaseOrStorageTouched": false,
+    "openAiCalls": 0,
+    "commitPushDeploy": false
+  },
+  "gate": "qa:uat-core-certification",
+  "observedFailure": "locator.click timeout waiting for getByRole('button', { name: /Continuar Rascunho/i }).first()",
+  "probableCause": "Gate flow creates an empty draft, returns to history, and then expects Continuar Rascunho even though current UX/lifecycle rules discard or filter empty drafts.",
+  "classification": {
+    "p0FunctionalBugConfirmed": false,
+    "gateOrSelectorMismatch": true,
+    "expectedUxRule": true,
+    "draftNotCreated": false,
+    "draftCreatedThenDiscardedOrFilteredAsEmpty": true,
+    "wrongScreenOrTimingLikely": false
+  },
+  "responsibleReferences": [
+    {
+      "file": "scripts/run-uat-real-complete.mjs",
+      "lines": "304-306",
+      "reason": "openDraftFromHistory clicks Continuar Rascunho."
+    },
+    {
+      "file": "scripts/run-uat-real-complete.mjs",
+      "lines": "830-835",
+      "reason": "core gate creates/opens primary inspection, returns to history, then immediately tries to reopen the draft."
+    },
+    {
+      "file": "src/components/InspectionWizard.tsx",
+      "lines": "780-805",
+      "reason": "handleBackToHistory deletes an empty draft."
+    },
+    {
+      "file": "src/lib/inspectionLifecycle.ts",
+      "lines": "18-53",
+      "reason": "em_andamento/rascunho with only default rooms and no meaningful content is classified as empty."
+    },
+    {
+      "file": "src/App.tsx",
+      "lines": "96-118",
+      "reason": "history filters out empty drafts."
+    },
+    {
+      "file": "src/App.tsx",
+      "lines": "627-633",
+      "reason": "Continuar Rascunho is rendered only for inspections present in the filtered history list."
+    }
+  ],
+  "supportingEvidence": {
+    "coreCertificationStatus": "FAIL_CORE",
+    "inventoryMounted": true,
+    "inventoryRooms": 10,
+    "inventoryValidPhotos": 158,
+    "phaseReachedBeforeFailure": "after property CRUD, during inspection CRUD resume",
+    "runtimeCriticalErrors": 0,
+    "aiRequestsBeforePhaseB": 0,
+    "screenshot": "test-results/uat-governance/real_complete_1782644777764_principal_functional_evidence_without_photo_registry_text.png",
+    "screenshotInterpretation": "Active inspection wizard opened with default rooms and 0/50 photos, consistent with an empty draft before meaningful content."
+  },
+  "minimalNextAction": "Patch only the QA gate flow so it creates meaningful draft content before returning to history, such as renaming a default room or adding a non-default room, then assert Continuar Rascunho. Alternatively split the assertions: empty-draft discard is expected UX, resume must be tested with a non-empty draft."
+}

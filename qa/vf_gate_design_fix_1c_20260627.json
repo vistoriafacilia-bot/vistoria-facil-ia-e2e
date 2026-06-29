@@ -1,0 +1,53 @@
+{
+  "status": "GATE_DESIGN_FIXED",
+  "repoPath": "C:\\Users\\gusta\\OneDrive\\Documentos\\Growth Agent - Vistoria Facil\\vistoria-facil-ia-app-invariants-20260627142620",
+  "branch": "qa/app-invariants-core-p0-20260627142620",
+  "head": "34ecea9",
+  "gitStatusBefore": [
+    " M package.json",
+    "?? docs/governance/vistoria_facil_ia_uat_manual_rc_itens_1_2_3_consolidado.md",
+    "?? qa/vf_gate_preparation_1a_20260627.json",
+    "?? qa/vf_gate_preparation_1a_20260627.md",
+    "?? scripts/run-item4-gate-contract.mjs"
+  ],
+  "productCodeChanged": false,
+  "openAiCalled": false,
+  "supabaseStorageTouched": false,
+  "envLocalTouched": false,
+  "commit": false,
+  "push": false,
+  "deploy": false,
+  "gates": {
+    "qa:app-invariants-core-p0": {
+      "runner": "scripts/run-item4-gate-runner.mjs --gate=app-invariants-core-p0",
+      "realExecution": "delegates to qa:uat-core-certification",
+      "falsePassGuard": "child gate failure or block prevents PASS"
+    },
+    "qa:inspection-lifecycle-p0": {
+      "runner": "scripts/run-persistence-p0.mjs --inspection-lifecycle",
+      "realExecution": "existing lifecycle P0 gate",
+      "falsePassGuard": "unchanged existing gate"
+    },
+    "qa:photo-storage-no-ai-p0": {
+      "runner": "scripts/run-item4-gate-runner.mjs --gate=photo-storage-no-ai-p0",
+      "realExecution": "blocks until executable UI photo CRUD no-IA runner exists",
+      "falsePassGuard": "returns BLOCKED_GATE_COVERAGE instead of PASS"
+    },
+    "qa:ai-review-p0": {
+      "runner": "scripts/run-item4-gate-runner.mjs --gate=ai-review-p0",
+      "realExecution": "delegates to scripts/run-uat-ai-controlled-contract.mjs with UAT_AI_CONTROLLED_MAX_PHOTOS=3",
+      "falsePassGuard": "no --dry mode, dataset governance, max 3 photos/calls"
+    },
+    "qa:report-p0-certification": {
+      "runner": "scripts/run-item4-gate-runner.mjs --gate=report-p0-certification",
+      "realExecution": "validates fresh evidence from AI/review gate",
+      "falsePassGuard": "rejects missing, stale, non-PASS, reportWorked=false, cleanup=false, or >3 call evidence"
+    },
+    "qa:uat-release-candidate": {
+      "runner": "scripts/run-item4-gate-runner.mjs --gate=uat-release-candidate",
+      "realExecution": "orchestrates lint, build, app invariants, lifecycle, photo-storage no-IA, AI review, and report certification",
+      "falsePassGuard": "stops on first mandatory failed or blocked gate"
+    }
+  },
+  "remainingCoverageBlocker": "qa:photo-storage-no-ai-p0 needs a real UI photo CRUD no-IA runner before Item 4 can pass end-to-end."
+}

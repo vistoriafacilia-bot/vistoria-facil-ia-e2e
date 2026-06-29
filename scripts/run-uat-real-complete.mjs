@@ -829,6 +829,8 @@ async function run() {
     await openHistory(page, editedPropertyName);
     const openedInspection = await startInspectionFromHistoryRobust(page, admin, provisioned.userId, persistedProperty.data, result, 'principal');
     const inspectionId = openedInspection.inspectionId;
+    const draftAnchorRoomName = `Sala Rascunho ${RUN_ID.slice(-6)}`;
+    await renameRoom(page, 'Sala', draftAnchorRoomName);
     if (openedInspection.duplicates) addGap(result, `Possivel duplicidade de rascunho detectada ao criar vistoria principal: ${openedInspection.duplicates} extras.`);
     await page.getByLabel(/Voltar para hist.rico/i).click();
     await page.getByText(/Hist.rico de Vistorias/i).waitFor({ state: 'visible', timeout: 30_000 });
@@ -857,6 +859,7 @@ async function run() {
 
     runtime.phase = 'rooms_crud';
     const defaultRoomNames = ['Sala', 'Quarto 1', 'Quarto 2', 'Banheiro', 'Cozinha', 'Área de Serviço', 'Varanda', 'Garagem', 'Outros'];
+    defaultRoomNames[0] = draftAnchorRoomName;
     const roomNames = inventory.rooms.map((room) => room.name);
     const initialTargets = roomNames.slice(0, defaultRoomNames.length);
     for (let i = 0; i < initialTargets.length; i += 1) {

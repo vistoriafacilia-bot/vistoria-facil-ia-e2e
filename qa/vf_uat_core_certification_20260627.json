@@ -1,9 +1,9 @@
 {
-  "status": "PASS_CORE_WITH_GAPS_NO_COST",
+  "status": "FAIL_CORE",
   "url": "https://glittery-boba-2b3367.netlify.app",
-  "runId": "real_complete_1782554264206",
-  "startedAt": "2026-06-27T09:57:44.207Z",
-  "finishedAt": "2026-06-27T09:58:39.707Z",
+  "runId": "real_complete_1782646209230",
+  "startedAt": "2026-06-28T11:30:09.231Z",
+  "finishedAt": "2026-06-28T11:30:56.310Z",
   "inventory": {
     "photoRoot": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes",
     "totalRooms": 10,
@@ -558,7 +558,7 @@
       "esperado": "Solicitacao aceita ou bloqueio externo documentado",
       "resultado": "",
       "status": "GAP",
-      "evidencia": "P1/P2: rate limit Supabase Auth; Discovery continua"
+      "evidencia": "P1/P2: mensagem esperada nao apareceu; Discovery continua"
     },
     {
       "phase": "1",
@@ -597,51 +597,6 @@
       "evidencia": "UI validada; Supabase validado no fechamento"
     },
     {
-      "phase": "3",
-      "caso": "CRUD vistoria",
-      "acao": "Criar entrada, listar/retomar, reload/logout-login e deletar temporaria",
-      "esperado": "Vistoria principal persiste vinculada ao imovel",
-      "resultado": "",
-      "status": "PASS_WITH_GATE_FALLBACK",
-      "evidencia": "inspectionId=fa5b4916-2aa5-4c6f-aa73-c6aaf41cd5c5; evidencias={\"operational\":true,\"photoRegistry\":true,\"fileInputCount\":2,\"addRoomVisible\":true,\"roomRows\":9,\"backToHistory\":true,\"reviewButton\":true,\"url\":\"https://glittery-boba-2b3367.netlify.app/?uat_real_complete=real_complete_1782554264206\"}"
-    },
-    {
-      "phase": "3",
-      "caso": "Alterar vistoria",
-      "acao": "Procurar controle de edicao de metadados/status",
-      "esperado": "Alterar se suportado",
-      "resultado": "",
-      "status": "NOT_SUPPORTED",
-      "evidencia": "Sem UI dedicada alem do fluxo rascunho/concluir."
-    },
-    {
-      "phase": "4",
-      "caso": "CRUD comodos",
-      "acao": "Criar comodos por subpasta, editar um, deletar temporario, reload/logout-login",
-      "esperado": "Todos os comodos persistem",
-      "resultado": "",
-      "status": "PASS",
-      "evidencia": "10 comodos validados"
-    },
-    {
-      "phase": "A",
-      "caso": "Barreira custo zero FASE A",
-      "acao": "Validar Auth, imovel, vistoria, comodos, Supabase e nenhum uso de IA",
-      "esperado": "0 fotos, 0 tokens, 0 requests IA antes da FASE B",
-      "resultado": "",
-      "status": "PASS",
-      "evidencia": "10 comodos persistidos; custo OpenAI R$ 0.00"
-    },
-    {
-      "phase": "B",
-      "caso": "FASE B nao executada",
-      "acao": "Recalcular custo e manter IA bloqueada no gate core",
-      "esperado": "Nao subir fotos nem chamar OpenAI",
-      "resultado": "",
-      "status": "NOT_EXECUTED",
-      "evidencia": "Amostra IA 50/50; base R$ 7.50; stress R$ 12.50"
-    },
-    {
       "phase": "9",
       "caso": "Cleanup",
       "acao": "Remover dados e fotos do teste",
@@ -651,10 +606,10 @@
       "evidencia": "Cleanup total confirmado"
     }
   ],
-  "phaseAStatus": "PASS",
-  "phaseBStatus": "NOT_EXECUTED_CORE_CERTIFICATION",
+  "phaseAStatus": "FAIL",
+  "phaseBStatus": "PENDING",
   "phaseACostOpenAi": 0,
-  "totalRoomsCreated": 10,
+  "totalRoomsCreated": 0,
   "photosProcessed": 0,
   "photosAnalyzedByIa": 0,
   "usage": {
@@ -663,12 +618,13 @@
     "totalTokens": 0
   },
   "gaps": [
-    "Esqueci senha bloqueado por rate limit Supabase Auth; nao bloqueia Discovery core.",
+    "Esqueci senha nao retornou mensagem esperada; nao bloqueia Discovery core.",
     "Esqueci e-mail / recuperar e-mail nao existe na UI publica atual.",
-    "Gate aceitou vistoria temporaria por evidencia funcional sem texto Registro de Fotos. Screenshot: test-results\\uat-governance\\real_complete_1782554264206_temporaria_functional_evidence_without_photo_registry_text.png",
-    "Edicao de metadados/status de vistoria nao tem controle dedicado na UI atual."
+    "Gate aceitou vistoria principal por evidencia funcional sem texto Registro de Fotos. Screenshot: test-results\\uat-governance\\real_complete_1782646209230_principal_functional_evidence_without_photo_registry_text.png"
   ],
-  "bugs": [],
+  "bugs": [
+    "INSPECTION_PRIMARY_LOST: primary inspection 53faba07-dc38-4176-98be-98bf5c31bb29 not found after temp delete"
+  ],
   "runtime": {
     "criticalConsoleErrors": 0,
     "criticalConsoleSamples": [],
@@ -696,5 +652,5 @@
     },
     "storagePaths": []
   },
-  "error": null
+  "error": "INSPECTION_PRIMARY_LOST: primary inspection 53faba07-dc38-4176-98be-98bf5c31bb29 not found after temp delete"
 }

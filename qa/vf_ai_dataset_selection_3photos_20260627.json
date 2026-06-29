@@ -1,0 +1,67 @@
+{
+  "status": "DATASET_3PHOTOS_APPROVED_FOR_1F",
+  "generated_at": "2026-06-27",
+  "derived_from": "qa/vf_ai_dataset_selection_20260627.json",
+  "photo_root": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes",
+  "total_source_selected_photos": 10,
+  "selected_photos": 3,
+  "max_openai_calls": 3,
+  "max_reanalysis_per_photo": 0,
+  "selection_criteria": [
+    "Derivar somente fotos ja aprovadas no dataset original.",
+    "Selecionar ambientes distintos para maior cobertura funcional com custo minimo.",
+    "Manter apenas fotos com visual_risk=baixo e recommendation=aprovado.",
+    "Preservar metadados e hash SHA-256 do dataset original."
+  ],
+  "selection": [
+    {
+      "room": "Area Externa",
+      "file_path": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Area Externa\\20171027_191457.jpg",
+      "file_name": "20171027_191457.jpg",
+      "reason": "Piso e ralo; bom para avaliar acabamento/estado do piso sem expor pessoas ou documentos.",
+      "visual_risk": "baixo",
+      "privacy_note": "Revisao visual por miniatura nao identificou pessoas, rostos, documentos, correspondencias, telas, placas, dados bancarios/medicos, criancas ou informacao pessoal/sensivel aparente.",
+      "recommendation": "aprovado",
+      "sha256": "5c6f4b83886d6ab98cde32d0e84010c24a136e3f81d84e3c35e77f12abb7df21"
+    },
+    {
+      "room": "Banheiro 1",
+      "file_path": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Banheiro 1\\20171027_185051.jpg",
+      "file_name": "20171027_185051.jpg",
+      "reason": "Revestimento de parede; enquadramento neutro e sem itens pessoais identificaveis.",
+      "visual_risk": "baixo",
+      "privacy_note": "Revisao visual por miniatura nao identificou pessoas, rostos, documentos, correspondencias, telas, placas, dados bancarios/medicos, criancas ou informacao pessoal/sensivel aparente.",
+      "recommendation": "aprovado",
+      "sha256": "e52d38e57a1da15e9f292a2346e1ad0b0156323c26a369a4efd2a334abd39761"
+    },
+    {
+      "room": "Cozinha",
+      "file_path": "E:\\AI - Aprendizado\\VistoriaFacilIA\\Fotos para Testes\\Fotos Apto - Garibaldi 225 - 1304 - Bloco 2\\Cozinha\\20171027_184714.jpg",
+      "file_name": "20171027_184714.jpg",
+      "reason": "Parede/revestimento neutro; evita bancada com utensilios ou itens pessoais.",
+      "visual_risk": "baixo",
+      "privacy_note": "Revisao visual por miniatura nao identificou pessoas, rostos, documentos, correspondencias, telas, placas, dados bancarios/medicos, criancas ou informacao pessoal/sensivel aparente.",
+      "recommendation": "aprovado",
+      "sha256": "a73fd2244f54dad445855dd678aacae45fc84dd5c9de4a4c21798e61c0fb3fca"
+    }
+  ],
+  "future_cost_estimate_brl": {
+    "base": 0.45,
+    "stress": 0.75,
+    "formula_base": "3 x R$ 0,15",
+    "formula_stress": "3 x R$ 0,25"
+  },
+  "openai_called": 0,
+  "tokens": 0,
+  "current_openai_cost_brl": 0.0,
+  "actions_not_performed": [
+    "OpenAI call",
+    "photo upload",
+    "qa:uat-ai-controlled",
+    "Supabase/app data creation"
+  ],
+  "reports": {
+    "md": "qa\\vf_ai_dataset_selection_3photos_20260627.md",
+    "json": "qa\\vf_ai_dataset_selection_3photos_20260627.json"
+  }
+}

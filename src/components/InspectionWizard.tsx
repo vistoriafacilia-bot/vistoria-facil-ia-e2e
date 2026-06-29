@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Property, Inspection, Room, Photo, AiAnalysis, ReviewedStatus, Entitlement } from '../types';
+import { Property, Inspection, Room, Photo, AiAnalysis, ReviewedStatus, Entitlement, ReportCredit } from '../types';
 import { safeCreateAuditEvent } from '../lib/auditEvents';
 import { 
   ArrowLeft, 
@@ -20,7 +20,6 @@ import {
 } from 'lucide-react';
 import { getPhotoLimitForEntitlement } from '../lib/entitlements';
 import { getRemainingPhotoSlots, canAddPhotoBatch } from '../lib/photoRules';
-import { APP_VERSION } from '../lib/appVersion';
 import { DEFAULT_INSPECTION_ROOMS, isEmptyInspectionDraft } from '../lib/inspectionLifecycle';
 import { formatQaGateIssues, validateInspectionCompletionGate } from '../lib/qaGates';
 import { getCurrentUser } from '../lib/services/authService';
@@ -29,6 +28,7 @@ import { deleteRoom, listRooms, newRoomId, saveRoom, updateRoom } from '../lib/s
 import { deletePhoto, listPhotos, newPhotoId, savePhoto, updatePhoto } from '../lib/services/photoService';
 import { listReports } from '../lib/services/reportService';
 import { buildPhotoStoragePath, deleteFile, uploadFile } from '../lib/services/storageService';
+import { assignReportCredit, consumeReportCreditAnalysis, listReportCredits } from '../lib/services/reportCreditService';
 
 interface InspectionWizardProps {
   property: Property;
@@ -70,9 +70,14 @@ export default function InspectionWizard({
   const [processingMessage, setProcessingMessage] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadInfoMessage, setUploadInfoMessage] = useState<string | null>(null);
+  const [completionError, setCompletionError] = useState<string | null>(null);
   const [privacyGuardAccepted, setPrivacyGuardAccepted] = useState(false);
   const [roomFeedbackMessage, setRoomFeedbackMessage] = useState<string | null>(null);
   const [roomError, setRoomError] = useState<string | null>(null);
+  const [reportCredits, setReportCredits] = useState<ReportCredit[]>([]);
+  const [activeReportCredit, setActiveReportCredit] = useState<ReportCredit | null>(null);
+  const [creditMessage, setCreditMessage] = useState<string | null>(null);
+  const [creditError, setCreditError] = useState<string | null>(null);
 
   // Refs for camera and gallery file inputs
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -87,8 +92,26 @@ export default function InspectionWizard({
   useEffect(() => {
     if (activeInspection) {
       fetchRoomsAndPhotos(activeInspection.id);
+      void refreshReportCredits(activeInspection.id);
     }
   }, [activeInspection]);
+
+  const refreshReportCredits = async (inspectionId = activeInspection?.id) => {
+    if (!inspectionId) return;
+    const currentUser = await getCurrentUser();
+    if (!currentUser) return;
+    try {
+      const credits = await listReportCredits(currentUser.uid);
+      setReportCredits(credits);
+      setActiveReportCredit(credits.find(credit =>
+        credit.inspectionId === inspectionId
+        && ['assigned', 'in_progress', 'finalized'].includes(credit.status)
+      ) || null);
+    } catch (error) {
+      console.error('Erro ao carregar creditos de relatorio:', error);
+      setCreditError('Nao foi possivel carregar seus creditos de relatorio agora.');
+    }
+  };
 
   const fetchRoomsAndPhotos = async (inspectionId: string) => {
     setLoading(true);
@@ -156,9 +179,30 @@ export default function InspectionWizard({
       onInspectionCreated(newInspection);
     } catch (error) {
       console.error('Error creating inspection:', error);
-      alert('Falha ao criar vistoria.');
+      setRoomError('Falha ao criar vistoria. Tente novamente.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleApplyReportCredit = async (creditId: string) => {
+    if (!activeInspection) return;
+    if (activeInspection.status === 'pdf_gerado' || activeInspection.status === 'finalizado') {
+      setCreditError('Relatorio finalizado nao aceita novo credito.');
+      return;
+    }
+    setCreditError(null);
+    setCreditMessage('Aplicando credito a esta vistoria...');
+    try {
+      const credit = await assignReportCredit(creditId, activeInspection.id);
+      setActiveReportCredit(credit);
+      await refreshReportCredits(activeInspection.id);
+      setCreditMessage('Credito aplicado. O limite desta vistoria agora segue o pacote comprado.');
+    } catch (error) {
+      console.error('Erro ao aplicar credito:', error);
+      setCreditError('Nao foi possivel aplicar este credito. Ele pode ja estar usado em outra vistoria.');
+    } finally {
+      window.setTimeout(() => setCreditMessage(null), 3500);
     }
   };
 
@@ -225,7 +269,7 @@ export default function InspectionWizard({
     setRoomError(null);
     const roomPhotos = photos.filter(p => p.roomId === roomId);
     if (roomPhotos.length > 0) {
-      alert('Este cômodo possui fotos. Remova as fotos antes de excluir o cômodo.');
+      setRoomError('Este comodo possui fotos. Remova as fotos antes de excluir o comodo.');
       return;
     }
 
@@ -321,14 +365,39 @@ export default function InspectionWizard({
     };
   };
 
+  const clearPhotoProcessingState = () => {
+    setUploading(false);
+    setProcessingMessage(null);
+    setAnalyzingPhotoId(null);
+  };
+
+  const getPhotoLimitBlockMessage = (imageCount: number): string | null => {
+    const photoLimit = activeReportCredit?.analysisLimit || getPhotoLimitForEntitlement(entitlement);
+    const usedAnalyses = activeReportCredit?.analysisUsed ?? photos.length;
+    const remainingSlots = getRemainingPhotoSlots(usedAnalyses, photoLimit);
+    const planLabel = activeReportCredit ? 'credito aplicado' : photoLimit === 10 ? 'plano gratuito' : 'plano atual';
+    const formatPhotoCount = (count: number) => `${count} ${count === 1 ? 'foto' : 'fotos'}`;
+    const formatSlotCount = (count: number) => count === 1 ? 'resta apenas 1 vaga' : `restam ${count} vagas`;
+
+    if (remainingSlots <= 0) {
+      return photoLimit === 10
+        ? 'Você atingiu o limite de 10 fotos do plano gratuito. Para adicionar mais fotos, veja as opções de upgrade.'
+        : `Você atingiu o limite de ${photoLimit} fotos do plano atual. Para adicionar mais fotos, veja as opções de upgrade.`;
+    }
+
+    if (!canAddPhotoBatch(usedAnalyses, imageCount, photoLimit)) {
+      return `Você selecionou ${formatPhotoCount(imageCount)}, mas ${formatSlotCount(remainingSlots)} no ${planLabel}. Selecione menos fotos ou veja as opções de upgrade.`;
+    }
+
+    return null;
+  };
+
   // Handle multiple Image uploads & Analysis in a loop
   const handlePhotoFiles = async (files: File[]) => {
     console.log("Arquivos recebidos:", files.length);
-    const currentUser = await getCurrentUser();
-    if (!activeInspection || !selectedRoom || !currentUser) return;
-
     setUploadError(null);
     setUploadInfoMessage(null);
+    clearPhotoProcessingState();
 
     // Filter only images
     const imageFiles = files.filter(file => file.type.startsWith('image/'));
@@ -337,22 +406,16 @@ export default function InspectionWizard({
       return;
     }
 
-    // Limit calculation
-    const photoLimit = getPhotoLimitForEntitlement(entitlement);
-    const remainingSlots = getRemainingPhotoSlots(photos.length, photoLimit);
-    if (remainingSlots <= 0) {
-      const msg = `Limite da ${APP_VERSION} atingido: Máximo de ${photoLimit} fotos por vistoria para controle de custos.`;
-      setUploadError(msg);
-      alert(msg);
+    const limitBlockMessage = getPhotoLimitBlockMessage(imageFiles.length);
+    if (limitBlockMessage) {
+      clearPhotoProcessingState();
+      setUploadInfoMessage(null);
+      setUploadError(limitBlockMessage);
       return;
     }
 
-    if (!canAddPhotoBatch(photos.length, imageFiles.length, photoLimit)) {
-      const msg = `Você selecionou ${imageFiles.length} fotos, mas o limite restante é de ${remainingSlots} fotos. O lote foi bloqueado para evitar exceder o limite de ${photoLimit} fotos.`;
-      setUploadError(msg);
-      alert(msg);
-      return;
-    }
+    const currentUser = await getCurrentUser();
+    if (!activeInspection || !selectedRoom || !currentUser) return;
 
     setUploading(true);
 
@@ -435,6 +498,11 @@ export default function InspectionWizard({
         await safeCreateAuditEvent(currentUser.uid, 'ai_analysis_request', { photoId, roomName: roomNameVal, inspectionId: activeInspection.id });
 
         try {
+          if (activeReportCredit) {
+            const consumedCredit = await consumeReportCreditAnalysis(activeInspection.id);
+            setActiveReportCredit(consumedCredit);
+          }
+
           const response = await fetch('/.netlify/functions/analyze-photo', {
             method: 'POST',
             headers: {
@@ -491,6 +559,12 @@ export default function InspectionWizard({
             ...updateData
           } : p));
         } catch (error: any) {
+          const errorMessage = String(error?.message || error);
+          if (/REPORT_CREDIT_LIMIT_REACHED|REPORT_CREDIT_NOT_ASSIGNED/i.test(errorMessage)) {
+            setUploadInfoMessage(null);
+            setUploadError('Nao foi possivel enviar a foto para analise: o credito de IA desta vistoria nao esta disponivel ou atingiu o limite.');
+            continue;
+          }
           console.error(`Erro ao analisar a foto ${photoId}:`, error);
           setUploadInfoMessage('Foto salva. A análise automática não está disponível agora. Revise manualmente.');
 
@@ -544,6 +618,15 @@ export default function InspectionWizard({
     }
 
     const filesArray = Array.from(selectedFiles);
+    const imageFiles = filesArray.filter(file => file.type.startsWith('image/'));
+    const limitBlockMessage = imageFiles.length > 0 ? getPhotoLimitBlockMessage(imageFiles.length) : null;
+    if (limitBlockMessage) {
+      clearPhotoProcessingState();
+      setUploadInfoMessage(null);
+      setUploadError(limitBlockMessage);
+      e.target.value = "";
+      return;
+    }
 
     setProcessingMessage("Foto capturada. Iniciando processamento...");
 
@@ -561,6 +644,15 @@ export default function InspectionWizard({
     }
 
     const filesArray = Array.from(selectedFiles);
+    const imageFiles = filesArray.filter(file => file.type.startsWith('image/'));
+    const limitBlockMessage = imageFiles.length > 0 ? getPhotoLimitBlockMessage(imageFiles.length) : null;
+    if (limitBlockMessage) {
+      clearPhotoProcessingState();
+      setUploadInfoMessage(null);
+      setUploadError(limitBlockMessage);
+      e.target.value = "";
+      return;
+    }
 
     setProcessingMessage(`${filesArray.length} foto(s) selecionada(s). Iniciando processamento...`);
 
@@ -571,6 +663,7 @@ export default function InspectionWizard({
 
   // Open Edit Mode for Photo
   const handleStartEditPhoto = (photo: Photo) => {
+    if (activeInspection?.status === 'pdf_gerado' || activeInspection?.status === 'finalizado' || activeReportCredit?.status === 'finalized') return;
     setEditingPhotoId(photo.id);
     setEditCaption(photo.caption);
     setEditCondition(photo.aiAnalysis?.condicao_sugerida || 'OK');
@@ -625,6 +718,7 @@ export default function InspectionWizard({
   // Approve AI suggestion directly
   const handleApprovePhotoAi = async (photoId: string) => {
     if (!activeInspection) return;
+    if (activeInspection.status === 'pdf_gerado' || activeInspection.status === 'finalizado' || activeReportCredit?.status === 'finalized') return;
     try {
       const photo = photos.find(p => p.id === photoId);
       if (!photo) return;
@@ -728,6 +822,7 @@ export default function InspectionWizard({
   // Delete Photo
   const handleDeletePhoto = async (photoId: string) => {
     if (!activeInspection) return;
+    if (activeInspection.status === 'pdf_gerado' || activeInspection.status === 'finalizado' || activeReportCredit?.status === 'finalized') return;
     try {
       const photo = photos.find(item => item.id === photoId);
       if (photo?.storagePath) {
@@ -746,18 +841,19 @@ export default function InspectionWizard({
 
   const handleFinishInspection = async () => {
     if (!activeInspection) return;
+    setCompletionError(null);
     const currentUser = await getCurrentUser();
     const completionGate = validateInspectionCompletionGate({
       inspection: activeInspection,
       property,
       rooms,
       photos,
-      photoLimit: getPhotoLimitForEntitlement(entitlement),
+      photoLimit: activeReportCredit?.analysisLimit || getPhotoLimitForEntitlement(entitlement),
       userId: currentUser?.uid,
     });
 
     if (!completionGate.passed) {
-      alert(`ImpossÃ­vel concluir a vistoria:\n\n${formatQaGateIssues(completionGate)}`);
+      setCompletionError(`Nao foi possivel concluir a vistoria: ${formatQaGateIssues(completionGate)}`);
       return;
     }
 
@@ -811,10 +907,13 @@ export default function InspectionWizard({
 
   // Get photos for current room
   const currentRoomPhotos = selectedRoom ? photos.filter(p => p.roomId === selectedRoom.id) : [];
-  const photoLimit = getPhotoLimitForEntitlement(entitlement);
-  const photoLimitReached = photos.length >= photoLimit;
+  const photoLimit = activeReportCredit?.analysisLimit || getPhotoLimitForEntitlement(entitlement);
+  const analysisUsed = activeReportCredit?.analysisUsed ?? photos.length;
+  const photoLimitReached = analysisUsed >= photoLimit;
   const uploadBlockedByPrivacy = !privacyGuardAccepted;
-  const uploadDisabled = photoLimitReached || uploading || uploadBlockedByPrivacy;
+  const availableReportCredits = reportCredits.filter(credit => credit.status === 'available');
+  const reportFinalized = activeInspection?.status === 'pdf_gerado' || activeInspection?.status === 'finalizado' || activeReportCredit?.status === 'finalized';
+  const uploadDisabled = photoLimitReached || uploading || uploadBlockedByPrivacy || reportFinalized;
 
   // Initial State: Prompt for inspection type
   if (!activeInspection) {
@@ -876,6 +975,12 @@ export default function InspectionWizard({
             </p>
           </div>
 
+          {roomError && (
+            <div className="text-[11px] bg-rose-50 border border-rose-100 text-rose-700 px-3 py-2 rounded-lg">
+              {roomError}
+            </div>
+          )}
+
           <button
             type="button"
             onClick={handleCreateInspection}
@@ -929,12 +1034,67 @@ export default function InspectionWizard({
           <button
             type="button"
             onClick={handleFinishInspection}
+            disabled={reportFinalized}
             className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs px-4 py-2.5 rounded-xl shadow-md transition-all active:scale-98 cursor-pointer h-10 flex items-center justify-center"
           >
             Concluir & Revisar
             <ChevronRight className="w-4 h-4 ml-1" />
           </button>
         </div>
+      </div>
+
+      {completionError && (
+        <div className="bg-rose-50 border border-rose-200 text-rose-700 px-4 py-3 rounded-xl text-xs font-semibold flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+          <span>{completionError}</span>
+        </div>
+      )}
+
+      <div className="bg-white border border-slate-100 rounded-2xl p-4 shadow-sm space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div>
+            <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Credito e uso de IA</h3>
+            <p className="text-[11px] text-slate-500 mt-1">
+              Cada foto enviada para analise consome 1 analise de IA, mesmo que seja excluida depois.
+            </p>
+          </div>
+          <div className="text-xs text-slate-600 sm:text-right space-y-1">
+            <p><span className="font-bold text-slate-800">Analises usadas:</span> {analysisUsed} de {photoLimit}</p>
+            <p><span className="font-bold text-slate-800">Fotos no relatorio:</span> {photos.length}</p>
+          </div>
+        </div>
+
+        {activeReportCredit ? (
+          <div className="text-[11px] bg-emerald-50 border border-emerald-100 text-emerald-800 px-3 py-2 rounded-xl">
+            Credito aplicado: {activeReportCredit.planId} ({activeReportCredit.status}).
+          </div>
+        ) : availableReportCredits.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-semibold text-slate-500">Creditos disponiveis:</span>
+            {availableReportCredits.map(credit => (
+              <button
+                key={credit.id}
+                type="button"
+                onClick={() => handleApplyReportCredit(credit.id)}
+                className="text-[11px] font-bold bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-100 px-3 py-1.5 rounded-lg"
+              >
+                Aplicar {credit.planId} ({credit.analysisLimit} analises)
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="text-[11px] bg-slate-50 border border-slate-100 text-slate-600 px-3 py-2 rounded-xl">
+            Sem credito pago aplicado. Esta vistoria usa a degustacao gratuita de 10 analises/fotos.
+          </div>
+        )}
+
+        {creditMessage && <div className="text-[11px] text-emerald-700 font-semibold">{creditMessage}</div>}
+        {creditError && <div className="text-[11px] text-rose-700 font-semibold">{creditError}</div>}
+        {reportFinalized && (
+          <div className="text-[11px] bg-slate-100 border border-slate-200 text-slate-700 px-3 py-2 rounded-xl">
+            Relatorio finalizado: fotos e descricoes ficam disponiveis para consulta, mas nao podem ser editadas neste credito.
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
@@ -1088,33 +1248,45 @@ export default function InspectionWizard({
                   <p className="text-[11px] text-slate-500">Insira imagens representativas deste cômodo.</p>
                 </div>
 
-                <div
-                  data-testid="privacy-ai-upload-guard"
-                  className="md:flex-1 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-3 text-[11px] leading-relaxed space-y-2"
-                >
-                  <p>
-                    As fotos enviadas poderao ser processadas por servico de inteligencia artificial para gerar sugestoes de vistoria.
-                  </p>
-                  <p>
-                    Nao envie fotos que contenham pessoas, rostos, documentos, correspondencias, telas, placas, dados bancarios, dados medicos, criancas ou qualquer informacao pessoal/sensivel.
-                  </p>
-                  <p>
-                    Envie apenas imagens necessarias para registrar o estado do imovel, como paredes, pisos, portas, janelas, instalacoes, moveis fixos e avarias aparentes.
-                  </p>
-                  <label className="flex items-start gap-2 font-semibold text-amber-950">
-                    <input
-                      data-testid="privacy-ai-upload-checkbox"
-                      type="checkbox"
-                      checked={privacyGuardAccepted}
-                      onChange={(event) => setPrivacyGuardAccepted(event.target.checked)}
-                      className="mt-0.5 h-4 w-4 rounded border-amber-300 text-indigo-600 focus:ring-indigo-500"
-                    />
-                    <span>Li e confirmo que as fotos nao contem informacoes pessoais ou sensiveis.</span>
-                  </label>
-                  <p className="text-[10px] text-amber-800">
-                    Ao continuar, voce confirma que revisou as imagens e que elas nao contem informacoes pessoais ou sensiveis.
-                  </p>
-                </div>
+                {privacyGuardAccepted ? (
+                  <div
+                    data-testid="privacy-ai-upload-guard"
+                    className="md:flex-1 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl px-3 py-2 text-[11px] leading-relaxed"
+                  >
+                    <p className="flex items-center gap-1.5 font-semibold">
+                      <CheckCircle className="w-3.5 h-3.5" />
+                      Privacidade confirmada para envio de fotos.
+                    </p>
+                  </div>
+                ) : (
+                  <div
+                    data-testid="privacy-ai-upload-guard"
+                    className="md:flex-1 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-3 text-[11px] leading-relaxed space-y-2"
+                  >
+                    <p>
+                      As fotos enviadas poderao ser processadas por servico de inteligencia artificial para gerar sugestoes de vistoria.
+                    </p>
+                    <p>
+                      Nao envie fotos que contenham pessoas, rostos, documentos, correspondencias, telas, placas, dados bancarios, dados medicos, criancas ou qualquer informacao pessoal/sensivel.
+                    </p>
+                    <p>
+                      Envie apenas imagens necessarias para registrar o estado do imovel, como paredes, pisos, portas, janelas, instalacoes, moveis fixos e avarias aparentes.
+                    </p>
+                    <label className="flex items-start gap-2 font-semibold text-amber-950">
+                      <input
+                        data-testid="privacy-ai-upload-checkbox"
+                        type="checkbox"
+                        checked={privacyGuardAccepted}
+                        onChange={(event) => setPrivacyGuardAccepted(event.target.checked)}
+                        className="mt-0.5 h-4 w-4 rounded border-amber-300 text-indigo-600 focus:ring-indigo-500"
+                      />
+                      <span>Li e confirmo que as fotos nao contem informacoes pessoais ou sensiveis.</span>
+                    </label>
+                    <p className="text-[10px] text-amber-800">
+                      Ao continuar, voce confirma que revisou as imagens e que elas nao contem informacoes pessoais ou sensiveis.
+                    </p>
+                  </div>
+                )}
 
                 {/* Hidden File Inputs */}
                 <input
@@ -1297,9 +1469,10 @@ export default function InspectionWizard({
                                 <button
                                   type="button"
                                   onClick={() => handleStartEditPhoto(photo)}
+                                  disabled={reportFinalized}
                                   aria-label="Editar descrição manual da foto"
                                   data-testid={`photo-edit-${photo.id}`}
-                                  className="p-1 text-slate-400 hover:text-indigo-600 rounded transition-colors"
+                                  className="p-1 text-slate-400 hover:text-indigo-600 disabled:opacity-40 disabled:hover:text-slate-400 rounded transition-colors"
                                   title="Editar descrição manual"
                                 >
                                   <Edit3 className="w-3.5 h-3.5" />
@@ -1307,9 +1480,10 @@ export default function InspectionWizard({
                                 <button
                                   type="button"
                                   onClick={() => handleDeletePhoto(photo.id)}
+                                  disabled={reportFinalized}
                                   aria-label="Excluir foto"
                                   data-testid={`photo-delete-${photo.id}`}
-                                  className="p-1 text-slate-400 hover:text-rose-600 rounded transition-colors"
+                                  className="p-1 text-slate-400 hover:text-rose-600 disabled:opacity-40 disabled:hover:text-slate-400 rounded transition-colors"
                                   title="Excluir foto"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
@@ -1393,13 +1567,13 @@ export default function InspectionWizard({
                                 {isPhotoAnalyzing ? (
                                   <div className="flex items-center gap-2 bg-indigo-50 text-indigo-700 text-xs px-3 py-2 rounded-lg border border-indigo-100 animate-pulse">
                                     <Sparkles className="w-3.5 h-3.5" />
-                                    <span>Gemini IA analisando a imagem visualmente...</span>
+                                    <span>IA analisando a imagem...</span>
                                   </div>
                                 ) : (analysisStatus === 'completed' && photo.aiAnalysis) ? (
                                   <div data-testid={`photo-ai-completed-${photo.id}`} className="bg-white border border-slate-150 rounded-xl p-3 space-y-2 text-xs">
                                     <div className="flex items-center justify-between">
                                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide flex items-center gap-1">
-                                        <Sparkles className="w-3 h-3 text-indigo-600" /> IA Recomendação
+                                        <Sparkles className="w-3 h-3 text-indigo-600" /> Descrição sugerida pela IA
                                       </span>
                                       
                                       {/* Status display badge */}
@@ -1433,25 +1607,38 @@ export default function InspectionWizard({
                                     )}
 
                                     {/* Action row */}
-                                    {photo.reviewedStatus === 'pendente' && (
-                                      <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-slate-100">
+                                    <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-slate-100">
+                                      {photo.reviewedStatus === 'confirmado' ? (
                                         <button
                                           type="button"
-                                          onClick={() => handleStartEditPhoto(photo)}
-                                          className="text-[10px] font-medium text-slate-500 hover:bg-slate-100 px-2.5 py-1.5 rounded-md cursor-pointer"
-                                        >
-                                          Editar
-                                        </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => handleApprovePhotoAi(photo.id)}
-                                          className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-md shadow-xs cursor-pointer"
+                                          disabled
+                                          className="flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-3 py-1.5 rounded-md cursor-not-allowed"
                                         >
                                           <Check className="w-3 h-3" />
-                                          Confirmar Sugestão
+                                          Confirmado
                                         </button>
-                                      </div>
-                                    )}
+                                      ) : (
+                                        <>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleStartEditPhoto(photo)}
+                                            disabled={reportFinalized}
+                                            className="text-[10px] font-medium text-slate-500 hover:bg-slate-100 disabled:opacity-40 px-2.5 py-1.5 rounded-md cursor-pointer"
+                                          >
+                                            Editar
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={() => handleApprovePhotoAi(photo.id)}
+                                            disabled={reportFinalized}
+                                            className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white text-[10px] font-bold px-3 py-1.5 rounded-md shadow-xs cursor-pointer"
+                                          >
+                                            <Check className="w-3 h-3" />
+                                            Confirmar Sugestão
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
                                   </div>
                                 ) : (
                                   <div data-testid={`photo-ai-fallback-${photo.id}`} className="bg-white border border-slate-150 rounded-xl p-3 space-y-2 text-xs">
@@ -1492,18 +1679,31 @@ export default function InspectionWizard({
                                         <button
                                           type="button"
                                           onClick={() => handleStartEditPhoto(photo)}
-                                          className="text-[10px] font-medium text-slate-500 hover:bg-slate-100 px-2.5 py-1.5 rounded-md cursor-pointer"
+                                          disabled={reportFinalized}
+                                          className="text-[10px] font-medium text-slate-500 hover:bg-slate-100 disabled:opacity-40 px-2.5 py-1.5 rounded-md cursor-pointer"
                                         >
                                           Editar
                                         </button>
-                                        <button
-                                          type="button"
-                                          onClick={() => handleApprovePhotoAi(photo.id)}
-                                          className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold px-3 py-1.5 rounded-md shadow-xs cursor-pointer"
-                                        >
-                                          <Check className="w-3 h-3" />
-                                          Confirmar Revisão
-                                        </button>
+                                        {photo.reviewedStatus === 'confirmado' ? (
+                                          <button
+                                            type="button"
+                                            disabled
+                                            className="flex items-center gap-1 bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-3 py-1.5 rounded-md cursor-not-allowed"
+                                          >
+                                            <Check className="w-3 h-3" />
+                                            Confirmado
+                                          </button>
+                                        ) : (
+                                          <button
+                                            type="button"
+                                            onClick={() => handleApprovePhotoAi(photo.id)}
+                                            disabled={reportFinalized}
+                                            className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white text-[10px] font-bold px-3 py-1.5 rounded-md shadow-xs cursor-pointer"
+                                          >
+                                            <Check className="w-3 h-3" />
+                                            Confirmar Revisão
+                                          </button>
+                                        )}
                                       </div>
                                     </div>
                                   </div>
