@@ -1,6 +1,7 @@
 ﻿import crypto from 'node:crypto';
 import { createAsaasCheckout } from './_paymentV1/asaasClient.mjs';
-import { errorResponseBody, toPaymentV1Error } from './_paymentV1/paymentErrors.mjs';
+import { errorResponseBody, PaymentV1Error, toPaymentV1Error } from './_paymentV1/paymentErrors.mjs';
+import { buildPaymentV1ExternalReference, createPaymentOrderStore } from './_paymentV1/paymentOrders.mjs';
 import { getPaymentV1Plan } from './_paymentV1/paymentPlans.mjs';
 
 const json = (statusCode, body) => ({
@@ -17,41 +18,63 @@ const parseBody = (event) => {
   try {
     return JSON.parse(event.body);
   } catch {
-    const error = new Error('Invalid JSON body.');
-    error.debugCode = 'payment_v1_invalid_json';
-    error.statusCode = 400;
-    throw error;
+    throw new PaymentV1Error('Invalid JSON body.', {
+      debugCode: 'payment_v1_invalid_json',
+      statusCode: 400,
+    });
   }
 };
 
-export const handler = async (event = {}) => {
+export const createHandler = ({
+  asaasClient = { createAsaasCheckout },
+  paymentOrders = createPaymentOrderStore(),
+  buildExternalReference = buildPaymentV1ExternalReference,
+} = {}) => async (event = {}) => {
   const requestId = crypto.randomUUID();
   try {
     if (event.httpMethod && event.httpMethod !== 'POST') {
-      const error = new Error('Method not allowed.');
-      error.debugCode = 'payment_v1_method_not_allowed';
-      error.statusCode = 405;
-      throw error;
+      throw new PaymentV1Error('Method not allowed.', {
+        debugCode: 'payment_v1_method_not_allowed',
+        statusCode: 405,
+      });
     }
 
     const { planCode } = parseBody(event);
-    const plan = getPaymentV1Plan(planCode);
-    if (!plan) {
-      const error = new Error('Invalid Payment V1 plan.');
-      error.debugCode = 'payment_v1_invalid_plan';
-      error.statusCode = 400;
-      throw error;
+    if (!planCode) {
+      throw new PaymentV1Error('Missing planCode.', {
+        debugCode: 'missing_plan_code',
+        statusCode: 400,
+      });
     }
 
-    const checkout = await createAsaasCheckout({ plan });
+    const plan = getPaymentV1Plan(planCode);
+    if (!plan) {
+      throw new PaymentV1Error('Invalid Payment V1 plan.', {
+        debugCode: 'plan_not_found',
+        statusCode: 400,
+      });
+    }
+
+    const externalReference = buildExternalReference({ planCode: plan.code });
+    const order = await paymentOrders.createPendingOrder({ plan, externalReference, userId: null });
+    const checkout = await asaasClient.createAsaasCheckout({ plan, externalReference });
+    await paymentOrders.updateOrderCheckout({
+      orderId: order.id,
+      checkoutId: checkout.checkoutId,
+      checkoutUrl: checkout.checkoutUrl,
+    });
+
     return json(200, {
       checkoutUrl: checkout.checkoutUrl,
       checkoutId: checkout.checkoutId,
+      orderId: order.id,
       planCode: checkout.planCode,
       requestId,
     });
   } catch (error) {
-    const paymentError = toPaymentV1Error(error);
+    const paymentError = toPaymentV1Error(error, 'unexpected_error');
     return json(paymentError.statusCode || 500, errorResponseBody(paymentError, requestId));
   }
 };
+
+export const handler = (event = {}) => createHandler()(event);

@@ -30,6 +30,28 @@ const withProcessEnv = async (nextEnv, fn) => {
   }
 };
 
+const makeMockPaymentOrders = () => ({
+  orders: [],
+  async createPendingOrder({ plan, externalReference, userId = null }) {
+    const order = {
+      id: `order_${this.orders.length + 1}`,
+      user_id: userId,
+      plan_code: plan.code,
+      external_reference: externalReference,
+      status: 'pending',
+      amount_cents: Math.round(plan.value * 100),
+      analysis_limit: plan.analysisLimit,
+    };
+    this.orders.push(order);
+    return order;
+  },
+  async updateOrderCheckout({ orderId, checkoutId, checkoutUrl }) {
+    const order = this.orders.find((item) => item.id === orderId);
+    Object.assign(order, { provider_checkout_id: checkoutId, checkout_url: checkoutUrl });
+    return order;
+  },
+});
+
 const plansModule = await import('../netlify/functions/_paymentV1/paymentPlans.mjs');
 const clientModule = await import('../netlify/functions/_paymentV1/asaasClient.mjs');
 const errorsModule = await import('../netlify/functions/_paymentV1/paymentErrors.mjs');
@@ -141,31 +163,42 @@ test('checkoutMissingLinkAndIdFailsWithDebugCode', async () => {
 });
 
 test('functionReturnsCheckoutUrl', async () => {
-  const previousFetch = globalThis.fetch;
-  globalThis.fetch = async () => jsonResponse(200, { id: 'chk_fn', link: 'https://sandbox.asaas.com/checkoutSession/show/chk_fn' });
-  try {
-    const response = await withProcessEnv(envFixture, () => functionModule.handler({
-      httpMethod: 'POST',
-      body: JSON.stringify({ planCode: 'report_50_beta' }),
-    }));
-    const body = JSON.parse(response.body);
-    assert.equal(response.statusCode, 200);
-    assert.equal(body.checkoutUrl, 'https://sandbox.asaas.com/checkoutSession/show/chk_fn');
-    assert.equal(body.checkoutId, 'chk_fn');
-    assert.equal(body.planCode, 'report_50_beta');
-  } finally {
-    globalThis.fetch = previousFetch;
-  }
+  const paymentOrders = makeMockPaymentOrders();
+  const handler = functionModule.createHandler({
+    paymentOrders,
+    asaasClient: {
+      async createAsaasCheckout({ plan, externalReference }) {
+        assert.equal(plan.code, 'report_50_beta');
+        assert.ok(externalReference.startsWith('vf-payment-v1-report_50_beta-'));
+        return {
+          checkoutUrl: 'https://sandbox.asaas.com/checkoutSession/show/chk_fn',
+          checkoutId: 'chk_fn',
+          planCode: plan.code,
+        };
+      },
+    },
+  });
+  const response = await handler({
+    httpMethod: 'POST',
+    body: JSON.stringify({ planCode: 'report_50_beta' }),
+  });
+  const body = JSON.parse(response.body);
+  assert.equal(response.statusCode, 200);
+  assert.equal(body.checkoutUrl, 'https://sandbox.asaas.com/checkoutSession/show/chk_fn');
+  assert.equal(body.checkoutId, 'chk_fn');
+  assert.equal(body.orderId, 'order_1');
+  assert.equal(body.planCode, 'report_50_beta');
 });
 
 test('noGenericErrorWithoutDebugCode', async () => {
-  const response = await withProcessEnv(envFixture, () => functionModule.handler({
+  const handler = functionModule.createHandler({ paymentOrders: makeMockPaymentOrders() });
+  const response = await handler({
     httpMethod: 'POST',
     body: JSON.stringify({ planCode: 'unknown' }),
-  }));
+  });
   const body = JSON.parse(response.body);
   assert.equal(response.statusCode, 400);
-  assert.equal(body.debugCode, 'payment_v1_invalid_plan');
+  assert.equal(body.debugCode, 'plan_not_found');
   assert.ok(body.error);
 });
 

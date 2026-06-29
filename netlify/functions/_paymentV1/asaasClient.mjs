@@ -49,10 +49,10 @@ export const buildCheckoutFallbackUrl = (asaasEnv, checkoutId) => {
   return base ? `${base}/${encodeURIComponent(checkoutId)}` : null;
 };
 
-export const buildAsaasCheckoutPayload = ({ plan, config, now = Date.now }) => ({
+export const buildAsaasCheckoutPayload = ({ plan, config, externalReference, now = Date.now }) => ({
   billingTypes: ['PIX', 'CREDIT_CARD'],
   chargeTypes: ['DETACHED'],
-  externalReference: `vf-payment-v1-${plan.code}-${now()}`,
+  externalReference: externalReference || `vf-payment-v1-${plan.code}-${now()}`,
   callback: config.callback,
   items: [
     {
@@ -64,7 +64,7 @@ export const buildAsaasCheckoutPayload = ({ plan, config, now = Date.now }) => (
   ],
 });
 
-export const createAsaasCheckout = async ({ plan, env = process.env, fetchImpl = globalThis.fetch, now = Date.now } = {}) => {
+export const createAsaasCheckout = async ({ plan, externalReference, env = process.env, fetchImpl = globalThis.fetch, now = Date.now } = {}) => {
   if (!plan) {
     throw new PaymentV1Error('Invalid Payment V1 plan.', {
       debugCode: 'payment_v1_invalid_plan',
@@ -79,7 +79,7 @@ export const createAsaasCheckout = async ({ plan, env = process.env, fetchImpl =
   }
 
   const config = resolveAsaasConfig(env);
-  const payload = buildAsaasCheckoutPayload({ plan, config, now });
+  const payload = buildAsaasCheckoutPayload({ plan, config, externalReference, now });
   const response = await fetchImpl(`${config.baseUrl}/checkouts`, {
     method: 'POST',
     headers: {
@@ -100,7 +100,7 @@ export const createAsaasCheckout = async ({ plan, env = process.env, fetchImpl =
 
   if (!response.ok) {
     throw new PaymentV1Error('Asaas checkout request failed.', {
-      debugCode: 'asaas_checkout_request_failed',
+      debugCode: response.status === 400 ? 'asaas_400' : response.status === 401 ? 'asaas_401' : response.status === 403 ? 'asaas_403' : response.status >= 500 ? 'asaas_500' : 'asaas_checkout_request_failed',
       statusCode: response.status >= 400 && response.status < 500 ? 400 : 502,
       asaasStatus: response.status,
       details: sanitizeForPaymentLog(body),
