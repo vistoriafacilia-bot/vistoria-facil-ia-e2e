@@ -51,6 +51,7 @@ const db = {
 };
 
 const asaasCheckoutPayloads = [];
+const asaasApiBases = [];
 
 const response = (status, body) => ({
   ok: status >= 200 && status < 300,
@@ -143,14 +144,18 @@ const installFetchMock = () => {
       return handleSupabaseRest(url, { method: options.method || 'GET', headers: options.headers, body: options.body });
     }
 
-    if (url.origin === 'https://api-sandbox.asaas.com' && url.pathname === '/v3/checkouts') {
+    if (
+      (url.origin === 'https://api-sandbox.asaas.com' || url.origin === 'https://api.asaas.com')
+      && url.pathname === '/v3/checkouts'
+    ) {
       const headers = normalizeHeaders(options.headers);
       assert.equal(headers.access_token, ASAAS_API_KEY);
       const payload = parseBody(options.body);
       asaasCheckoutPayloads.push(payload);
+      asaasApiBases.push(url.origin);
       return response(200, {
         id: `chk_${payload.externalReference}`,
-        url: `https://sandbox.asaas.test/checkout/${payload.externalReference}`,
+        url: `${url.origin === 'https://api-sandbox.asaas.com' ? 'https://sandbox.asaas.test' : 'https://asaas.test'}/checkout/${payload.externalReference}`,
       });
     }
 
@@ -264,10 +269,30 @@ const main = async () => {
   installFetchMock();
   assertNewFunctionsLoaded();
 
+  delete process.env.ASAAS_ENV;
+  const missingEnv = await createCheckout('report_50_beta');
+  assert.equal(missingEnv.statusCode, 503);
+  assert.equal(missingEnv.body.error, 'asaas_env_invalid');
+  assert.equal(db.report_payment_orders.length, 0);
+
+  process.env.ASAAS_ENV = 'test';
+  const invalidEnv = await createCheckout('report_50_beta');
+  assert.equal(invalidEnv.statusCode, 503);
+  assert.equal(invalidEnv.body.error, 'asaas_env_invalid');
+  assert.equal(db.report_payment_orders.length, 0);
+
+  process.env.ASAAS_ENV = 'production';
+  const productionCheckout = await createCheckout('report_50_beta');
+  assert.equal(productionCheckout.statusCode, 200);
+  assert.match(productionCheckout.body.checkoutUrl, /^https:\/\/asaas\.test\/checkout\//);
+  assert.equal(asaasApiBases.at(-1), 'https://api.asaas.com');
+
+  process.env.ASAAS_ENV = 'sandbox';
   const checkout50 = await createCheckout('report_50_beta');
   assert.equal(checkout50.statusCode, 200);
   assert.equal(checkout50.body.provider, 'asaas');
   assert.match(checkout50.body.checkoutUrl, /^https:\/\/sandbox\.asaas\.test\/checkout\//);
+  assert.equal(asaasApiBases.at(-1), 'https://api-sandbox.asaas.com');
 
   const order50 = db.report_payment_orders.find(order => order.id === checkout50.body.orderId);
   assert.equal(order50.provider, 'asaas');
@@ -365,6 +390,10 @@ const main = async () => {
     status: 'PAYMENT_ASAAS_CHECKOUT_SANDBOX_TEST_PASS',
     scenarios: {
       newFunctionsLoaded: true,
+      sandboxEnvUsesSandboxApiBase: true,
+      productionEnvUsesProductionApiBase: true,
+      missingAsaasEnvFailsClosed: true,
+      invalidAsaasEnvFailsClosed: true,
       checkoutSandboxPlan50: true,
       pendingOrderCreated: true,
       pixAndCreditCardBillingTypes: true,

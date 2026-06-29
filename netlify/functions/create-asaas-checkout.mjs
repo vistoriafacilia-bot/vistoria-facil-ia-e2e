@@ -20,7 +20,7 @@ const json = (statusCode, body) => ({
 });
 
 const env = () => {
-  const asaasEnv = String(process.env.ASAAS_ENV || 'sandbox').trim().toLowerCase();
+  const asaasEnv = String(process.env.ASAAS_ENV || '').trim().toLowerCase();
   return {
     supabaseUrl: process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL,
     serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
@@ -34,9 +34,11 @@ const env = () => {
 
 const asaasBaseUrl = (asaasEnv) => {
   if (asaasEnv === 'production') return 'https://api.asaas.com';
-  if (asaasEnv === 'sandbox' || asaasEnv === 'test') return 'https://api-sandbox.asaas.com';
-  throw new Error('ASAAS_ENV_INVALID');
+  if (asaasEnv === 'sandbox') return 'https://api-sandbox.asaas.com';
+  throw new Error('asaas_env_invalid');
 };
+
+const isValidAsaasEnv = (asaasEnv) => asaasEnv === 'sandbox' || asaasEnv === 'production';
 
 const sanitizeError = (error) => {
   const message = String(error?.message || error || 'unknown error');
@@ -127,6 +129,9 @@ export async function handler(event) {
 
   if (!supabaseUrl || !serviceRoleKey || !asaasApiKey) {
     return json(503, { error: 'asaas_env_missing' });
+  }
+  if (!isValidAsaasEnv(asaasEnv)) {
+    return json(503, { error: 'asaas_env_invalid' });
   }
 
   try {
