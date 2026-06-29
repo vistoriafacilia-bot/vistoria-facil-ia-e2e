@@ -28,3 +28,5 @@ qa/**/evidence/*payload*
 
 # Local Netlify folder
 .netlify
+
+firebase-applet-config.json
