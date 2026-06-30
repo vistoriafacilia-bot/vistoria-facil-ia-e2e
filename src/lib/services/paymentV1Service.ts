@@ -49,6 +49,7 @@ export interface PaymentV1StatusResponse {
   pendingOrders: PaymentV1OrderStatus[];
   paidOrders: PaymentV1OrderStatus[];
   requestId?: string;
+  authRequired?: boolean;
 }
 
 export interface PaymentV1ErrorResponse {
@@ -82,15 +83,31 @@ export const PAYMENT_V1_PLANS: PaymentV1PlanOption[] = [
   },
 ];
 
-const getRequiredAccessToken = async () => {
+const EMPTY_PAYMENT_V1_STATUS: PaymentV1StatusResponse = {
+  hasActiveCredit: false,
+  activeCredits: [],
+  pendingOrders: [],
+  paidOrders: [],
+};
+
+const buildMissingSessionError = () => {
+  const error = new Error('Faça login novamente para comprar crédito.') as Error & PaymentV1ErrorResponse;
+  error.debugCode = 'missing_auth_session';
+  return error;
+};
+
+const getOptionalAccessToken = async () => {
   const accessToken = await getCurrentAccessToken();
-  if (!accessToken) {
-    const error = new Error('Sessão expirada. Entre novamente para continuar.') as Error & PaymentV1ErrorResponse;
-    error.debugCode = 'missing_auth_header';
-    throw error;
-  }
+  return accessToken || null;
+};
+
+const getRequiredAccessToken = async () => {
+  const accessToken = await getOptionalAccessToken();
+  if (!accessToken) throw buildMissingSessionError();
   return accessToken;
 };
+
+export const hasPaymentV1AuthSession = async () => Boolean(await getOptionalAccessToken());
 
 const buildPaymentV1Error = (body: Partial<PaymentV1ErrorResponse>, fallbackMessage: string, fallbackDebugCode: string) => {
   const error = new Error(body.error || fallbackMessage) as Error & PaymentV1ErrorResponse;
@@ -107,7 +124,7 @@ export const createPaymentV1Checkout = async (planCode: PaymentV1PlanCode): Prom
     method: 'POST',
     headers: {
       'content-type': 'application/json',
-      authorization: `Bearer ${accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
     },
     body: JSON.stringify({ planCode }),
   });
@@ -128,12 +145,18 @@ export const createPaymentV1Checkout = async (planCode: PaymentV1PlanCode): Prom
 };
 
 export const getPaymentV1Status = async (): Promise<PaymentV1StatusResponse> => {
-  const accessToken = await getRequiredAccessToken();
+  const accessToken = await getOptionalAccessToken();
+  if (!accessToken) {
+    return {
+      ...EMPTY_PAYMENT_V1_STATUS,
+      authRequired: true,
+    };
+  }
 
   const response = await fetch('/.netlify/functions/payment-v1-status', {
     method: 'GET',
     headers: {
-      authorization: `Bearer ${accessToken}`,
+      Authorization: `Bearer ${accessToken}`,
     },
   });
 

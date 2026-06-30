@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 
 const originalConsole = { ...console };
 console.info = () => {};
@@ -19,6 +20,9 @@ const SUPABASE_ENV = {
   SUPABASE_URL: 'https://supabase.example.test',
   SUPABASE_SERVICE_ROLE_KEY: 'service_role_key_not_printed',
 };
+
+const paymentServiceSource = fs.readFileSync('src/lib/services/paymentV1Service.ts', 'utf8');
+const paymentGateSource = fs.readFileSync('src/components/PaymentV1Gate.tsx', 'utf8');
 
 const jsonResponse = (status, body) => ({
   ok: status >= 200 && status < 300,
@@ -166,6 +170,29 @@ const runPaidWebhook = async (store, order, id = 'evt_paid_1') => {
   return handler(webhookEvent(paidPayload(order, id)));
 };
 
+test('statusRequestSendsAuthorizationBearer', () => {
+  assert.match(paymentServiceSource, /payment-v1-status/);
+  assert.match(paymentServiceSource, /Authorization:\s*`Bearer \$\{accessToken\}`/);
+});
+
+test('checkoutRequestSendsAuthorizationBearer', () => {
+  assert.match(paymentServiceSource, /payment-v1-create-checkout/);
+  assert.match(paymentServiceSource, /Authorization:\s*`Bearer \$\{accessToken\}`/);
+});
+
+test('missingSessionDoesNotCallStatusAsAuthenticated', () => {
+  assert.match(paymentServiceSource, /if \(!accessToken\) \{/);
+  assert.match(paymentServiceSource, /authRequired:\s*true/);
+});
+
+test('missingSessionBlocksCheckoutWithFriendlyMessage', () => {
+  assert.match(paymentGateSource, /hasPaymentV1AuthSession\(\)/);
+  assert.match(paymentGateSource, /Faça login novamente para comprar crédito\./);
+});
+
+test('noMissingAuthHeaderFromFrontendWhenSessionExists', () => {
+  assert.doesNotMatch(paymentServiceSource, /debugCode\s*=\s*['"]missing_auth_header['"]/);
+});
 test('statusRequiresAuth', async () => {
   const handler = statusModule.createHandler({
     paymentOrders: makeStore(),

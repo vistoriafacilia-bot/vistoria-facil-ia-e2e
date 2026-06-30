@@ -155,10 +155,28 @@ test('checkoutRequiresAuth', async () => {
 
 test('checkoutSendsAuthorizationFromFrontend', () => {
   assert.match(paymentServiceSource, /getCurrentAccessToken\(\)/);
-  assert.match(paymentServiceSource, /authorization:\s*`Bearer \$\{accessToken\}`/);
+  assert.match(paymentServiceSource, /Authorization:\s*`Bearer \$\{accessToken\}`/);
   assert.match(paymentServiceSource, /payment-v1-create-checkout/);
 });
 
+test('statusRequestSendsAuthorizationBearer', () => {
+  assert.match(paymentServiceSource, /payment-v1-status/);
+  assert.match(paymentServiceSource, /Authorization:\s*`Bearer \$\{accessToken\}`/);
+});
+
+test('missingSessionDoesNotCallStatusAsAuthenticated', () => {
+  assert.match(paymentServiceSource, /if \(!accessToken\) \{/);
+  assert.match(paymentServiceSource, /authRequired:\s*true/);
+});
+
+test('missingSessionBlocksCheckoutWithFriendlyMessage', () => {
+  assert.match(paymentGateSource, /hasPaymentV1AuthSession\(\)/);
+  assert.match(paymentGateSource, /Faça login novamente para comprar crédito\./);
+});
+
+test('noMissingAuthHeaderFromFrontendWhenSessionExists', () => {
+  assert.doesNotMatch(paymentServiceSource, /debugCode\s*=\s*['"]missing_auth_header['"]/);
+});
 test('checkoutCreatesPendingOrderWithUserId', async () => {
   const store = makeStore();
   const { response, body } = await createCheckout(store);

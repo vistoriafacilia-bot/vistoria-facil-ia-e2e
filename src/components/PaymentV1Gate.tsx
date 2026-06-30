@@ -4,6 +4,7 @@ import type { AppUser, Entitlement } from '../types';
 import {
   createPaymentV1Checkout,
   getPaymentV1Status,
+  hasPaymentV1AuthSession,
   PAYMENT_V1_PLANS,
 } from '../lib/services/paymentV1Service';
 import type { PaymentV1PlanCode, PaymentV1StatusResponse } from '../lib/services/paymentV1Service';
@@ -13,6 +14,8 @@ interface PaymentV1GateProps {
   onReady: (entitlement: Entitlement) => void;
   autoContinueOnActiveEntitlement?: boolean;
 }
+
+const loginAgainMessage = 'Faça login novamente para comprar crédito.';
 
 export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntitlement }: PaymentV1GateProps) {
   void user;
@@ -30,7 +33,11 @@ export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntit
     try {
       const status = await getPaymentV1Status();
       setPaymentStatus(status);
-      setStatusWarning(null);
+      if (status.authRequired) {
+        setStatusWarning(null);
+      } else {
+        setStatusWarning(null);
+      }
     } catch (error: any) {
       const debugCode = error?.debugCode || 'payment_v1_status_failed';
       setStatusWarning(`Não foi possível confirmar pagamentos anteriores agora. Os planos continuam disponíveis. debugCode=${debugCode}`);
@@ -65,9 +72,18 @@ export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntit
     setLoadingPlan(planCode);
     setCheckoutError(null);
     try {
+      const hasSession = await hasPaymentV1AuthSession();
+      if (!hasSession) {
+        setCheckoutError(loginAgainMessage);
+        return;
+      }
       const checkout = await createPaymentV1Checkout(planCode);
       window.location.href = checkout.checkoutUrl;
     } catch (error: any) {
+      if (error?.debugCode === 'missing_auth_session' || error?.debugCode === 'missing_auth_token') {
+        setCheckoutError(loginAgainMessage);
+        return;
+      }
       const debugCode = error?.debugCode || 'payment_v1_checkout_failed';
       setCheckoutError(`${error?.message || 'Não foi possível iniciar o pagamento.'} debugCode=${debugCode}`);
     } finally {
