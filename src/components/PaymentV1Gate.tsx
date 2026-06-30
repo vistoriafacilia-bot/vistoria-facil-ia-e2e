@@ -7,6 +7,7 @@ import {
   getPaymentV1Status,
   hasPaymentV1AuthSession,
   PAYMENT_V1_PLANS,
+  reconcilePaymentV1,
 } from '../lib/services/paymentV1Service';
 import type {
   PaymentV1CreditStatus,
@@ -132,9 +133,17 @@ export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntit
         return;
       }
 
+      await reconcilePaymentV1();
+      const reconciledStatus = await getPaymentV1Status();
+      applyStatus(reconciledStatus);
+      if (reconciledStatus.hasActiveCredit) {
+        setPaymentDiagnostic(buildDiagnosticMessage(reconciledStatus));
+        return;
+      }
+
       setDebugLoading(true);
       const debugStatus = await getPaymentV1DebugStatus();
-      const mergedStatus = mergeDebugIntoStatus(status, debugStatus);
+      const mergedStatus = mergeDebugIntoStatus(reconciledStatus, debugStatus);
       setPaymentStatus(mergedStatus);
       setPaymentDiagnostic(buildDiagnosticMessage(mergedStatus, debugStatus));
       if (mergedStatus.hasActiveCredit) notifyReadyIfAllowed(mergedStatus);

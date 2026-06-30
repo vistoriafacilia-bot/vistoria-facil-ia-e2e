@@ -84,6 +84,14 @@ export interface PaymentV1DebugStatusResponse {
   authRequired?: boolean;
 }
 
+export interface PaymentV1ReconcileResponse {
+  pendingOrders: PaymentV1OrderStatus[];
+  reconciledOrders: PaymentV1OrderStatus[];
+  activeCredits: PaymentV1CreditStatus[];
+  requestId?: string;
+  authRequired?: boolean;
+}
+
 export interface PaymentV1ErrorResponse {
   error: string;
   debugCode: string;
@@ -134,6 +142,12 @@ const EMPTY_PAYMENT_V1_DEBUG_STATUS: PaymentV1DebugStatusResponse = {
     activeCreditsCount: 0,
     eventsCount: 0,
   },
+};
+
+const EMPTY_PAYMENT_V1_RECONCILE: PaymentV1ReconcileResponse = {
+  pendingOrders: [],
+  reconciledOrders: [],
+  activeCredits: [],
 };
 
 const buildMissingSessionError = () => {
@@ -294,6 +308,42 @@ export const getPaymentV1DebugStatus = async (): Promise<PaymentV1DebugStatusRes
     latestCredits: body.latestCredits,
     latestEvents: body.latestEvents,
     counts: normalizeDebugCounts(body.counts),
+    requestId: body.requestId,
+  };
+};
+
+export const reconcilePaymentV1 = async (): Promise<PaymentV1ReconcileResponse> => {
+  const accessToken = await getOptionalAccessToken();
+  if (!accessToken) {
+    return {
+      ...EMPTY_PAYMENT_V1_RECONCILE,
+      authRequired: true,
+    };
+  }
+
+  const response = await fetch('/.netlify/functions/payment-v1-reconcile', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw buildPaymentV1Error(body, 'Não foi possível verificar o pagamento.', 'payment_v1_frontend_reconcile_failed');
+  }
+
+  if (!Array.isArray(body.pendingOrders) || !Array.isArray(body.reconciledOrders) || !Array.isArray(body.activeCredits)) {
+    const error = new Error('Resposta de reconciliação incompleta.') as Error & PaymentV1ErrorResponse;
+    error.debugCode = 'payment_v1_frontend_invalid_reconcile_response';
+    error.requestId = body.requestId;
+    throw error;
+  }
+
+  return {
+    pendingOrders: body.pendingOrders,
+    reconciledOrders: body.reconciledOrders,
+    activeCredits: body.activeCredits,
     requestId: body.requestId,
   };
 };
