@@ -157,12 +157,12 @@
       {
         "phase": "logout_login_resume",
         "failure": "net::ERR_ABORTED",
-        "url": "https://hovnpnddvjnfotgmylvp.supabase.co/auth/v1/logout"
+        "url": "[REDACTED_SUPABASE_URL]/auth/v1/logout"
       },
       {
         "phase": "final_resume_matrix",
         "failure": "net::ERR_ABORTED",
-        "url": "https://hovnpnddvjnfotgmylvp.supabase.co/auth/v1/logout"
+        "url": "[REDACTED_SUPABASE_URL]/auth/v1/logout"
       }
     ],
     "httpErrors": [],
