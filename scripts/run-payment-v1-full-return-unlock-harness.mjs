@@ -10,6 +10,7 @@ console.error = () => {};
 const tests = [];
 const test = (name, fn) => tests.push({ name, fn });
 
+const authModule = await import('../netlify/functions/_paymentV1/paymentAuth.mjs');
 const ordersModule = await import('../netlify/functions/_paymentV1/paymentOrders.mjs');
 const checkoutModule = await import('../netlify/functions/payment-v1-create-checkout.mjs');
 const webhookModule = await import('../netlify/functions/payment-v1-asaas-webhook.mjs');
@@ -17,6 +18,10 @@ const statusModule = await import('../netlify/functions/payment-v1-status.mjs');
 const asaasModule = await import('../netlify/functions/_paymentV1/asaasClient.mjs');
 
 const USER_ID = '00000000-0000-4000-8000-000000000001';
+const SUPABASE_ENV = {
+  SUPABASE_URL: 'https://supabase.example.test',
+  SUPABASE_SERVICE_ROLE_KEY: 'service_role_key_not_printed',
+};
 const USER_B = '00000000-0000-4000-8000-000000000002';
 
 const paymentServiceSource = fs.readFileSync('src/lib/services/paymentV1Service.ts', 'utf8');
@@ -164,9 +169,20 @@ test('statusRequestSendsAuthorizationBearer', () => {
   assert.match(paymentServiceSource, /Authorization:\s*`Bearer \$\{accessToken\}`/);
 });
 
+test('frontendDoesNotSendEmptyBearer', () => {
+  assert.match(paymentServiceSource, /normalizeAccessToken/);
+  assert.match(paymentServiceSource, /missing_auth_token/);
+  assert.doesNotMatch(paymentServiceSource, /Bearer \$\{accessToken \|\|/);
+  assert.doesNotMatch(paymentServiceSource, /Bearer undefined|Bearer null/);
+});
+
 test('missingSessionDoesNotCallStatusAsAuthenticated', () => {
   assert.match(paymentServiceSource, /if \(!accessToken\) \{/);
   assert.match(paymentServiceSource, /authRequired:\s*true/);
+});
+
+test('missingSessionDoesNotCallProtectedBackend', () => {
+  assert.match(paymentServiceSource, /return \{\s*\.\.\.EMPTY_PAYMENT_V1_STATUS,[\s\S]*authRequired:\s*true/);
 });
 
 test('missingSessionBlocksCheckoutWithFriendlyMessage', () => {
@@ -174,8 +190,54 @@ test('missingSessionBlocksCheckoutWithFriendlyMessage', () => {
   assert.match(paymentGateSource, /Faça login novamente para comprar crédito\./);
 });
 
+test('missingSessionShowsFriendlyMessage', () => {
+  assert.match(paymentGateSource, /loginAgainMessage/);
+  assert.match(paymentGateSource, /isAuthSessionError/);
+  assert.doesNotMatch(paymentGateSource, /setCheckoutError\(.*missing_auth_header/);
+});
+
 test('noMissingAuthHeaderFromFrontendWhenSessionExists', () => {
   assert.doesNotMatch(paymentServiceSource, /debugCode\s*=\s*['"]missing_auth_header['"]/);
+});
+
+test('backendRejectsMalformedAuthorization', () => {
+  assert.throws(
+    () => authModule.getBearerTokenFromEvent({ headers: { Authorization: 'Token abc' } }),
+    (error) => error.debugCode === 'invalid_auth_header_format' && error.statusCode === 401
+  );
+});
+
+test('supabaseGetUserFailureHasSpecificDebugCode', async () => {
+  await assert.rejects(
+    () => authModule.verifySupabaseAccessToken({
+      accessToken: 'valid-looking-token',
+      env: SUPABASE_ENV,
+      fetchImpl: async () => { throw new Error('network down'); },
+    }),
+    (error) => error.debugCode === 'supabase_auth_get_user_failed' && error.statusCode === 502
+  );
+});
+
+test('validSessionTokenAccepted', async () => {
+  const authUser = await authModule.verifySupabaseAccessToken({
+    accessToken: 'valid-session-token',
+    env: SUPABASE_ENV,
+    fetchImpl: async (url, options) => {
+      assert.equal(url, `${SUPABASE_ENV.SUPABASE_URL}/auth/v1/user`);
+      assert.equal(options.headers.Authorization, 'Bearer valid-session-token');
+      return { ok: true, status: 200, text: async () => JSON.stringify({ id: USER_ID, email: 'user@example.test' }) };
+    },
+  });
+  assert.equal(authUser.userId, USER_ID);
+});
+
+test('noInvalidAuthTokenForValidSession', async () => {
+  const authUser = await authModule.authenticatePaymentV1Request({
+    event: { headers: { Authorization: 'Bearer valid-session-token' } },
+    env: SUPABASE_ENV,
+    fetchImpl: async () => ({ ok: true, status: 200, text: async () => JSON.stringify({ id: USER_ID }) }),
+  });
+  assert.equal(authUser.userId, USER_ID);
 });
 test('checkoutCreatesPendingOrderWithUserId', async () => {
   const store = makeStore();

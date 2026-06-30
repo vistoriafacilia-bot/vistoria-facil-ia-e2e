@@ -16,6 +16,15 @@ interface PaymentV1GateProps {
 }
 
 const loginAgainMessage = 'Faça login novamente para comprar crédito.';
+const authDebugCodes = new Set([
+  'missing_auth_session',
+  'missing_auth_token',
+  'missing_auth_header',
+  'invalid_auth_header_format',
+  'invalid_auth_token',
+]);
+
+const isAuthSessionError = (error: any) => authDebugCodes.has(String(error?.debugCode || ''));
 
 export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntitlement }: PaymentV1GateProps) {
   void user;
@@ -28,6 +37,11 @@ export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntit
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [statusWarning, setStatusWarning] = useState<string | null>(null);
 
+  const buildStatusWarning = (error: any) => {
+    if (isAuthSessionError(error)) return loginAgainMessage;
+    return `Não foi possível confirmar pagamentos anteriores agora. Os planos continuam disponíveis. debugCode=${error?.debugCode || 'payment_v1_status_failed'}`;
+  };
+
   const refreshPaymentStatus = useCallback(async () => {
     setStatusLoading(true);
     try {
@@ -39,8 +53,7 @@ export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntit
         setStatusWarning(null);
       }
     } catch (error: any) {
-      const debugCode = error?.debugCode || 'payment_v1_status_failed';
-      setStatusWarning(`Não foi possível confirmar pagamentos anteriores agora. Os planos continuam disponíveis. debugCode=${debugCode}`);
+      setStatusWarning(buildStatusWarning(error));
     } finally {
       setStatusLoading(false);
     }
@@ -57,8 +70,7 @@ export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntit
       })
       .catch((error: any) => {
         if (!active) return;
-        const debugCode = error?.debugCode || 'payment_v1_status_failed';
-        setStatusWarning(`Não foi possível confirmar pagamentos anteriores agora. Os planos continuam disponíveis. debugCode=${debugCode}`);
+        setStatusWarning(buildStatusWarning(error));
       })
       .finally(() => {
         if (active) setStatusLoading(false);
@@ -80,7 +92,7 @@ export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntit
       const checkout = await createPaymentV1Checkout(planCode);
       window.location.href = checkout.checkoutUrl;
     } catch (error: any) {
-      if (error?.debugCode === 'missing_auth_session' || error?.debugCode === 'missing_auth_token') {
+      if (isAuthSessionError(error)) {
         setCheckoutError(loginAgainMessage);
         return;
       }

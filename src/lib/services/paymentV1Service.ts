@@ -1,4 +1,5 @@
 import { getCurrentAccessToken } from './authService';
+import { supabase } from '../supabaseClient';
 
 export type PaymentV1PlanCode = 'report_50_beta' | 'report_100' | 'report_150';
 
@@ -96,14 +97,38 @@ const buildMissingSessionError = () => {
   return error;
 };
 
+const normalizeAccessToken = (value: string | null | undefined) => {
+  const token = String(value || '').trim();
+  const lowerToken = token.toLowerCase();
+  if (!token || lowerToken === 'null' || lowerToken === 'undefined') return null;
+  if (lowerToken.startsWith('bearer ')) return token.slice(7).trim() || null;
+  if (token === 'local-e2e-token') return null;
+  return token;
+};
+
+const refreshAccessTokenOnce = async () => {
+  try {
+    const { data, error } = await supabase.auth.refreshSession();
+    if (error) return null;
+    return normalizeAccessToken(data.session?.access_token);
+  } catch {
+    return null;
+  }
+};
+
 const getOptionalAccessToken = async () => {
-  const accessToken = await getCurrentAccessToken();
-  return accessToken || null;
+  const accessToken = normalizeAccessToken(await getCurrentAccessToken());
+  if (accessToken) return accessToken;
+  return refreshAccessTokenOnce();
 };
 
 const getRequiredAccessToken = async () => {
   const accessToken = await getOptionalAccessToken();
-  if (!accessToken) throw buildMissingSessionError();
+  if (!accessToken) {
+    const error = buildMissingSessionError();
+    error.debugCode = 'missing_auth_token';
+    throw error;
+  }
   return accessToken;
 };
 
