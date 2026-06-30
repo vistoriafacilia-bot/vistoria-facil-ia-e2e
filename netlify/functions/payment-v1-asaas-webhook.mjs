@@ -72,11 +72,12 @@ export const parseWebhookPayload = (event = {}) => {
 
 export const extractAsaasWebhookFacts = (payload = {}) => {
   const eventType = String(payload.event || payload.type || payload.eventType || payload.action || '').trim().toUpperCase();
-  const checkout = payload.checkout || payload.checkoutSession || payload.object?.checkout || {};
-  const payment = payload.payment || payload.object?.payment || payload.data || {};
-  const checkoutId = checkout.id || payload.checkoutId || payload.checkout_id || payment.checkoutId || payment.checkout_id || payment.checkout?.id || null;
-  const paymentId = payment.id || payload.paymentId || payload.payment_id || payload.object?.payment?.id || null;
-  const externalReference = checkout.externalReference || checkout.external_reference || payload.externalReference || payload.external_reference || payment.externalReference || payment.external_reference || null;
+  const data = payload.data || {};
+  const checkout = payload.checkout || payload.checkoutSession || payload.object?.checkout || data.checkout || data.checkoutSession || payload.payment?.checkout || {};
+  const payment = payload.payment || payload.object?.payment || data.payment || data || {};
+  const checkoutId = checkout.id || checkout.checkoutId || checkout.checkout_id || payload.checkoutId || payload.checkout_id || payment.checkoutId || payment.checkout_id || payment.checkout?.id || data.checkoutId || data.checkout_id || null;
+  const paymentId = payment.id || payment.paymentId || payment.payment_id || payload.paymentId || payload.payment_id || payload.object?.payment?.id || data.paymentId || data.payment_id || null;
+  const externalReference = checkout.externalReference || checkout.external_reference || payload.externalReference || payload.external_reference || payment.externalReference || payment.external_reference || data.externalReference || data.external_reference || null;
   const deterministicId = `asaas:${eventType || 'UNKNOWN'}:${checkoutId || paymentId || 'no-provider-id'}:${externalReference || 'no-external-reference'}`;
   const fallbackHash = crypto.createHash('sha256').update(deterministicId).digest('hex').slice(0, 24);
   const eventId = payload.id || payload.eventId || payload.event_id || `${deterministicId}:${fallbackHash}`;
@@ -159,6 +160,7 @@ export const createHandler = ({ paymentOrders = null, env = process.env } = {}) 
     const order = await orderStore.findOrderForWebhook({
       externalReference: facts.externalReference,
       checkoutId: facts.checkoutId,
+      paymentId: facts.paymentId,
     });
     if (order) {
       logContext.orderId = order.id;

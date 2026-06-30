@@ -141,7 +141,7 @@ export const createPaymentOrderStore = ({ env = process.env, fetchImpl = globalT
     return Array.isArray(rows) ? rows[0] : rows;
   };
 
-  const findOrderForWebhook = async ({ externalReference, checkoutId }) => {
+  const findOrderForWebhook = async ({ externalReference, checkoutId, paymentId }) => {
     let rows = [];
     if (externalReference) {
       rows = await requestSupabase({
@@ -156,6 +156,14 @@ export const createPaymentOrderStore = ({ env = process.env, fetchImpl = globalT
         config,
         fetchImpl,
         path: `payment_v1_orders?provider_checkout_id=eq.${encodeURIComponent(checkoutId)}&limit=1&select=*`,
+        debugCode: 'webhook_order_not_found',
+      });
+    }
+    if ((!rows || rows.length === 0) && paymentId && paymentId !== checkoutId) {
+      rows = await requestSupabase({
+        config,
+        fetchImpl,
+        path: `payment_v1_orders?provider_checkout_id=eq.${encodeURIComponent(paymentId)}&limit=1&select=*`,
         debugCode: 'webhook_order_not_found',
       });
     }

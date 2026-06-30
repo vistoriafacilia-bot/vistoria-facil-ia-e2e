@@ -15,6 +15,7 @@ export interface PaymentV1CheckoutResponse {
   checkoutUrl: string;
   checkoutId: string;
   orderId: string;
+  externalReference: string;
   planCode: PaymentV1PlanCode;
   requestId?: string;
 }
@@ -49,6 +50,36 @@ export interface PaymentV1StatusResponse {
   activeCredits: PaymentV1CreditStatus[];
   pendingOrders: PaymentV1OrderStatus[];
   paidOrders: PaymentV1OrderStatus[];
+  requestId?: string;
+  authRequired?: boolean;
+}
+
+export interface PaymentV1DebugEvent {
+  id: string;
+  provider: string;
+  eventId: string;
+  eventType: string;
+  providerCheckoutId?: string | null;
+  externalReference?: string | null;
+  processedAt?: string | null;
+  createdAt?: string;
+}
+
+export interface PaymentV1DebugCounts {
+  ordersCount: number;
+  pendingOrdersCount: number;
+  paidOrdersCount: number;
+  creditsCount: number;
+  activeCreditsCount: number;
+  eventsCount: number;
+}
+
+export interface PaymentV1DebugStatusResponse {
+  userId?: string;
+  latestOrders: PaymentV1OrderStatus[];
+  latestCredits: PaymentV1CreditStatus[];
+  latestEvents: PaymentV1DebugEvent[];
+  counts: PaymentV1DebugCounts;
   requestId?: string;
   authRequired?: boolean;
 }
@@ -89,6 +120,20 @@ const EMPTY_PAYMENT_V1_STATUS: PaymentV1StatusResponse = {
   activeCredits: [],
   pendingOrders: [],
   paidOrders: [],
+};
+
+const EMPTY_PAYMENT_V1_DEBUG_STATUS: PaymentV1DebugStatusResponse = {
+  latestOrders: [],
+  latestCredits: [],
+  latestEvents: [],
+  counts: {
+    ordersCount: 0,
+    pendingOrdersCount: 0,
+    paidOrdersCount: 0,
+    creditsCount: 0,
+    activeCreditsCount: 0,
+    eventsCount: 0,
+  },
 };
 
 const buildMissingSessionError = () => {
@@ -159,7 +204,7 @@ export const createPaymentV1Checkout = async (planCode: PaymentV1PlanCode): Prom
     throw buildPaymentV1Error(body, 'Não foi possível iniciar o checkout.', 'payment_v1_frontend_checkout_failed');
   }
 
-  if (!body.checkoutUrl || !body.checkoutId || !body.orderId || !body.planCode) {
+  if (!body.checkoutUrl || !body.checkoutId || !body.orderId || !body.externalReference || !body.planCode) {
     const error = new Error('Resposta de checkout incompleta.') as Error & PaymentV1ErrorResponse;
     error.debugCode = 'payment_v1_frontend_invalid_response';
     error.requestId = body.requestId;
@@ -168,6 +213,15 @@ export const createPaymentV1Checkout = async (planCode: PaymentV1PlanCode): Prom
 
   return body as PaymentV1CheckoutResponse;
 };
+
+const normalizeDebugCounts = (counts: any): PaymentV1DebugCounts => ({
+  ordersCount: Number(counts?.ordersCount || 0),
+  pendingOrdersCount: Number(counts?.pendingOrdersCount || 0),
+  paidOrdersCount: Number(counts?.paidOrdersCount || 0),
+  creditsCount: Number(counts?.creditsCount || 0),
+  activeCreditsCount: Number(counts?.activeCreditsCount || 0),
+  eventsCount: Number(counts?.eventsCount || 0),
+});
 
 export const getPaymentV1Status = async (): Promise<PaymentV1StatusResponse> => {
   const accessToken = await getOptionalAccessToken();
@@ -204,4 +258,42 @@ export const getPaymentV1Status = async (): Promise<PaymentV1StatusResponse> => 
     paidOrders: body.paidOrders,
     requestId: body.requestId,
   } as PaymentV1StatusResponse;
+};
+
+export const getPaymentV1DebugStatus = async (): Promise<PaymentV1DebugStatusResponse> => {
+  const accessToken = await getOptionalAccessToken();
+  if (!accessToken) {
+    return {
+      ...EMPTY_PAYMENT_V1_DEBUG_STATUS,
+      authRequired: true,
+    };
+  }
+
+  const response = await fetch('/.netlify/functions/payment-v1-debug-status', {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw buildPaymentV1Error(body, 'Não foi possível consultar o diagnóstico do pagamento.', 'payment_v1_frontend_debug_status_failed');
+  }
+
+  if (!Array.isArray(body.latestOrders) || !Array.isArray(body.latestCredits) || !Array.isArray(body.latestEvents) || !body.counts) {
+    const error = new Error('Resposta de diagnóstico incompleta.') as Error & PaymentV1ErrorResponse;
+    error.debugCode = 'payment_v1_frontend_invalid_debug_status_response';
+    error.requestId = body.requestId;
+    throw error;
+  }
+
+  return {
+    userId: body.userId,
+    latestOrders: body.latestOrders,
+    latestCredits: body.latestCredits,
+    latestEvents: body.latestEvents,
+    counts: normalizeDebugCounts(body.counts),
+    requestId: body.requestId,
+  };
 };

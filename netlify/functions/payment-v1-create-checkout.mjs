@@ -132,6 +132,7 @@ export const createHandler = ({
       checkoutUrl: checkout.checkoutUrl,
       checkoutId: checkout.checkoutId,
       orderId: order.id,
+      externalReference,
       planCode: checkout.planCode,
       requestId,
     });
