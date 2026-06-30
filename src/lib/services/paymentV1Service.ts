@@ -63,22 +63,22 @@ export interface PaymentV1ErrorResponse {
 export const PAYMENT_V1_PLANS: PaymentV1PlanOption[] = [
   {
     code: 'report_50_beta',
-    name: 'Relatório 50',
-    description: 'Relatório beta com até 50 análises',
+    name: 'RelatÃ³rio 50',
+    description: 'RelatÃ³rio beta com atÃ© 50 anÃ¡lises',
     priceLabel: 'R$ 49,90',
     analysisLimit: 50,
   },
   {
     code: 'report_100',
-    name: 'Relatório 100',
-    description: 'Relatório beta com até 100 análises',
+    name: 'RelatÃ³rio 100',
+    description: 'RelatÃ³rio beta com atÃ© 100 anÃ¡lises',
     priceLabel: 'R$ 99,90',
     analysisLimit: 100,
   },
   {
     code: 'report_150',
-    name: 'Relatório 150',
-    description: 'Relatório beta com até 150 análises',
+    name: 'RelatÃ³rio 150',
+    description: 'RelatÃ³rio beta com atÃ© 150 anÃ¡lises',
     priceLabel: 'R$ 149,90',
     analysisLimit: 150,
   },
@@ -92,7 +92,7 @@ const EMPTY_PAYMENT_V1_STATUS: PaymentV1StatusResponse = {
 };
 
 const buildMissingSessionError = () => {
-  const error = new Error('Faça login novamente para comprar crédito.') as Error & PaymentV1ErrorResponse;
+  const error = new Error('FaÃ§a login novamente para comprar crÃ©dito.') as Error & PaymentV1ErrorResponse;
   error.debugCode = 'missing_auth_session';
   return error;
 };
@@ -156,7 +156,7 @@ export const createPaymentV1Checkout = async (planCode: PaymentV1PlanCode): Prom
 
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw buildPaymentV1Error(body, 'Não foi possível iniciar o checkout.', 'payment_v1_frontend_checkout_failed');
+    throw buildPaymentV1Error(body, 'NÃ£o foi possÃ­vel iniciar o checkout.', 'payment_v1_frontend_checkout_failed');
   }
 
   if (!body.checkoutUrl || !body.checkoutId || !body.orderId || !body.planCode) {
@@ -187,7 +187,7 @@ export const getPaymentV1Status = async (): Promise<PaymentV1StatusResponse> => 
 
   const body = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw buildPaymentV1Error(body, 'Não foi possível consultar o pagamento.', 'payment_v1_frontend_status_failed');
+    throw buildPaymentV1Error(body, 'NÃ£o foi possÃ­vel consultar o pagamento.', 'payment_v1_frontend_status_failed');
   }
 
   if (!Array.isArray(body.activeCredits) || !Array.isArray(body.pendingOrders) || !Array.isArray(body.paidOrders)) {

@@ -15,7 +15,7 @@ interface PaymentV1GateProps {
   autoContinueOnActiveEntitlement?: boolean;
 }
 
-const loginAgainMessage = 'FaÁa login novamente para comprar crÈdito.';
+const loginAgainMessage = 'Fa√ßa login novamente para comprar cr√©dito.';
 const authDebugCodes = new Set([
   'missing_auth_session',
   'missing_auth_token',
@@ -39,7 +39,7 @@ export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntit
 
   const buildStatusWarning = (error: any) => {
     if (isAuthSessionError(error)) return loginAgainMessage;
-    return `N„o foi possÌvel confirmar pagamentos anteriores agora. Os planos continuam disponÌveis. debugCode=${error?.debugCode || 'payment_v1_status_failed'}`;
+    return `N√£o foi poss√≠vel confirmar pagamentos anteriores agora. Os planos continuam dispon√≠veis. debugCode=${error?.debugCode || 'payment_v1_status_failed'}`;
   };
 
   const refreshPaymentStatus = useCallback(async () => {
@@ -97,7 +97,7 @@ export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntit
         return;
       }
       const debugCode = error?.debugCode || 'payment_v1_checkout_failed';
-      setCheckoutError(`${error?.message || 'N„o foi possÌvel iniciar o pagamento.'} debugCode=${debugCode}`);
+      setCheckoutError(`${error?.message || 'N√£o foi poss√≠vel iniciar o pagamento.'} debugCode=${debugCode}`);
     } finally {
       setLoadingPlan(null);
     }
@@ -106,8 +106,8 @@ export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntit
   const hasActiveCredit = Boolean(paymentStatus?.hasActiveCredit);
   const hasPendingOrder = Boolean(paymentStatus?.pendingOrders?.length);
   const statusText = hasActiveCredit
-    ? 'Pagamento confirmado. RelatÛrio liberado.'
-    : 'Pagamento em confirmaÁ„o.';
+    ? 'Pagamento confirmado. Relat√≥rio liberado.'
+    : 'Pagamento em confirma√ß√£o.';
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-5 space-y-5">
@@ -116,9 +116,9 @@ export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntit
           <ShieldCheck className="w-5 h-5" />
         </div>
         <div className="space-y-1">
-          <h3 className="text-base font-bold text-slate-900">Comprar crÈdito de relatÛrio</h3>
+          <h3 className="text-base font-bold text-slate-900">Comprar cr√©dito de relat√≥rio</h3>
           <p className="text-sm text-slate-600">
-            Pagamento em ambiente seguro. ApÛs a confirmaÁ„o, seu relatÛrio beta ser· liberado no fluxo assistido.
+            Pagamento em ambiente seguro. Ap√≥s a confirma√ß√£o, seu relat√≥rio beta ser√° liberado no fluxo assistido.
           </p>
         </div>
       </div>
@@ -181,7 +181,7 @@ export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntit
                 <p className="text-xs text-slate-500 mt-1">{plan.description}</p>
               </div>
               <div className="text-2xl font-bold text-slate-900">{plan.priceLabel}</div>
-              <div className="text-xs text-slate-500">{plan.analysisLimit} an·lises de IA</div>
+              <div className="text-xs text-slate-500">{plan.analysisLimit} an√°lises de IA</div>
               <button
                 type="button"
                 onClick={() => handleCheckout(plan.code)}

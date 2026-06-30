@@ -187,7 +187,7 @@ test('missingSessionDoesNotCallProtectedBackend', () => {
 
 test('missingSessionBlocksCheckoutWithFriendlyMessage', () => {
   assert.match(paymentGateSource, /hasPaymentV1AuthSession\(\)/);
-  assert.match(paymentGateSource, /Faça login novamente para comprar crédito\./);
+  assert.match(paymentGateSource, /FaÃ§a login novamente para comprar crÃ©dito\./);
 });
 
 test('missingSessionShowsFriendlyMessage', () => {
@@ -312,7 +312,7 @@ test('statusNoCreditReturnsSuccess', async () => {
 test('returnRefreshShowsUnlocked', () => {
   assert.match(paymentGateSource, /getPaymentV1Status\(\)/);
   assert.match(paymentGateSource, /refreshPaymentStatus/);
-  assert.match(paymentGateSource, /Pagamento confirmado\. Relatório liberado\./);
+  assert.match(paymentGateSource, /Pagamento confirmado\. RelatÃ³rio liberado\./);
 });
 
 test('noUnexpectedErrorInCheckout', async () => {
@@ -350,7 +350,7 @@ test('noUnexpectedErrorInWebhook', async () => {
 test('asaasNetworkFailureHasSpecificDebugCode', async () => {
   await assert.rejects(
     () => asaasModule.createAsaasCheckout({
-      plan: { code: 'report_50_beta', name: 'Relatório 50', description: 'Relatório beta', value: 49.9 },
+      plan: { code: 'report_50_beta', name: 'RelatÃ³rio 50', description: 'RelatÃ³rio beta', value: 49.9 },
       externalReference: 'vf-test',
       env: {
         ASAAS_ENV: 'sandbox',

@@ -199,7 +199,7 @@ test('missingSessionDoesNotCallProtectedBackend', () => {
 
 test('missingSessionBlocksCheckoutWithFriendlyMessage', () => {
   assert.match(paymentGateSource, /hasPaymentV1AuthSession\(\)/);
-  assert.match(paymentGateSource, /Faça login novamente para comprar crédito\./);
+  assert.match(paymentGateSource, /FaÃ§a login novamente para comprar crÃ©dito\./);
 });
 
 test('missingSessionShowsFriendlyMessage', () => {
