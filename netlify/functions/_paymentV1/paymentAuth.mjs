@@ -1,4 +1,4 @@
-﻿import { PaymentV1Error, sanitizeForPaymentLog } from './paymentErrors.mjs';
+import { PaymentV1Error, sanitizeForPaymentLog } from './paymentErrors.mjs';
 
 const lowerHeaders = (headers = {}) => Object.fromEntries(Object.entries(headers || {}).map(([key, value]) => [String(key).toLowerCase(), value]));
 
@@ -53,12 +53,21 @@ export const verifySupabaseAccessToken = async ({ accessToken, env = process.env
     });
   }
   const config = resolveSupabaseAuthConfig(env);
-  const response = await fetchImpl(`${config.url}/auth/v1/user`, {
-    headers: {
-      apikey: config.serviceRoleKey,
-      authorization: `Bearer ${accessToken}`,
-    },
-  });
+  let response;
+  try {
+    response = await fetchImpl(`${config.url}/auth/v1/user`, {
+      headers: {
+        apikey: config.serviceRoleKey,
+        authorization: `Bearer ${accessToken}`,
+      },
+    });
+  } catch (error) {
+    throw new PaymentV1Error('Authorization bearer token is invalid.', {
+      debugCode: 'invalid_auth_token',
+      statusCode: 401,
+      details: sanitizeForPaymentLog(error?.message || String(error)),
+    });
+  }
   const text = await response.text();
   let body = {};
   try {

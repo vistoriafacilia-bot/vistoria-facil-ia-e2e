@@ -1,7 +1,7 @@
-﻿import crypto from 'node:crypto';
+import crypto from 'node:crypto';
 import { createAsaasCheckout } from './_paymentV1/asaasClient.mjs';
 import { authenticatePaymentV1Request } from './_paymentV1/paymentAuth.mjs';
-import { errorResponseBody, PaymentV1Error, toPaymentV1Error } from './_paymentV1/paymentErrors.mjs';
+import { errorResponseBody, PaymentV1Error, sanitizeForPaymentLog, toPaymentV1Error } from './_paymentV1/paymentErrors.mjs';
 import { buildPaymentV1ExternalReference, createPaymentOrderStore } from './_paymentV1/paymentOrders.mjs';
 import { getPaymentV1Plan } from './_paymentV1/paymentPlans.mjs';
 
@@ -13,6 +13,29 @@ const json = (statusCode, body) => ({
   },
   body: JSON.stringify(body),
 });
+
+const safeLog = (level, { requestId, step, debugCode, error }) => {
+  const payload = {
+    scope: 'payment-v1-create-checkout',
+    requestId,
+    step,
+    debugCode,
+  };
+  if (error) {
+    payload.error = sanitizeForPaymentLog({
+      name: error.name,
+      message: error.message,
+      debugCode: error.debugCode,
+      statusCode: error.statusCode,
+      asaasStatus: error.asaasStatus,
+      details: error.details,
+    });
+  }
+  const line = JSON.stringify(payload);
+  if (level === 'error') console.error(line);
+  else if (level === 'warn') console.warn(line);
+  else console.info(line);
+};
 
 const parseBody = (event) => {
   if (!event?.body) return {};
@@ -31,6 +54,7 @@ export const createHandler = ({
   paymentOrders = null,
   buildExternalReference = buildPaymentV1ExternalReference,
   authenticateRequest = authenticatePaymentV1Request,
+  env = process.env,
 } = {}) => async (event = {}) => {
   const requestId = crypto.randomUUID();
   try {
@@ -41,7 +65,14 @@ export const createHandler = ({
       });
     }
 
-    const authUser = await authenticateRequest({ event });
+    safeLog('info', { requestId, step: 'auth_start', debugCode: 'checkout_auth_start' });
+    const authUser = await authenticateRequest({ event, env });
+    if (!authUser?.userId) {
+      throw new PaymentV1Error('Authorization bearer token is invalid.', {
+        debugCode: 'invalid_auth_token',
+        statusCode: 401,
+      });
+    }
 
     const { planCode } = parseBody(event);
     if (!planCode) {
@@ -59,16 +90,19 @@ export const createHandler = ({
       });
     }
 
-    const orderStore = paymentOrders || createPaymentOrderStore();
+    const orderStore = paymentOrders || createPaymentOrderStore({ env });
     const externalReference = buildExternalReference({ planCode: plan.code });
+    safeLog('info', { requestId, step: 'order_create_start', debugCode: 'checkout_order_create_start' });
     const order = await orderStore.createPendingOrder({ plan, externalReference, userId: authUser.userId });
-    const checkout = await asaasClient.createAsaasCheckout({ plan, externalReference });
+    safeLog('info', { requestId, step: 'asaas_checkout_start', debugCode: 'checkout_asaas_start' });
+    const checkout = await asaasClient.createAsaasCheckout({ plan, externalReference, env });
     await orderStore.updateOrderCheckout({
       orderId: order.id,
       checkoutId: checkout.checkoutId,
       checkoutUrl: checkout.checkoutUrl,
     });
 
+    safeLog('info', { requestId, step: 'checkout_success', debugCode: 'checkout_ok' });
     return json(200, {
       checkoutUrl: checkout.checkoutUrl,
       checkoutId: checkout.checkoutId,
@@ -77,7 +111,13 @@ export const createHandler = ({
       requestId,
     });
   } catch (error) {
-    const paymentError = toPaymentV1Error(error, 'unexpected_error');
+    const paymentError = toPaymentV1Error(error, 'checkout_unhandled_error');
+    safeLog('error', {
+      requestId,
+      step: 'checkout_failed',
+      debugCode: paymentError.debugCode || 'checkout_unhandled_error',
+      error: paymentError,
+    });
     return json(paymentError.statusCode || 500, errorResponseBody(paymentError, requestId));
   }
 };

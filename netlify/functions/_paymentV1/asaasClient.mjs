@@ -1,4 +1,4 @@
-﻿import { PaymentV1Error, sanitizeForPaymentLog } from './paymentErrors.mjs';
+import { PaymentV1Error, sanitizeForPaymentLog } from './paymentErrors.mjs';
 
 export const ASAAS_BASE_URLS = {
   sandbox: 'https://api-sandbox.asaas.com/v3',
@@ -64,6 +64,12 @@ export const buildAsaasCheckoutPayload = ({ plan, config, externalReference, now
   ],
 });
 
+const debugCodeForAsaasStatus = (status) => {
+  if (status === 400) return 'asaas_400';
+  if (status === 401 || status === 403) return 'asaas_401';
+  return 'asaas_request_failed';
+};
+
 export const createAsaasCheckout = async ({ plan, externalReference, env = process.env, fetchImpl = globalThis.fetch, now = Date.now } = {}) => {
   if (!plan) {
     throw new PaymentV1Error('Invalid Payment V1 plan.', {
@@ -73,22 +79,31 @@ export const createAsaasCheckout = async ({ plan, externalReference, env = proce
   }
   if (typeof fetchImpl !== 'function') {
     throw new PaymentV1Error('Fetch implementation is not available.', {
-      debugCode: 'payment_v1_fetch_missing',
+      debugCode: 'asaas_request_failed',
       statusCode: 500,
     });
   }
 
   const config = resolveAsaasConfig(env);
   const payload = buildAsaasCheckoutPayload({ plan, config, externalReference, now });
-  const response = await fetchImpl(`${config.baseUrl}/checkouts`, {
-    method: 'POST',
-    headers: {
-      accept: 'application/json',
-      'content-type': 'application/json',
-      access_token: config.apiKey,
-    },
-    body: JSON.stringify(payload),
-  });
+  let response;
+  try {
+    response = await fetchImpl(`${config.baseUrl}/checkouts`, {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/json',
+        access_token: config.apiKey,
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    throw new PaymentV1Error('Asaas checkout request failed.', {
+      debugCode: 'asaas_request_failed',
+      statusCode: 502,
+      details: sanitizeForPaymentLog(error?.message || String(error)),
+    });
+  }
 
   const responseText = await response.text();
   let body = {};
@@ -100,7 +115,7 @@ export const createAsaasCheckout = async ({ plan, externalReference, env = proce
 
   if (!response.ok) {
     throw new PaymentV1Error('Asaas checkout request failed.', {
-      debugCode: response.status === 400 ? 'asaas_400' : response.status === 401 ? 'asaas_401' : response.status === 403 ? 'asaas_403' : response.status >= 500 ? 'asaas_500' : 'asaas_checkout_request_failed',
+      debugCode: debugCodeForAsaasStatus(response.status),
       statusCode: response.status >= 400 && response.status < 500 ? 400 : 502,
       asaasStatus: response.status,
       details: sanitizeForPaymentLog(body),

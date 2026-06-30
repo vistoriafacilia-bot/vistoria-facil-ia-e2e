@@ -86,7 +86,7 @@ const requireStatusUserId = (userId) => {
 export const createPaymentOrderStore = ({ env = process.env, fetchImpl = globalThis.fetch } = {}) => {
   if (typeof fetchImpl !== 'function') {
     throw new PaymentV1Error('Fetch implementation is not available.', {
-      debugCode: 'status_unexpected_error',
+      debugCode: 'order_create_failed',
       statusCode: 500,
     });
   }
@@ -178,7 +178,7 @@ export const createPaymentOrderStore = ({ env = process.env, fetchImpl = globalT
           raw,
           processed_at: nowIso(),
         },
-        debugCode: 'unexpected_error',
+        debugCode: 'webhook_event_record_failed',
       });
       return { duplicate: false, event: Array.isArray(rows) ? rows[0] : rows };
     } catch (error) {

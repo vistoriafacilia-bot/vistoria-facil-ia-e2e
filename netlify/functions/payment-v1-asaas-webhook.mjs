@@ -1,4 +1,4 @@
-﻿import crypto from 'node:crypto';
+import crypto from 'node:crypto';
 import { errorResponseBody, PaymentV1Error, sanitizeForPaymentLog, toPaymentV1Error } from './_paymentV1/paymentErrors.mjs';
 import { createPaymentOrderStore } from './_paymentV1/paymentOrders.mjs';
 
@@ -15,6 +15,29 @@ const json = (statusCode, body) => ({
   body: JSON.stringify(body),
 });
 
+const safeLog = (level, { requestId, step, debugCode, error }) => {
+  const payload = {
+    scope: 'payment-v1-asaas-webhook',
+    requestId,
+    step,
+    debugCode,
+  };
+  if (error) {
+    payload.error = sanitizeForPaymentLog({
+      name: error.name,
+      message: error.message,
+      debugCode: error.debugCode,
+      statusCode: error.statusCode,
+      supabaseStatus: error.supabaseStatus,
+      details: error.details,
+    });
+  }
+  const line = JSON.stringify(payload);
+  if (level === 'error') console.error(line);
+  else if (level === 'warn') console.warn(line);
+  else console.info(line);
+};
+
 const lowerHeaders = (headers = {}) => Object.fromEntries(Object.entries(headers || {}).map(([key, value]) => [String(key).toLowerCase(), value]));
 
 export const getWebhookToken = (event = {}) => {
@@ -29,7 +52,7 @@ export const parseWebhookPayload = (event = {}) => {
     return event.body ? JSON.parse(event.body) : {};
   } catch {
     throw new PaymentV1Error('Invalid webhook JSON body.', {
-      debugCode: 'unexpected_error',
+      debugCode: 'webhook_invalid_json',
       statusCode: 400,
     });
   }
@@ -73,7 +96,8 @@ export const createHandler = ({ paymentOrders = null, env = process.env } = {}) 
       });
     }
 
-    const orderStore = paymentOrders || createPaymentOrderStore();
+    safeLog('info', { requestId, step: 'webhook_payload_parse_start', debugCode: 'webhook_parse_start' });
+    const orderStore = paymentOrders || createPaymentOrderStore({ env });
     const payload = parseWebhookPayload(event);
     const facts = extractAsaasWebhookFacts(payload);
     const eventStatus = mapAsaasEventStatus(facts.eventType);
@@ -87,6 +111,7 @@ export const createHandler = ({ paymentOrders = null, env = process.env } = {}) 
     });
 
     if (eventRecord.duplicate) {
+      safeLog('info', { requestId, step: 'webhook_duplicate', debugCode: 'webhook_event_duplicate' });
       return json(200, {
         status: 'duplicate',
         debugCode: 'webhook_event_duplicate',
@@ -95,9 +120,11 @@ export const createHandler = ({ paymentOrders = null, env = process.env } = {}) 
     }
 
     if (eventStatus === 'ignored') {
+      safeLog('info', { requestId, step: 'webhook_ignored', debugCode: 'webhook_event_ignored' });
       return json(200, {
         status: 'ignored',
         eventType: facts.eventType,
+        debugCode: 'webhook_event_ignored',
         requestId,
       });
     }
@@ -108,6 +135,7 @@ export const createHandler = ({ paymentOrders = null, env = process.env } = {}) 
     });
 
     if (!order) {
+      safeLog('warn', { requestId, step: 'webhook_order_not_found', debugCode: 'webhook_order_not_found' });
       return json(200, {
         status: 'order_not_found',
         debugCode: 'webhook_order_not_found',
@@ -124,6 +152,7 @@ export const createHandler = ({ paymentOrders = null, env = process.env } = {}) 
       }
       const paidOrder = await orderStore.updateOrderStatus({ orderId: order.id, status: 'paid' });
       const creditResult = await orderStore.createCreditForOrderOnce({ order: paidOrder || order });
+      safeLog('info', { requestId, step: 'webhook_paid_success', debugCode: 'webhook_paid_ok' });
       return json(200, {
         status: 'paid',
         orderId: order.id,
@@ -133,6 +162,7 @@ export const createHandler = ({ paymentOrders = null, env = process.env } = {}) 
     }
 
     await orderStore.updateOrderStatus({ orderId: order.id, status: eventStatus });
+    safeLog('info', { requestId, step: 'webhook_terminal_status', debugCode: `webhook_${eventStatus}_ok` });
     return json(200, {
       status: eventStatus,
       orderId: order.id,
@@ -140,7 +170,13 @@ export const createHandler = ({ paymentOrders = null, env = process.env } = {}) 
       requestId,
     });
   } catch (error) {
-    const paymentError = toPaymentV1Error(error, 'unexpected_error');
+    const paymentError = toPaymentV1Error(error, 'webhook_unhandled_error');
+    safeLog('error', {
+      requestId,
+      step: 'webhook_failed',
+      debugCode: paymentError.debugCode || 'webhook_unhandled_error',
+      error: paymentError,
+    });
     return json(paymentError.statusCode || 500, errorResponseBody(paymentError, requestId));
   }
 };
