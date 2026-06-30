@@ -12,13 +12,25 @@ const json = (statusCode, body) => ({
   body: JSON.stringify(body),
 });
 
-const safeLog = (level, { requestId, step, debugCode, error }) => {
+const maskUserId = (userId) => {
+  const value = String(userId || '');
+  if (value.length <= 8) return value ? '[masked]' : null;
+  return `${value.slice(0, 4)}...${value.slice(-4)}`;
+};
+
+const safeLog = (level, { requestId, step, stage, debugCode, userId, orderId, externalReference, checkoutId, error }) => {
+  const resolvedStage = stage || step;
   const payload = {
     scope: 'payment-v1-status',
     requestId,
-    step,
+    step: resolvedStage,
+    stage: resolvedStage,
     debugCode,
   };
+  if (userId) payload.userId = maskUserId(userId);
+  if (orderId) payload.orderId = orderId;
+  if (externalReference) payload.externalReference = externalReference;
+  if (checkoutId) payload.checkoutId = checkoutId;
   if (error) {
     payload.error = sanitizeForPaymentLog({
       name: error.name,
@@ -87,6 +99,7 @@ export const createHandler = ({
   env = process.env,
 } = {}) => async (event = {}) => {
   const requestId = crypto.randomUUID();
+  const logContext = {};
   try {
     if (event.httpMethod && !['GET', 'POST'].includes(event.httpMethod)) {
       throw new PaymentV1Error('Method not allowed.', {
@@ -99,7 +112,7 @@ export const createHandler = ({
       validateSupabaseStatusEnv(env);
     }
 
-    safeLog('info', { requestId, step: 'auth_start', debugCode: 'status_auth_start' });
+    safeLog('info', { requestId, stage: 'auth_start', debugCode: 'status_auth_start' });
     const authUser = await authenticateRequest({ event, env });
     if (!authUser?.userId) {
       throw new PaymentV1Error('Authorization bearer token is invalid.', {
@@ -107,15 +120,28 @@ export const createHandler = ({
         statusCode: 401,
       });
     }
+    logContext.userId = authUser.userId;
 
-    safeLog('info', { requestId, step: 'query_start', debugCode: 'status_query_start' });
+    safeLog('info', { requestId, stage: 'query_start', debugCode: 'status_query_start', userId: authUser.userId });
     const orderStore = paymentOrders || createPaymentOrderStore({ env });
     const status = normalizeStatusRows(await orderStore.getPaymentStatusForUser({ userId: authUser.userId }));
     const activeCredits = status.activeCredits.map(publicCredit);
     const pendingOrders = status.pendingOrders.map(publicOrder);
     const paidOrders = status.paidOrders.map(publicOrder);
+    const firstOrder = pendingOrders[0] || paidOrders[0] || null;
+    if (firstOrder) {
+      logContext.orderId = firstOrder.id;
+      logContext.externalReference = firstOrder.externalReference;
+      logContext.checkoutId = firstOrder.providerCheckoutId;
+    }
 
-    safeLog('info', { requestId, step: 'status_success', debugCode: 'status_ok' });
+    safeLog('info', {
+      requestId,
+      stage: 'status_success',
+      debugCode: 'status_ok',
+      userId: authUser.userId,
+      ...logContext,
+    });
     return json(200, {
       hasActiveCredit: activeCredits.length > 0,
       activeCredits,
@@ -127,8 +153,9 @@ export const createHandler = ({
     const paymentError = toPaymentV1Error(error, 'status_unexpected_error');
     safeLog('error', {
       requestId,
-      step: 'status_failed',
+      stage: 'status_failed',
       debugCode: paymentError.debugCode || 'status_unexpected_error',
+      ...logContext,
       error: paymentError,
     });
     return json(paymentError.statusCode || 500, errorResponseBody(paymentError, requestId));

@@ -252,6 +252,17 @@ export const createPaymentOrderStore = ({ env = process.env, fetchImpl = globalT
     return Array.isArray(rows) ? rows : [];
   };
 
+  const listRecentCreditsForUser = async ({ userId }) => {
+    requireStatusUserId(userId);
+    const rows = await requestSupabase({
+      config,
+      fetchImpl,
+      path: `payment_v1_credits?user_id=eq.${encodeURIComponent(userId)}&order=created_at.desc&limit=20&select=id,order_id,plan_code,analysis_limit,analysis_used,status,created_at,finalized_at`,
+      debugCode: 'credits_query_failed',
+    });
+    return Array.isArray(rows) ? rows : [];
+  };
+
   const listRecentOrdersForUser = async ({ userId }) => {
     requireStatusUserId(userId);
     const rows = await requestSupabase({
@@ -261,6 +272,28 @@ export const createPaymentOrderStore = ({ env = process.env, fetchImpl = globalT
       debugCode: 'orders_query_failed',
     });
     return Array.isArray(rows) ? rows : [];
+  };
+
+  const listRecentEventsForOrders = async ({ orders = [] }) => {
+    const seen = new Map();
+    const orderKeys = orders.flatMap((order) => [
+      { column: 'external_reference', value: order.external_reference },
+      { column: 'provider_checkout_id', value: order.provider_checkout_id },
+    ]).filter((item) => item.value);
+
+    for (const { column, value } of orderKeys) {
+      const rows = await requestSupabase({
+        config,
+        fetchImpl,
+        path: `payment_v1_events?${column}=eq.${encodeURIComponent(value)}&order=created_at.desc&limit=20&select=id,provider,event_id,event_type,provider_checkout_id,external_reference,processed_at,created_at`,
+        debugCode: 'events_query_failed',
+      });
+      for (const row of Array.isArray(rows) ? rows : []) {
+        seen.set(row.id || `${row.provider}:${row.event_id}`, row);
+      }
+    }
+
+    return [...seen.values()].sort((left, right) => String(right.created_at || '').localeCompare(String(left.created_at || ''))).slice(0, 20);
   };
 
   const getPaymentStatusForUser = async ({ userId }) => {
@@ -281,7 +314,9 @@ export const createPaymentOrderStore = ({ env = process.env, fetchImpl = globalT
     updateOrderStatus,
     createCreditForOrderOnce,
     listActiveCreditsForUser,
+    listRecentCreditsForUser,
     listRecentOrdersForUser,
+    listRecentEventsForOrders,
     getPaymentStatusForUser,
   };
 };

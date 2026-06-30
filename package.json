@@ -46,7 +46,8 @@
     "qa:payment-v1:minimal-checkout": "node scripts/run-payment-v1-minimal-checkout-harness.mjs",
     "qa:payment-v1:webhook-credit": "node scripts/run-payment-v1-webhook-credit-harness.mjs",
     "qa:payment-v1:app-unlock": "node scripts/run-payment-v1-app-unlock-harness.mjs",
-    "qa:payment-v1:full-return-unlock": "node scripts/run-payment-v1-full-return-unlock-harness.mjs"
+    "qa:payment-v1:full-return-unlock": "node scripts/run-payment-v1-full-return-unlock-harness.mjs",
+    "qa:payment-v1:e2e-diagnostic": "node scripts/run-payment-v1-e2e-diagnostic-harness.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.108.2",

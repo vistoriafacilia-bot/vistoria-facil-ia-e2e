@@ -15,13 +15,25 @@ const json = (statusCode, body) => ({
   body: JSON.stringify(body),
 });
 
-const safeLog = (level, { requestId, step, debugCode, error }) => {
+const maskUserId = (userId) => {
+  const value = String(userId || '');
+  if (value.length <= 8) return value ? '[masked]' : null;
+  return `${value.slice(0, 4)}...${value.slice(-4)}`;
+};
+
+const safeLog = (level, { requestId, step, stage, debugCode, userId, orderId, externalReference, checkoutId, error }) => {
+  const resolvedStage = stage || step;
   const payload = {
     scope: 'payment-v1-asaas-webhook',
     requestId,
-    step,
+    step: resolvedStage,
+    stage: resolvedStage,
     debugCode,
   };
+  if (userId) payload.userId = maskUserId(userId);
+  if (orderId) payload.orderId = orderId;
+  if (externalReference) payload.externalReference = externalReference;
+  if (checkoutId) payload.checkoutId = checkoutId;
   if (error) {
     payload.error = sanitizeForPaymentLog({
       name: error.name,
@@ -80,6 +92,7 @@ export const mapAsaasEventStatus = (eventType) => {
 
 export const createHandler = ({ paymentOrders = null, env = process.env } = {}) => async (event = {}) => {
   const requestId = crypto.randomUUID();
+  const logContext = {};
   try {
     if (event.httpMethod && event.httpMethod !== 'POST') {
       throw new PaymentV1Error('Method not allowed.', {
@@ -96,10 +109,12 @@ export const createHandler = ({ paymentOrders = null, env = process.env } = {}) 
       });
     }
 
-    safeLog('info', { requestId, step: 'webhook_payload_parse_start', debugCode: 'webhook_parse_start' });
+    safeLog('info', { requestId, stage: 'webhook_payload_parse_start', debugCode: 'webhook_parse_start' });
     const orderStore = paymentOrders || createPaymentOrderStore({ env });
     const payload = parseWebhookPayload(event);
     const facts = extractAsaasWebhookFacts(payload);
+    logContext.externalReference = facts.externalReference;
+    logContext.checkoutId = facts.checkoutId;
     const eventStatus = mapAsaasEventStatus(facts.eventType);
     const sanitizedPayload = sanitizeForPaymentLog(payload);
     const eventRecord = await orderStore.recordWebhookEvent({
@@ -111,7 +126,13 @@ export const createHandler = ({ paymentOrders = null, env = process.env } = {}) 
     });
 
     if (eventRecord.duplicate) {
-      safeLog('info', { requestId, step: 'webhook_duplicate', debugCode: 'webhook_event_duplicate' });
+      safeLog('info', {
+        requestId,
+        stage: 'webhook_duplicate',
+        debugCode: 'webhook_event_duplicate',
+        externalReference: facts.externalReference,
+        checkoutId: facts.checkoutId,
+      });
       return json(200, {
         status: 'duplicate',
         debugCode: 'webhook_event_duplicate',
@@ -120,7 +141,13 @@ export const createHandler = ({ paymentOrders = null, env = process.env } = {}) 
     }
 
     if (eventStatus === 'ignored') {
-      safeLog('info', { requestId, step: 'webhook_ignored', debugCode: 'webhook_event_ignored' });
+      safeLog('info', {
+        requestId,
+        stage: 'webhook_ignored',
+        debugCode: 'webhook_event_ignored',
+        externalReference: facts.externalReference,
+        checkoutId: facts.checkoutId,
+      });
       return json(200, {
         status: 'ignored',
         eventType: facts.eventType,
@@ -133,9 +160,19 @@ export const createHandler = ({ paymentOrders = null, env = process.env } = {}) 
       externalReference: facts.externalReference,
       checkoutId: facts.checkoutId,
     });
+    if (order) {
+      logContext.orderId = order.id;
+      logContext.userId = order.user_id;
+    }
 
     if (!order) {
-      safeLog('warn', { requestId, step: 'webhook_order_not_found', debugCode: 'webhook_order_not_found' });
+      safeLog('warn', {
+        requestId,
+        stage: 'webhook_order_not_found',
+        debugCode: 'webhook_order_not_found',
+        externalReference: facts.externalReference,
+        checkoutId: facts.checkoutId,
+      });
       return json(200, {
         status: 'order_not_found',
         debugCode: 'webhook_order_not_found',
@@ -152,7 +189,15 @@ export const createHandler = ({ paymentOrders = null, env = process.env } = {}) 
       }
       const paidOrder = await orderStore.updateOrderStatus({ orderId: order.id, status: 'paid' });
       const creditResult = await orderStore.createCreditForOrderOnce({ order: paidOrder || order });
-      safeLog('info', { requestId, step: 'webhook_paid_success', debugCode: 'webhook_paid_ok' });
+      safeLog('info', {
+        requestId,
+        stage: 'webhook_paid_success',
+        debugCode: 'webhook_paid_ok',
+        userId: order.user_id,
+        orderId: order.id,
+        externalReference: facts.externalReference,
+        checkoutId: facts.checkoutId,
+      });
       return json(200, {
         status: 'paid',
         orderId: order.id,
@@ -162,7 +207,15 @@ export const createHandler = ({ paymentOrders = null, env = process.env } = {}) 
     }
 
     await orderStore.updateOrderStatus({ orderId: order.id, status: eventStatus });
-    safeLog('info', { requestId, step: 'webhook_terminal_status', debugCode: `webhook_${eventStatus}_ok` });
+    safeLog('info', {
+      requestId,
+      stage: 'webhook_terminal_status',
+      debugCode: `webhook_${eventStatus}_ok`,
+      userId: order.user_id,
+      orderId: order.id,
+      externalReference: facts.externalReference,
+      checkoutId: facts.checkoutId,
+    });
     return json(200, {
       status: eventStatus,
       orderId: order.id,
@@ -173,8 +226,9 @@ export const createHandler = ({ paymentOrders = null, env = process.env } = {}) 
     const paymentError = toPaymentV1Error(error, 'webhook_unhandled_error');
     safeLog('error', {
       requestId,
-      step: 'webhook_failed',
+      stage: 'webhook_failed',
       debugCode: paymentError.debugCode || 'webhook_unhandled_error',
+      ...logContext,
       error: paymentError,
     });
     return json(paymentError.statusCode || 500, errorResponseBody(paymentError, requestId));
