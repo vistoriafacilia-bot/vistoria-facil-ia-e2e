@@ -9,8 +9,8 @@ import {
   PAYMENT_V1_PLANS,
   reconcilePaymentV1,
 } from '../lib/services/paymentV1Service';
+import { buildPaymentV1Entitlement } from '../lib/paymentV1EntitlementBridge';
 import type {
-  PaymentV1CreditStatus,
   PaymentV1DebugStatusResponse,
   PaymentV1PlanCode,
   PaymentV1StatusResponse,
@@ -36,25 +36,6 @@ const isAuthSessionError = (error: any) => authDebugCodes.has(String(error?.debu
 const buildStatusWarning = (error: any) => {
   if (isAuthSessionError(error)) return loginAgainMessage;
   return `Não foi possível confirmar pagamentos anteriores agora. Os planos continuam disponíveis. debugCode=${error?.debugCode || 'payment_v1_status_failed'}`;
-};
-
-const buildPaymentV1Entitlement = (credit: PaymentV1CreditStatus, user?: AppUser): Entitlement => {
-  const now = new Date().toISOString();
-  return {
-    id: `payment-v1-${credit.id}`,
-    userId: user?.uid || user?.id || '',
-    planId: 'beta_paid_4990',
-    status: 'active',
-    source: 'manual_admin',
-    maxPhotosPerInspection: credit.analysisLimit,
-    pdfEnabled: true,
-    orderId: credit.orderId,
-    paymentId: credit.id,
-    preferenceId: null,
-    createdAt: credit.createdAt || now,
-    updatedAt: now,
-    expiresAt: null,
-  };
 };
 
 const buildDiagnosticMessage = (status: PaymentV1StatusResponse | null, debug?: PaymentV1DebugStatusResponse | null) => {

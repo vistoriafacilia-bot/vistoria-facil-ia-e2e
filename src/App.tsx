@@ -9,10 +9,12 @@ import PaymentV1Gate from './components/PaymentV1Gate';
 import { ClipboardList, Plus, History, Trash2, FileText, Play, ChevronLeft, ArrowRight, ShieldCheck, Sparkles, Building2 } from 'lucide-react';
 import { APP_VERSION } from './lib/appVersion';
 import { getOrCreateUserEntitlement } from './lib/entitlements';
+import { resolvePaymentV1Entitlement } from './lib/paymentV1EntitlementBridge';
 import { isEmptyInspectionDraft } from './lib/inspectionLifecycle';
 import { safeCreateAuditEvent } from './lib/auditEvents';
 import { loginWithEmailPassword, loginWithGoogle, onAuthStateChanged, resetPasswordForEmail, signUpWithEmailPassword, upsertProfile } from './lib/services/authService';
 import { deleteInspection, listInspections } from './lib/services/inspectionService';
+import { getPaymentV1Status } from './lib/services/paymentV1Service';
 import { listPhotos } from './lib/services/photoService';
 import { listReports } from './lib/services/reportService';
 import { listRooms } from './lib/services/roomService';
@@ -77,20 +79,41 @@ export default function App() {
 
   // Sync active user entitlement
   useEffect(() => {
-    if (user) {
-      setEntitlementLoading(true);
-      getOrCreateUserEntitlement(user.uid)
-        .then(ent => {
-          setEntitlement(ent);
-          setEntitlementLoading(false);
-        })
-        .catch(err => {
-          console.error('Error fetching entitlement:', err);
-          setEntitlementLoading(false);
-        });
-    } else {
+    let active = true;
+
+    if (!user) {
       setEntitlement(null);
+      setEntitlementLoading(false);
+      return () => {
+        active = false;
+      };
     }
+
+    setEntitlementLoading(true);
+
+    void (async () => {
+      try {
+        const baseEntitlement = await getOrCreateUserEntitlement(user.uid);
+        let effectiveEntitlement = baseEntitlement;
+
+        try {
+          const paymentStatus = await getPaymentV1Status();
+          effectiveEntitlement = resolvePaymentV1Entitlement(baseEntitlement, user, paymentStatus);
+        } catch (error) {
+          console.warn('Payment V1 entitlement status unavailable; using base entitlement.', error);
+        }
+
+        if (active) setEntitlement(effectiveEntitlement);
+      } catch (error) {
+        if (active) console.error('Error fetching entitlement:', error);
+      } finally {
+        if (active) setEntitlementLoading(false);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
   }, [user]);
 
   const loadPropertyInspections = async (property: Property): Promise<HistoryInspection[]> => {
