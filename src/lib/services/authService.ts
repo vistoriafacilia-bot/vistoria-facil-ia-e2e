@@ -2,6 +2,10 @@ import { AppUser } from '../../types';
 import { isLocalE2EMode, requireSupabaseConfigured, supabase, throwIfSupabaseError, toAppUser } from '../supabaseClient';
 import { localTestUser, localUpsert } from '../supabaseLocalStore';
 
+const handleAuthBootstrapError = (callback: (user: AppUser | null) => void) => {
+  callback(null);
+};
+
 export function onAuthStateChanged(callback: (user: AppUser | null) => void) {
   if (isLocalE2EMode()) {
     window.setTimeout(() => callback(localTestUser), 0);
@@ -9,7 +13,15 @@ export function onAuthStateChanged(callback: (user: AppUser | null) => void) {
   }
 
   requireSupabaseConfigured();
-  void supabase.auth.getUser().then(({ data }) => callback(toAppUser(data.user)));
+  void supabase.auth.getUser()
+    .then(({ data, error }) => {
+      if (error) {
+        handleAuthBootstrapError(callback);
+        return;
+      }
+      callback(toAppUser(data.user));
+    })
+    .catch(() => handleAuthBootstrapError(callback));
   const { data } = supabase.auth.onAuthStateChange((_event, session) => {
     callback(toAppUser(session?.user));
   });

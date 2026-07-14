@@ -51,6 +51,44 @@ test('paymentV1ModulesLoad', () => {
   assert.equal(typeof errorsModule.PaymentV1Error, 'function');
   assert.equal(plan50.value, 49.9);
   assert.equal(typeof functionModule.createHandler, 'function');
+  assert.equal(typeof functionModule.resolvePaymentV1ReturnCallback, 'function');
+});
+
+test('productionReturnOriginAccepted', () => {
+  const callback = functionModule.resolvePaymentV1ReturnCallback('https://vistoriafacil-ia.com.br');
+  assert.deepEqual(callback, {
+    successUrl: 'https://vistoriafacil-ia.com.br/?payment=success',
+    cancelUrl: 'https://vistoriafacil-ia.com.br/?payment=cancel',
+    expiredUrl: 'https://vistoriafacil-ia.com.br/?payment=expired',
+  });
+});
+
+test('mainNetlifyReturnOriginAccepted', () => {
+  const callback = functionModule.resolvePaymentV1ReturnCallback('https://glittery-boba-2b3367.netlify.app');
+  assert.equal(callback.successUrl, 'https://glittery-boba-2b3367.netlify.app/?payment=success');
+});
+
+test('draftNetlifyReturnOriginAccepted', () => {
+  const callback = functionModule.resolvePaymentV1ReturnCallback('https://6a55231a670ff1e30df48d7f--glittery-boba-2b3367.netlify.app');
+  assert.equal(callback.successUrl, 'https://6a55231a670ff1e30df48d7f--glittery-boba-2b3367.netlify.app/?payment=success');
+});
+
+test('maliciousReturnOriginRejected', () => {
+  assert.throws(
+    () => functionModule.resolvePaymentV1ReturnCallback('https://attacker.example.test'),
+    (error) => error.debugCode === 'invalid_return_origin' && error.statusCode === 400
+  );
+});
+
+test('similarInvalidNetlifyReturnOriginRejected', () => {
+  assert.throws(
+    () => functionModule.resolvePaymentV1ReturnCallback('https://6a55231a670ff1e30df48d7f--glittery-boba-2b3367.netlify.app.evil.example'),
+    (error) => error.debugCode === 'invalid_return_origin' && error.statusCode === 400
+  );
+});
+
+test('missingReturnOriginUsesEnvFallback', () => {
+  assert.equal(functionModule.resolvePaymentV1ReturnCallback(undefined), null);
 });
 
 test('sandboxEnvUsesSandboxBase', () => {
@@ -83,6 +121,41 @@ test('checkoutPayloadHasPixAndCreditCard', async () => {
     },
   });
   assert.deepEqual(payload.billingTypes, ['PIX', 'CREDIT_CARD']);
+});
+
+test('checkoutPayloadUsesEnvCallbackFallback', async () => {
+  let payload;
+  await clientModule.createAsaasCheckout({
+    plan: plan50,
+    env: envFixture,
+    fetchImpl: async (_url, options) => {
+      payload = JSON.parse(options.body);
+      return jsonResponse(200, { id: 'chk_123', link: 'https://sandbox.asaas.com/checkoutSession/show/chk_123' });
+    },
+  });
+  assert.deepEqual(payload.callback, {
+    successUrl: envFixture.ASAAS_SUCCESS_URL,
+    cancelUrl: envFixture.ASAAS_CANCEL_URL,
+    expiredUrl: envFixture.ASAAS_EXPIRED_URL,
+  });
+});
+
+test('checkoutPayloadUsesValidatedReturnOriginCallback', async () => {
+  let payload;
+  const callback = functionModule.resolvePaymentV1ReturnCallback('https://6a55231a670ff1e30df48d7f--glittery-boba-2b3367.netlify.app');
+  await clientModule.createAsaasCheckout({
+    plan: plan50,
+    env: {
+      ASAAS_ENV: 'sandbox',
+      ASAAS_API_KEY: 'test_api_key_not_printed',
+    },
+    callback,
+    fetchImpl: async (_url, options) => {
+      payload = JSON.parse(options.body);
+      return jsonResponse(200, { id: 'chk_123', link: 'https://sandbox.asaas.com/checkoutSession/show/chk_123' });
+    },
+  });
+  assert.deepEqual(payload.callback, callback);
 });
 
 test('checkoutPayloadHasDetached', async () => {
@@ -159,6 +232,51 @@ test('functionReturnsCheckoutUrl', async () => {
   assert.equal(body.checkoutId, 'chk_fn');
   assert.equal(body.orderId, 'order_1');
   assert.equal(body.planCode, 'report_50_beta');
+});
+
+test('functionPassesValidatedReturnOriginCallbackToAsaas', async () => {
+  const paymentOrders = makeMockPaymentOrders();
+  let receivedCallback;
+  const handler = functionModule.createHandler({
+    paymentOrders,
+    authenticateRequest: async () => ({ userId: '00000000-0000-4000-8000-000000000001' }),
+    asaasClient: {
+      async createAsaasCheckout({ plan, callback }) {
+        receivedCallback = callback;
+        return { checkoutUrl: 'https://sandbox.asaas.com/checkoutSession/show/chk_fn', checkoutId: 'chk_fn', planCode: plan.code };
+      },
+    },
+  });
+  const response = await handler({
+    httpMethod: 'POST',
+    body: JSON.stringify({
+      planCode: 'report_50_beta',
+      returnOrigin: 'https://6a55231a670ff1e30df48d7f--glittery-boba-2b3367.netlify.app',
+    }),
+  });
+  assert.equal(response.statusCode, 200);
+  assert.equal(receivedCallback.successUrl, 'https://6a55231a670ff1e30df48d7f--glittery-boba-2b3367.netlify.app/?payment=success');
+});
+
+test('functionRejectsInvalidReturnOriginBeforeOrderCreation', async () => {
+  const paymentOrders = makeMockPaymentOrders();
+  const handler = functionModule.createHandler({
+    paymentOrders,
+    authenticateRequest: async () => ({ userId: '00000000-0000-4000-8000-000000000001' }),
+    asaasClient: {
+      async createAsaasCheckout() {
+        throw new Error('asaas should not be called');
+      },
+    },
+  });
+  const response = await handler({
+    httpMethod: 'POST',
+    body: JSON.stringify({ planCode: 'report_50_beta', returnOrigin: 'https://attacker.example.test' }),
+  });
+  const body = JSON.parse(response.body);
+  assert.equal(response.statusCode, 400);
+  assert.equal(body.debugCode, 'invalid_return_origin');
+  assert.equal(paymentOrders.orders.length, 0);
 });
 
 test('noGenericErrorWithoutDebugCode', async () => {
