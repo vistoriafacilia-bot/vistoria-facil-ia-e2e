@@ -918,7 +918,7 @@ export default function InspectionWizard({
 
           <div className="bg-amber-50 rounded-xl p-3.5 border border-amber-100 text-xs text-amber-800 leading-relaxed space-y-2">
             <p className="font-semibold flex items-center gap-1.5">
-              <Info className="w-4 h-4" /> Importante (V0.4.0-rc3)
+              <Info className="w-4 h-4" /> Importante (V0.4.0-rc4)
             </p>
             <p>
               Ao iniciar, configuraremos uma checklist inicial com {DEFAULT_ROOMS.length} cômodos clássicos para você registrar fotos e analisar as condições de paredes, pisos, mobílias e instalações de forma rápida e segura.

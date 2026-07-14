@@ -324,7 +324,8 @@ test('paymentSuccessReturnAutoConfirmsAndCleansUrl', () => {
   assert.match(paymentGateSource, /while \(active && Date\.now\(\) <= deadline\)/);
   assert.match(paymentGateSource, /await reconcilePaymentV1\(\)/);
   assert.match(paymentGateSource, /setPaymentReturnMessage\('Confirmando pagamento\.\.\.'\)/);
-  assert.match(paymentGateSource, /setPaymentReturnMessage\('Pagamento aprovado\. Seu relatório foi liberado\.'\)/);
+  assert.match(paymentGateSource, /setPaymentReturnMessage\(null\)/);
+  assert.match(paymentGateSource, /showPaymentReturnMessage/);
   assert.match(paymentGateSource, /setPaymentReturnMessage\('Seu pagamento ainda está sendo processado\. Aguarde alguns instantes\.'\)/);
   assert.match(paymentGateSource, /setReturnConfirming\(false\)/);
 });

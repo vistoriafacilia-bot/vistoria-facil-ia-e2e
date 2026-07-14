@@ -244,7 +244,9 @@ describe('PlanGate critical error boundaries', () => {
       paymentId: 'credit-return-001',
     }));
     expect(window.location.search).toBe('?keep=1');
-    expect(screen.getByText(/Pagamento aprovado\. Seu relat.rio foi liberado\./i)).toBeInTheDocument();
+    expect(screen.queryByText('Confirmando pagamento...')).not.toBeInTheDocument();
+    expect(screen.getAllByText(/Pagamento confirmado\. Relat.rio liberado\./i)).toHaveLength(1);
+    expect(screen.queryByText(/Pagamento em reestrutura..o/i)).not.toBeInTheDocument();
     expect(onReadyMock).not.toHaveBeenCalled();
 
     const callsAfterSuccess = paymentV1Mocks.getPaymentV1Status.mock.calls.length;

@@ -289,7 +289,7 @@ const seed = async (session) => {
     startedAt: now,
     completedAt: now,
     summary: `Vistoria seed VF-STAGING-GATE-002 testRunId=${testRunId}`,
-    appVersion: 'V0.4.0-rc3',
+    appVersion: 'V0.4.0-rc4',
     testRunId,
   });
 

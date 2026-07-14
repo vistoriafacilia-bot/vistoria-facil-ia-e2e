@@ -120,6 +120,8 @@ export default function PaymentV1Gate({ user, onReady, onEntitlementSync, autoCo
     setPaymentStatus(status);
     setStatusWarning(null);
     if (status.hasActiveCredit) {
+      setReturnConfirming(false);
+      setPaymentReturnMessage(null);
       syncEntitlementIfAvailable(status);
       setPaymentDiagnostic(buildDiagnosticMessage(status));
       notifyReadyIfAllowed(status);
@@ -160,19 +162,15 @@ export default function PaymentV1Gate({ user, onReady, onEntitlementSync, autoCo
       setDebugLoading(true);
       const debugStatus = await getPaymentV1DebugStatus();
       const mergedStatus = mergeDebugIntoStatus(reconciledStatus, debugStatus);
-      setPaymentStatus(mergedStatus);
+      applyStatus(mergedStatus);
       setPaymentDiagnostic(buildDiagnosticMessage(mergedStatus, debugStatus));
-      if (mergedStatus.hasActiveCredit) {
-        syncEntitlementIfAvailable(mergedStatus);
-        notifyReadyIfAllowed(mergedStatus);
-      }
     } catch (error: any) {
       setStatusWarning(buildStatusWarning(error));
     } finally {
       setStatusLoading(false);
       setDebugLoading(false);
     }
-  }, [applyStatus, notifyReadyIfAllowed, syncEntitlementIfAvailable]);
+  }, [applyStatus]);
 
   useEffect(() => {
     if (!paymentReturnDetected) return;
@@ -186,7 +184,8 @@ export default function PaymentV1Gate({ user, onReady, onEntitlementSync, autoCo
 
     const finishSuccess = (status: PaymentV1StatusResponse) => {
       applyStatus(status);
-      setPaymentReturnMessage('Pagamento aprovado. Seu relatório foi liberado.');
+      setReturnConfirming(false);
+      setPaymentReturnMessage(null);
       setPaymentDiagnostic(buildDiagnosticMessage(status));
       removePaymentSuccessReturnFromUrl();
     };
@@ -290,6 +289,7 @@ export default function PaymentV1Gate({ user, onReady, onEntitlementSync, autoCo
     ? 'Pagamento confirmado. Relatório liberado.'
     : 'Pagamento em confirmação.';
   const verifyingPayment = statusLoading || debugLoading || returnConfirming;
+  const showPaymentReturnMessage = Boolean(paymentReturnMessage && !hasActiveCredit);
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-5 space-y-5">
@@ -342,17 +342,11 @@ export default function PaymentV1Gate({ user, onReady, onEntitlementSync, autoCo
         </div>
       )}
 
-      {paymentReturnMessage && (
+      {showPaymentReturnMessage && (
         <div className={`border rounded-lg px-3 py-2 text-sm flex items-start gap-2 ${
-          hasActiveCredit
-            ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-            : 'bg-amber-50 border-amber-200 text-amber-800'
+          'bg-amber-50 border-amber-200 text-amber-800'
         }`}>
-          {hasActiveCredit ? (
-            <CheckCircle className="w-4 h-4 mt-0.5 shrink-0" />
-          ) : (
-            <Loader2 className="w-4 h-4 mt-0.5 shrink-0" />
-          )}
+          <Loader2 className="w-4 h-4 mt-0.5 shrink-0" />
           <span>{paymentReturnMessage}</span>
         </div>
       )}

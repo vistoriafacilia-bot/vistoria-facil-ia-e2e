@@ -55,7 +55,7 @@ describe('critical static regression guards', () => {
 
   it('production app version is the release candidate and no V0.1.0 marker remains in source files', () => {
     const appVersion = read('src/lib/appVersion.ts');
-    expect(appVersion).toContain('V0.4.0-rc3');
+    expect(appVersion).toContain('V0.4.0-rc4');
 
     const productionFiles = [
       'src/App.tsx',
