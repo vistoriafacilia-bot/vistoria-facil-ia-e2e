@@ -750,6 +750,7 @@ export default function App() {
               <PaymentV1Gate 
                 user={user}
                 autoContinueOnActiveEntitlement={false}
+                onEntitlementSync={setEntitlement}
                 onReady={(updatedEnt) => {
                   setEntitlement(updatedEnt);
                   setCurrentView('properties');

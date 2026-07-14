@@ -19,6 +19,7 @@ import type {
 interface PaymentV1GateProps {
   user?: AppUser;
   onReady: (entitlement: Entitlement) => void;
+  onEntitlementSync?: (entitlement: Entitlement) => void;
   autoContinueOnActiveEntitlement?: boolean;
 }
 
@@ -67,7 +68,7 @@ const mergeDebugIntoStatus = (status: PaymentV1StatusResponse, debug: PaymentV1D
   };
 };
 
-export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntitlement }: PaymentV1GateProps) {
+export default function PaymentV1Gate({ user, onReady, onEntitlementSync, autoContinueOnActiveEntitlement }: PaymentV1GateProps) {
   const [loadingPlan, setLoadingPlan] = useState<PaymentV1PlanCode | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
   const [debugLoading, setDebugLoading] = useState(false);
@@ -76,20 +77,32 @@ export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntit
   const [statusWarning, setStatusWarning] = useState<string | null>(null);
   const [paymentDiagnostic, setPaymentDiagnostic] = useState<string | null>(null);
 
-  const notifyReadyIfAllowed = useCallback((status: PaymentV1StatusResponse) => {
+  const buildEntitlementFromStatus = useCallback((status: PaymentV1StatusResponse) => {
     const firstCredit = status.activeCredits?.[0];
-    if (!autoContinueOnActiveEntitlement || !firstCredit) return;
-    onReady(buildPaymentV1Entitlement(firstCredit, user));
-  }, [autoContinueOnActiveEntitlement, onReady, user]);
+    return firstCredit ? buildPaymentV1Entitlement(firstCredit, user) : null;
+  }, [user]);
+
+  const syncEntitlementIfAvailable = useCallback((status: PaymentV1StatusResponse) => {
+    const paymentEntitlement = buildEntitlementFromStatus(status);
+    if (paymentEntitlement) onEntitlementSync?.(paymentEntitlement);
+    return paymentEntitlement;
+  }, [buildEntitlementFromStatus, onEntitlementSync]);
+
+  const notifyReadyIfAllowed = useCallback((status: PaymentV1StatusResponse) => {
+    const paymentEntitlement = buildEntitlementFromStatus(status);
+    if (!autoContinueOnActiveEntitlement || !paymentEntitlement) return;
+    onReady(paymentEntitlement);
+  }, [autoContinueOnActiveEntitlement, buildEntitlementFromStatus, onReady]);
 
   const applyStatus = useCallback((status: PaymentV1StatusResponse) => {
     setPaymentStatus(status);
     setStatusWarning(null);
     if (status.hasActiveCredit) {
+      syncEntitlementIfAvailable(status);
       setPaymentDiagnostic(buildDiagnosticMessage(status));
       notifyReadyIfAllowed(status);
     }
-  }, [notifyReadyIfAllowed]);
+  }, [notifyReadyIfAllowed, syncEntitlementIfAvailable]);
 
   const refreshPaymentStatus = useCallback(async () => {
     setStatusLoading(true);
@@ -127,14 +140,17 @@ export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntit
       const mergedStatus = mergeDebugIntoStatus(reconciledStatus, debugStatus);
       setPaymentStatus(mergedStatus);
       setPaymentDiagnostic(buildDiagnosticMessage(mergedStatus, debugStatus));
-      if (mergedStatus.hasActiveCredit) notifyReadyIfAllowed(mergedStatus);
+      if (mergedStatus.hasActiveCredit) {
+        syncEntitlementIfAvailable(mergedStatus);
+        notifyReadyIfAllowed(mergedStatus);
+      }
     } catch (error: any) {
       setStatusWarning(buildStatusWarning(error));
     } finally {
       setStatusLoading(false);
       setDebugLoading(false);
     }
-  }, [applyStatus, notifyReadyIfAllowed]);
+  }, [applyStatus, notifyReadyIfAllowed, syncEntitlementIfAvailable]);
 
   useEffect(() => {
     let active = true;
