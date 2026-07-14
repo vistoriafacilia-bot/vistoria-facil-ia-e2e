@@ -201,7 +201,7 @@ describe.skip('Legacy Firebase App integrated critical path', () => {
     const storedInspection = Array.from(firestoreStore.docs.values()).find((doc: any) => doc?.propertyId === 'prop-1' && doc?.status === 'em_andamento') as Inspection | undefined;
     expect(storedInspection).toBeTruthy();
     expect(storedInspection?.userId).toBe(testUser.uid);
-    expect(storedInspection?.appVersion).toBe('V0.4.0-rc2');
+    expect(storedInspection?.appVersion).toBe('V0.4.0-rc3');
 
     const storedRooms = Array.from(firestoreStore.docs.entries()).filter(([path]) => path.includes(`/rooms/`));
     expect(storedRooms).toHaveLength(9);
@@ -220,7 +220,7 @@ describe.skip('Legacy Firebase App integrated critical path', () => {
       inspectionType: 'entrada',
       status: 'em_andamento',
       startedAt: '2026-06-25T11:00:00.000Z',
-      appVersion: 'V0.4.0-rc2',
+      appVersion: 'V0.4.0-rc3',
     };
     const room: Room = {
       id: 'room-existing-1',
@@ -322,7 +322,7 @@ describe.skip('Legacy Firebase App integrated critical path', () => {
       inspectionType: 'entrada',
       status: 'em_andamento',
       startedAt: '2026-06-25T11:00:00.000Z',
-      appVersion: 'V0.4.0-rc2',
+      appVersion: 'V0.4.0-rc3',
     };
     const room: Room = {
       id: 'room-existing-draft',

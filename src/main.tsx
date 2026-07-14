@@ -78,7 +78,7 @@ function updateDiagnosticsPanel() {
   panel.innerHTML = `
     <div style="display: flex; justify-content: space-between; align-items: center; border-b: 1px solid #334155; padding-bottom: 10px; margin-bottom: 12px;">
       <span style="font-weight: bold; color: #f87171; display: flex; align-items: center; gap: 6px;">
-        🛑 Diagnóstico técnico — V0.4.0-rc2
+        🛑 Diagnóstico técnico — V0.4.0-rc3
       </span>
       <button onclick="document.getElementById('tech-diagnostics-panel').remove()" style="background: #ef4444; border: none; color: white; cursor: pointer; font-size: 11px; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-family: sans-serif;">FECHAR</button>
     </div>
@@ -151,5 +151,3 @@ createRoot(document.getElementById('root')!).render(
     </ErrorBoundary>
   </StrictMode>,
 );
-
-

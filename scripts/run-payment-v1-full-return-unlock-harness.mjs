@@ -315,6 +315,20 @@ test('returnRefreshShowsUnlocked', () => {
   assert.match(paymentGateSource, /Pagamento confirmado\. Relatório liberado\./);
 });
 
+test('paymentSuccessReturnAutoConfirmsAndCleansUrl', () => {
+  assert.match(paymentGateSource, /PAYMENT_RETURN_POLL_INTERVAL_MS/);
+  assert.match(paymentGateSource, /PAYMENT_RETURN_POLL_TIMEOUT_MS = 30_000/);
+  assert.match(paymentGateSource, /new URLSearchParams\(window\.location\.search\)\.get\('payment'\) === 'success'/);
+  assert.match(paymentGateSource, /window\.history\.replaceState/);
+  assert.match(paymentGateSource, /url\.searchParams\.delete\('payment'\)/);
+  assert.match(paymentGateSource, /while \(active && Date\.now\(\) <= deadline\)/);
+  assert.match(paymentGateSource, /await reconcilePaymentV1\(\)/);
+  assert.match(paymentGateSource, /setPaymentReturnMessage\('Confirmando pagamento\.\.\.'\)/);
+  assert.match(paymentGateSource, /setPaymentReturnMessage\('Pagamento aprovado\. Seu relatório foi liberado\.'\)/);
+  assert.match(paymentGateSource, /setPaymentReturnMessage\('Seu pagamento ainda está sendo processado\. Aguarde alguns instantes\.'\)/);
+  assert.match(paymentGateSource, /setReturnConfirming\(false\)/);
+});
+
 test('noUnexpectedErrorInCheckout', async () => {
   const store = makeStore();
   const { body } = await createCheckout(store, {

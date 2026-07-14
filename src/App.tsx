@@ -24,6 +24,15 @@ type HistoryInspection = Inspection & {
   photoCount?: number;
 };
 
+type AppView = 'properties' | 'inspections_history' | 'inspection_wizard' | 'pdf_generator' | 'plans';
+
+const getInitialAppView = (): AppView => {
+  if (typeof window === 'undefined') return 'properties';
+  return new URLSearchParams(window.location.search).get('payment') === 'success'
+    ? 'plans'
+    : 'properties';
+};
+
 export default function App() {
   const [user, setUser] = useState<AppUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -42,7 +51,7 @@ export default function App() {
 
   // Routing states
   // 'properties' | 'inspections_history' | 'inspection_wizard' | 'pdf_generator' | 'plans'
-  const [currentView, setCurrentView] = useState<'properties' | 'inspections_history' | 'inspection_wizard' | 'pdf_generator' | 'plans'>('properties');
+  const [currentView, setCurrentView] = useState<AppView>(getInitialAppView);
   
   // Selected Contexts
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);

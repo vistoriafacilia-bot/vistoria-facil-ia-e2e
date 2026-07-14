@@ -16,6 +16,9 @@ import type {
   PaymentV1StatusResponse,
 } from '../lib/services/paymentV1Service';
 
+export const PAYMENT_RETURN_POLL_INTERVAL_MS = 2_000;
+export const PAYMENT_RETURN_POLL_TIMEOUT_MS = 30_000;
+
 interface PaymentV1GateProps {
   user?: AppUser;
   onReady: (entitlement: Entitlement) => void;
@@ -68,14 +71,33 @@ const mergeDebugIntoStatus = (status: PaymentV1StatusResponse, debug: PaymentV1D
   };
 };
 
+const hasPaymentSuccessReturn = () => {
+  if (typeof window === 'undefined') return false;
+  return new URLSearchParams(window.location.search).get('payment') === 'success';
+};
+
+const removePaymentSuccessReturnFromUrl = () => {
+  if (typeof window === 'undefined') return;
+  const url = new URL(window.location.href);
+  if (url.searchParams.get('payment') !== 'success') return;
+  url.searchParams.delete('payment');
+  const nextUrl = `${url.pathname}${url.search}${url.hash}` || '/';
+  window.history.replaceState(window.history.state, document.title, nextUrl);
+};
+
 export default function PaymentV1Gate({ user, onReady, onEntitlementSync, autoContinueOnActiveEntitlement }: PaymentV1GateProps) {
+  const [paymentReturnDetected] = useState(hasPaymentSuccessReturn);
   const [loadingPlan, setLoadingPlan] = useState<PaymentV1PlanCode | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
   const [debugLoading, setDebugLoading] = useState(false);
+  const [returnConfirming, setReturnConfirming] = useState(paymentReturnDetected);
   const [paymentStatus, setPaymentStatus] = useState<PaymentV1StatusResponse | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [statusWarning, setStatusWarning] = useState<string | null>(null);
   const [paymentDiagnostic, setPaymentDiagnostic] = useState<string | null>(null);
+  const [paymentReturnMessage, setPaymentReturnMessage] = useState<string | null>(() => (
+    paymentReturnDetected ? 'Confirmando pagamento...' : null
+  ));
 
   const buildEntitlementFromStatus = useCallback((status: PaymentV1StatusResponse) => {
     const firstCredit = status.activeCredits?.[0];
@@ -153,6 +175,73 @@ export default function PaymentV1Gate({ user, onReady, onEntitlementSync, autoCo
   }, [applyStatus, notifyReadyIfAllowed, syncEntitlementIfAvailable]);
 
   useEffect(() => {
+    if (!paymentReturnDetected) return;
+
+    let active = true;
+    let pollTimer: number | null = null;
+
+    const waitForNextPoll = (delayMs: number) => new Promise<void>((resolve) => {
+      pollTimer = window.setTimeout(resolve, delayMs);
+    });
+
+    const finishSuccess = (status: PaymentV1StatusResponse) => {
+      applyStatus(status);
+      setPaymentReturnMessage('Pagamento aprovado. Seu relatório foi liberado.');
+      setPaymentDiagnostic(buildDiagnosticMessage(status));
+      removePaymentSuccessReturnFromUrl();
+    };
+
+    void (async () => {
+      setReturnConfirming(true);
+      setStatusWarning(null);
+      setPaymentReturnMessage('Confirmando pagamento...');
+      const deadline = Date.now() + PAYMENT_RETURN_POLL_TIMEOUT_MS;
+
+      try {
+        while (active && Date.now() <= deadline) {
+          const status = await getPaymentV1Status();
+          if (!active) return;
+          if (status.hasActiveCredit) {
+            finishSuccess(status);
+            return;
+          }
+          applyStatus(status);
+
+          await reconcilePaymentV1();
+          if (!active) return;
+
+          const reconciledStatus = await getPaymentV1Status();
+          if (!active) return;
+          if (reconciledStatus.hasActiveCredit) {
+            finishSuccess(reconciledStatus);
+            return;
+          }
+          applyStatus(reconciledStatus);
+
+          const remainingMs = deadline - Date.now();
+          if (remainingMs <= 0) break;
+          await waitForNextPoll(Math.min(PAYMENT_RETURN_POLL_INTERVAL_MS, remainingMs));
+        }
+
+        if (active) {
+          setPaymentDiagnostic('Pedido pendente; aguardando confirmação do gateway');
+          setPaymentReturnMessage('Seu pagamento ainda está sendo processado. Aguarde alguns instantes.');
+        }
+      } catch (error: any) {
+        if (active) setStatusWarning(buildStatusWarning(error));
+      } finally {
+        if (active) setReturnConfirming(false);
+      }
+    })();
+
+    return () => {
+      active = false;
+      if (pollTimer !== null) window.clearTimeout(pollTimer);
+    };
+  }, [applyStatus, paymentReturnDetected]);
+
+  useEffect(() => {
+    if (paymentReturnDetected) return;
     let active = true;
     setStatusLoading(true);
     getPaymentV1Status()
@@ -170,7 +259,7 @@ export default function PaymentV1Gate({ user, onReady, onEntitlementSync, autoCo
     return () => {
       active = false;
     };
-  }, [applyStatus]);
+  }, [applyStatus, paymentReturnDetected]);
 
   const handleCheckout = async (planCode: PaymentV1PlanCode) => {
     setLoadingPlan(planCode);
@@ -200,7 +289,7 @@ export default function PaymentV1Gate({ user, onReady, onEntitlementSync, autoCo
   const statusText = hasActiveCredit
     ? 'Pagamento confirmado. Relatório liberado.'
     : 'Pagamento em confirmação.';
-  const verifyingPayment = statusLoading || debugLoading;
+  const verifyingPayment = statusLoading || debugLoading || returnConfirming;
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-5 space-y-5">
@@ -244,12 +333,27 @@ export default function PaymentV1Gate({ user, onReady, onEntitlementSync, autoCo
           <button
             type="button"
             onClick={refreshPaymentStatus}
-            disabled={statusLoading}
+            disabled={statusLoading || returnConfirming}
             className="shrink-0 text-xs font-semibold hover:underline disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-1"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${statusLoading ? 'animate-spin' : ''}`} />
             Atualizar
           </button>
+        </div>
+      )}
+
+      {paymentReturnMessage && (
+        <div className={`border rounded-lg px-3 py-2 text-sm flex items-start gap-2 ${
+          hasActiveCredit
+            ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+            : 'bg-amber-50 border-amber-200 text-amber-800'
+        }`}>
+          {hasActiveCredit ? (
+            <CheckCircle className="w-4 h-4 mt-0.5 shrink-0" />
+          ) : (
+            <Loader2 className="w-4 h-4 mt-0.5 shrink-0" />
+          )}
+          <span>{paymentReturnMessage}</span>
         </div>
       )}
 
@@ -274,7 +378,7 @@ export default function PaymentV1Gate({ user, onReady, onEntitlementSync, autoCo
           <button
             type="button"
             onClick={refreshPaymentStatus}
-            disabled={statusLoading}
+            disabled={statusLoading || returnConfirming}
             className="shrink-0 font-semibold hover:underline disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-1"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${statusLoading ? 'animate-spin' : ''}`} />

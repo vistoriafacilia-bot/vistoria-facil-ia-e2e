@@ -93,7 +93,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
           </div>
 
           <p className="text-slate-400 text-[10px] mt-6 text-center font-mono">
-            Vistoria Fácil IA V0.4.0-rc2 • Sistema Estabilizado
+            Vistoria Fácil IA V0.4.0-rc3 • Sistema Estabilizado
           </p>
         </div>
       );
