@@ -284,7 +284,6 @@ export default function PaymentV1Gate({ user, onReady, onEntitlementSync, autoCo
   };
 
   const hasActiveCredit = Boolean(paymentStatus?.hasActiveCredit);
-  const hasPendingOrder = Boolean(paymentStatus?.pendingOrders?.length);
   const statusText = hasActiveCredit
     ? 'Pagamento confirmado. Relatório liberado.'
     : 'Pagamento em confirmação.';
@@ -316,7 +315,7 @@ export default function PaymentV1Gate({ user, onReady, onEntitlementSync, autoCo
         </button>
       </div>
 
-      {(hasActiveCredit || hasPendingOrder) && (
+      {(hasActiveCredit || paymentReturnDetected) && (
         <div className={`border rounded-lg px-3 py-2 text-sm flex items-start justify-between gap-3 ${
           hasActiveCredit
             ? 'bg-emerald-50 border-emerald-200 text-emerald-800'

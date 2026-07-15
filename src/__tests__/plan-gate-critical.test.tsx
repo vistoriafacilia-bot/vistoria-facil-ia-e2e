@@ -105,6 +105,29 @@ describe('PlanGate critical error boundaries', () => {
     expect(onReadyMock).not.toHaveBeenCalled();
   });
 
+  it('does not show a confirmation banner for a pending order without payment=success', async () => {
+    paymentV1Mocks.getPaymentV1Status.mockResolvedValue({
+      hasActiveCredit: false,
+      activeCredits: [],
+      pendingOrders: [{
+        id: 'order-manual-return-001',
+        planCode: 'report_50_beta',
+        externalReference: 'vf-manual-return-001',
+        status: 'pending',
+        amountCents: 4990,
+        analysisLimit: 50,
+      }],
+      paidOrders: [],
+    });
+
+    render(<PlanGate user={testUser} onReady={vi.fn()} autoContinueOnActiveEntitlement={false} />);
+
+    await waitFor(() => expect(paymentV1Mocks.getPaymentV1Status).toHaveBeenCalledTimes(1));
+
+    expect(screen.queryByText('Pagamento em confirmação.')).not.toBeInTheDocument();
+    expect(paymentV1Mocks.reconcilePaymentV1).not.toHaveBeenCalled();
+  });
+
   it('continues with beta_paid_4990 when an active Payment V1 credit is available', async () => {
     const onReadyMock = vi.fn();
     paymentV1Mocks.getPaymentV1Status.mockResolvedValue({
@@ -135,6 +158,7 @@ describe('PlanGate critical error boundaries', () => {
         paymentId: 'credit-001',
       }));
     });
+    expect(screen.getByText('Pagamento confirmado. Relatório liberado.')).toBeInTheDocument();
   });
 
   it('syncs beta_paid_4990 entitlement without auto-continuing when active credit is available', async () => {
@@ -226,6 +250,7 @@ describe('PlanGate critical error boundaries', () => {
     );
 
     expect(screen.getByText('Confirmando pagamento...')).toBeInTheDocument();
+    expect(screen.getByText('Pagamento em confirmação.')).toBeInTheDocument();
 
     await flushPaymentReturnEffects();
     expect(window.location.search).toBe('?payment=success&keep=1');
