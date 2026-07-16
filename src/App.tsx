@@ -6,6 +6,7 @@ import InspectionWizard from './components/InspectionWizard';
 import ReportPdfGenerator from './components/ReportPdfGenerator';
 import DashboardMetrics from './components/DashboardMetrics';
 import PaymentV1Gate from './components/PaymentV1Gate';
+import AdminApp from './components/admin/AdminApp';
 import { ClipboardList, Plus, History, Trash2, FileText, Play, ChevronLeft, ArrowRight, ShieldCheck, Sparkles, Building2 } from 'lucide-react';
 import { APP_VERSION } from './lib/appVersion';
 import { getOrCreateUserEntitlement } from './lib/entitlements';
@@ -34,6 +35,10 @@ const getInitialAppView = (): AppView => {
 };
 
 export default function App() {
+  if (typeof window !== 'undefined' && window.location.pathname.replace(/\/+$/, '') === '/admin') {
+    return <AdminApp />;
+  }
+
   const [user, setUser] = useState<AppUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const isGoogleAuthEnabled = import.meta.env.VITE_ENABLE_GOOGLE_AUTH === 'true';
@@ -61,7 +66,7 @@ export default function App() {
 
   // Admin and Metrics Control
   const [showAdminMetrics, setShowAdminMetrics] = useState(false);
-  const isAdminUser = user?.email === 'vistoriafacil.ia@gmail.com';
+  const isAdminUser = false;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(async (currentUser) => {

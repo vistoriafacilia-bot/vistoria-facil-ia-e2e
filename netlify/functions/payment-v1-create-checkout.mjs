@@ -193,7 +193,8 @@ export const createHandler = ({
       });
     }
 
-    const plan = getPaymentV1Plan(planCode);
+    const orderStore = paymentOrders || createPaymentOrderStore({ env });
+    const plan = await getPaymentV1Plan(planCode, { store: orderStore, env });
     if (!plan) {
       throw new PaymentV1Error('Invalid Payment V1 plan.', {
         debugCode: 'plan_not_found',
@@ -202,7 +203,6 @@ export const createHandler = ({
     }
     const callback = resolvePaymentV1ReturnCallback(returnOrigin, { env });
 
-    const orderStore = paymentOrders || createPaymentOrderStore({ env });
     const externalReference = buildExternalReference({ planCode: plan.code });
     logContext.externalReference = externalReference;
     safeLog('info', { requestId, stage: 'order_create_start', debugCode: 'checkout_order_create_start', userId: authUser.userId, externalReference });

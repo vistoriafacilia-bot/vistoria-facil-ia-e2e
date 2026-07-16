@@ -20,8 +20,25 @@ const jsonResponse = (status, body) => ({
   text: async () => JSON.stringify(body),
 });
 
+const paymentPlanFixture = {
+  code: 'report_50_beta',
+  name: 'Relatório 50',
+  description: 'Relatório beta',
+  value: 49.9,
+  amountCents: 4990,
+  analysisLimit: 50,
+  snapshot: { code: 'report_50_beta', priceCents: 4990, analysisLimit: 50 },
+};
+
+const paymentPlanStore = {
+  async getPaymentV1PlanByCode(planCode) {
+    return planCode === paymentPlanFixture.code ? paymentPlanFixture : null;
+  },
+};
+
 const makeMockPaymentOrders = () => ({
   orders: [],
+  getPaymentV1PlanByCode: paymentPlanStore.getPaymentV1PlanByCode,
   async createPendingOrder({ plan, externalReference, userId }) {
     if (!userId) throw Object.assign(new Error('user required'), { debugCode: 'invalid_auth_token', statusCode: 401 });
     const order = {
@@ -48,7 +65,7 @@ const clientModule = await import('../netlify/functions/_paymentV1/asaasClient.m
 const errorsModule = await import('../netlify/functions/_paymentV1/paymentErrors.mjs');
 const functionModule = await import('../netlify/functions/payment-v1-create-checkout.mjs');
 
-const plan50 = plansModule.getPaymentV1Plan('report_50_beta');
+const plan50 = await plansModule.getPaymentV1Plan('report_50_beta', { store: paymentPlanStore });
 
 test('paymentV1ModulesLoad', () => {
   assert.equal(typeof clientModule.createAsaasCheckout, 'function');

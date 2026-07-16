@@ -11,6 +11,7 @@ const paymentV1Mocks = vi.hoisted(() => ({
   getPaymentV1DebugStatus: vi.fn(),
   getPaymentV1Status: vi.fn(),
   hasPaymentV1AuthSession: vi.fn(),
+  listPaymentV1Plans: vi.fn(),
   reconcilePaymentV1: vi.fn(),
 }));
 
@@ -19,6 +20,8 @@ vi.mock('../lib/services/paymentV1Service', () => ({
   getPaymentV1DebugStatus: paymentV1Mocks.getPaymentV1DebugStatus,
   getPaymentV1Status: paymentV1Mocks.getPaymentV1Status,
   hasPaymentV1AuthSession: paymentV1Mocks.hasPaymentV1AuthSession,
+  listPaymentV1Plans: paymentV1Mocks.listPaymentV1Plans,
+  formatPaymentV1PlanPrice: (plan: any) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: plan.currency || 'BRL' }).format(plan.priceCents / 100),
   reconcilePaymentV1: paymentV1Mocks.reconcilePaymentV1,
   PAYMENT_V1_PLANS: [
     {
@@ -63,6 +66,32 @@ describe('PlanGate critical error boundaries', () => {
       pendingOrders: [],
       paidOrders: [],
     });
+    paymentV1Mocks.listPaymentV1Plans.mockResolvedValue([
+      {
+        code: 'report_50_beta',
+        name: 'Relatorio 50',
+        description: 'Relatorio beta com ate 50 analises',
+        priceCents: 4990,
+        currency: 'BRL',
+        analysisLimit: 50,
+      },
+      {
+        code: 'report_100',
+        name: 'Relatorio 100',
+        description: 'Relatorio beta com ate 100 analises',
+        priceCents: 9990,
+        currency: 'BRL',
+        analysisLimit: 100,
+      },
+      {
+        code: 'report_150',
+        name: 'Relatorio 150',
+        description: 'Relatorio beta com ate 150 analises',
+        priceCents: 14990,
+        currency: 'BRL',
+        analysisLimit: 150,
+      },
+    ]);
     paymentV1Mocks.hasPaymentV1AuthSession.mockResolvedValue(false);
     paymentV1Mocks.reconcilePaymentV1.mockResolvedValue({
       pendingOrders: [],
