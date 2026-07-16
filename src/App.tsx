@@ -34,11 +34,13 @@ const getInitialAppView = (): AppView => {
     : 'properties';
 };
 
-export default function App() {
-  if (typeof window !== 'undefined' && window.location.pathname.replace(/\/+$/, '') === '/admin') {
-    return <AdminApp />;
-  }
+const isAdminRoute = () => (
+  typeof window !== 'undefined'
+  && window.location.pathname.replace(/\/+$/, '') === '/admin'
+);
 
+export default function App() {
+  const adminRoute = isAdminRoute();
   const [user, setUser] = useState<AppUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const isGoogleAuthEnabled = import.meta.env.VITE_ENABLE_GOOGLE_AUTH === 'true';
@@ -73,7 +75,7 @@ export default function App() {
       setUser(currentUser);
       setAuthLoading(false);
 
-      if (currentUser) {
+      if (currentUser && !adminRoute) {
         try {
           await upsertProfile(currentUser);
         } catch (err) {
@@ -89,13 +91,13 @@ export default function App() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [adminRoute]);
 
   // Sync active user entitlement
   useEffect(() => {
     let active = true;
 
-    if (!user) {
+    if (adminRoute || !user) {
       setEntitlement(null);
       setEntitlementLoading(false);
       return () => {
@@ -128,7 +130,7 @@ export default function App() {
     return () => {
       active = false;
     };
-  }, [user]);
+  }, [adminRoute, user]);
 
   const loadPropertyInspections = async (property: Property): Promise<HistoryInspection[]> => {
     if (!user) return [];
@@ -486,6 +488,10 @@ export default function App() {
 
       </div>
     );
+  }
+
+  if (adminRoute) {
+    return <AdminApp />;
   }
 
   const activeDraftInspection = inspections.find((inspection) => (

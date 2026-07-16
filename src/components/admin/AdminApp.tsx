@@ -78,6 +78,15 @@ const askReason = (label: string) => {
   return reason?.trim() || '';
 };
 
+const isAdminAuthorizationError = (error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error);
+  return [
+    'admin_user_not_found',
+    'admin_role_invalid',
+    'admin_permission_denied',
+  ].some((code) => message.includes(`debugCode=${code}`));
+};
+
 function StatusPill({ value }: { value?: string | boolean | null }) {
   const text = String(value ?? '-');
   const active = value === true || ['active', 'paid', 'success', 'available'].includes(text);
@@ -124,6 +133,7 @@ export default function AdminApp() {
   const [tab, setTab] = useState<AdminTab>('dashboard');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [accessDenied, setAccessDenied] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [dashboard, setDashboard] = useState<AdminDashboard | null>(null);
   const [customers, setCustomers] = useState<AdminCustomer[]>([]);
@@ -154,6 +164,10 @@ export default function AdminApp() {
       await task();
       if (successMessage) setNotice(successMessage);
     } catch (err) {
+      if (isAdminAuthorizationError(err)) {
+        setAccessDenied(true);
+        return;
+      }
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
@@ -208,6 +222,18 @@ export default function AdminApp() {
           <LockKeyhole className="mx-auto mb-3 h-6 w-6 text-slate-400" />
           <h1 className="text-lg font-bold">Admin V1</h1>
           <p className="mt-1 text-sm text-slate-400">Sessao obrigatoria.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (accessDenied) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6">
+        <div className="border border-slate-800 bg-slate-900 p-6 text-center">
+          <LockKeyhole className="mx-auto mb-3 h-6 w-6 text-slate-400" />
+          <h1 className="text-lg font-bold">Acesso não autorizado</h1>
+          <p className="mt-1 text-sm text-slate-400">Sua conta não possui permissão para acessar o Admin.</p>
         </div>
       </div>
     );
