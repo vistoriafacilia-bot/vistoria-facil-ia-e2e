@@ -3,10 +3,11 @@ import { AlertTriangle, CheckCircle, CreditCard, Loader2, RefreshCw, ShieldCheck
 import type { AppUser, Entitlement } from '../types';
 import {
   createPaymentV1Checkout,
+  formatPaymentV1PlanPrice,
   getPaymentV1DebugStatus,
   getPaymentV1Status,
   hasPaymentV1AuthSession,
-  PAYMENT_V1_PLANS,
+  listPaymentV1Plans,
   reconcilePaymentV1,
 } from '../lib/services/paymentV1Service';
 import { buildPaymentV1Entitlement } from '../lib/paymentV1EntitlementBridge';
@@ -87,6 +88,9 @@ const removePaymentSuccessReturnFromUrl = () => {
 
 export default function PaymentV1Gate({ user, onReady, onEntitlementSync, autoContinueOnActiveEntitlement }: PaymentV1GateProps) {
   const [paymentReturnDetected] = useState(hasPaymentSuccessReturn);
+  const [plans, setPlans] = useState<Awaited<ReturnType<typeof listPaymentV1Plans>>>([]);
+  const [plansLoading, setPlansLoading] = useState(false);
+  const [plansError, setPlansError] = useState<string | null>(null);
   const [loadingPlan, setLoadingPlan] = useState<PaymentV1PlanCode | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
   const [debugLoading, setDebugLoading] = useState(false);
@@ -115,6 +119,31 @@ export default function PaymentV1Gate({ user, onReady, onEntitlementSync, autoCo
     if (!autoContinueOnActiveEntitlement || !paymentEntitlement) return;
     onReady(paymentEntitlement);
   }, [autoContinueOnActiveEntitlement, buildEntitlementFromStatus, onReady]);
+
+  useEffect(() => {
+    let active = true;
+    setPlansLoading(true);
+    setPlansError(null);
+    listPaymentV1Plans()
+      .then((loadedPlans) => {
+        if (!active) return;
+        setPlans(loadedPlans);
+        if (loadedPlans.length === 0) {
+          setPlansError('Nenhum plano disponivel para compra agora.');
+        }
+      })
+      .catch((error: any) => {
+        if (!active) return;
+        const debugCode = error?.debugCode || 'payment_v1_plans_failed';
+        setPlansError(`${error?.message || 'Nao foi possivel carregar os planos.'} debugCode=${debugCode}`);
+      })
+      .finally(() => {
+        if (active) setPlansLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const applyStatus = useCallback((status: PaymentV1StatusResponse) => {
     setPaymentStatus(status);
@@ -387,8 +416,22 @@ export default function PaymentV1Gate({ user, onReady, onEntitlementSync, autoCo
         </div>
       )}
 
+      {plansError && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg px-3 py-2 text-sm flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+          <span>{plansError}</span>
+        </div>
+      )}
+
+      {plansLoading && (
+        <div className="border border-slate-200 rounded-lg px-3 py-4 text-sm text-slate-500 flex items-center gap-2">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          <span>Carregando planos...</span>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-        {PAYMENT_V1_PLANS.map((plan) => {
+        {plans.map((plan) => {
           const loading = loadingPlan === plan.code;
           return (
             <div key={plan.code} className="border border-slate-200 rounded-lg p-4 flex flex-col gap-3">
@@ -396,12 +439,12 @@ export default function PaymentV1Gate({ user, onReady, onEntitlementSync, autoCo
                 <h4 className="font-semibold text-slate-900">{plan.name}</h4>
                 <p className="text-xs text-slate-500 mt-1">{plan.description}</p>
               </div>
-              <div className="text-2xl font-bold text-slate-900">{plan.priceLabel}</div>
+              <div className="text-2xl font-bold text-slate-900">{formatPaymentV1PlanPrice(plan)}</div>
               <div className="text-xs text-slate-500">{plan.analysisLimit} análises de IA</div>
               <button
                 type="button"
                 onClick={() => handleCheckout(plan.code)}
-                disabled={Boolean(loadingPlan)}
+                disabled={Boolean(loadingPlan) || plansLoading}
                 className="mt-auto h-10 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 disabled:bg-slate-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CreditCard className="w-4 h-4" />}

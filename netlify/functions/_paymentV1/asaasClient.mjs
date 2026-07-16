@@ -70,7 +70,7 @@ export const buildAsaasCheckoutPayload = ({ plan, config, externalReference, cal
     {
       name: plan.name,
       description: plan.description,
-      value: plan.value,
+      value: Number(plan.amountCents ?? plan.priceCents) / 100,
       quantity: 1,
     },
   ],

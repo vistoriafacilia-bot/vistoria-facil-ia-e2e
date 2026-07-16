@@ -9,7 +9,16 @@ const jsonHeaders = (config) => ({
 
 const nowIso = () => new Date().toISOString();
 
-export const amountCentsForPlan = (plan) => Math.round(Number(plan.value) * 100);
+export const amountCentsForPlan = (plan) => {
+  const amountCents = Number(plan?.amountCents ?? plan?.priceCents);
+  if (!Number.isInteger(amountCents) || amountCents <= 0) {
+    throw new PaymentV1Error('Payment V1 plan price is invalid.', {
+      debugCode: 'plan_price_invalid',
+      statusCode: 500,
+    });
+  }
+  return amountCents;
+};
 
 export const buildPaymentV1ExternalReference = ({ planCode, now = Date.now, random = Math.random }) => {
   const suffix = Math.floor(random() * 1_000_000).toString().padStart(6, '0');
@@ -112,6 +121,7 @@ export const createPaymentOrderStore = ({ env = process.env, fetchImpl = globalT
         status: 'pending',
         amount_cents: amountCentsForPlan(plan),
         analysis_limit: plan.analysisLimit,
+        plan_snapshot: plan.snapshot || null,
       },
       debugCode: 'order_create_failed',
     });
@@ -314,6 +324,56 @@ export const createPaymentOrderStore = ({ env = process.env, fetchImpl = globalT
     };
   };
 
+  const mapPaymentPlan = (row) => ({
+    code: row.payment_v1_plan_code,
+    catalogId: row.id,
+    name: row.name,
+    description: row.description,
+    priceCents: Number(row.price_cents),
+    amountCents: Number(row.price_cents),
+    currency: row.currency || 'BRL',
+    analysisLimit: Number(row.analysis_limit),
+    snapshot: {
+      catalogId: row.id,
+      code: row.payment_v1_plan_code,
+      name: row.name,
+      description: row.description,
+      priceCents: row.price_cents,
+      currency: row.currency || 'BRL',
+      analysisLimit: row.analysis_limit,
+      version: row.version || 1,
+    },
+  });
+
+  const getPaymentV1PlanByCode = async (planCode) => {
+    const rows = await requestSupabase({
+      config,
+      fetchImpl,
+      path: `report_credit_plans?payment_v1_plan_code=eq.${encodeURIComponent(planCode)}&active=eq.true&visible=eq.true&available_for_purchase=eq.true&limit=1&select=*`,
+      debugCode: 'plan_query_failed',
+    });
+    const row = Array.isArray(rows) ? rows[0] : rows;
+    return row ? mapPaymentPlan(row) : null;
+  };
+
+  const listPublicPaymentPlans = async () => {
+    const rows = await requestSupabase({
+      config,
+      fetchImpl,
+      path: 'report_credit_plans?payment_v1_plan_code=not.is.null&active=eq.true&visible=eq.true&available_for_purchase=eq.true&order=price_cents.asc&select=id,payment_v1_plan_code,name,description,price_cents,currency,analysis_limit,badge',
+      debugCode: 'plans_query_failed',
+    });
+    return (Array.isArray(rows) ? rows : []).map((row) => ({
+      code: row.payment_v1_plan_code,
+      name: row.name,
+      description: row.description,
+      priceCents: row.price_cents,
+      currency: row.currency || 'BRL',
+      analysisLimit: row.analysis_limit,
+      badge: row.badge,
+    }));
+  };
+
   return {
     createPendingOrder,
     updateOrderCheckout,
@@ -326,5 +386,7 @@ export const createPaymentOrderStore = ({ env = process.env, fetchImpl = globalT
     listRecentOrdersForUser,
     listRecentEventsForOrders,
     getPaymentStatusForUser,
+    getPaymentV1PlanByCode,
+    listPublicPaymentPlans,
   };
 };
