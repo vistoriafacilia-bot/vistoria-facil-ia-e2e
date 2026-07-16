@@ -139,6 +139,7 @@ export default function AdminApp() {
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
   const [audit, setAudit] = useState<any[]>([]);
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
+  const [selectedReportPlanId, setSelectedReportPlanId] = useState('');
 
   useEffect(() => onAuthStateChanged((currentUser) => {
     setUser(currentUser);
@@ -166,7 +167,14 @@ export default function AdminApp() {
       if (target === 'plans') setPlans(await listAdminPlans());
       if (target === 'trial') setTrial(await getAdminTrial());
       if (target === 'orders') setOrders(await listAdminOrders());
-      if (target === 'credits') setCredits(await getAdminCredits(selectedCustomerId));
+      if (target === 'credits') {
+        const [creditSummary, catalogPlans] = await Promise.all([
+          getAdminCredits(selectedCustomerId),
+          listAdminPlans(),
+        ]);
+        setCredits(creditSummary);
+        setPlans(catalogPlans);
+      }
       if (target === 'inspections') setInspections(await listAdminInspections(selectedCustomerId));
       if (target === 'admins') setAdminUsers(await listAdminUsers());
       if (target === 'audit') setAudit(await listAdminAudit());
@@ -264,8 +272,8 @@ export default function AdminApp() {
                 {[
                   ['Clientes', metrics.customers],
                   ['Pedidos', metrics.orders],
-                  ['Pagamentos', metrics.payments],
-                  ['Creditos', metrics.credits],
+                  ['Pagamentos aprovados', metrics.payments],
+                  ['Creditos de uso', metrics.credits],
                   ['Vistorias', metrics.inspections],
                 ].map(([label, value]) => (
                   <div key={String(label)} className="border border-slate-200 bg-white p-4">
@@ -342,7 +350,7 @@ export default function AdminApp() {
                     rows={[
                       ['Planos', selectedCustomer.entitlements?.length || 0],
                       ['Pedidos', selectedCustomer.orders?.length || 0],
-                      ['Creditos', (selectedCustomer.paymentCredits?.length || 0) + (selectedCustomer.reportCredits?.length || 0)],
+                      ['Creditos de uso', (selectedCustomer.paymentCredits?.length || 0) + (selectedCustomer.reportCredits?.length || 0)],
                       ['Vistorias', selectedCustomer.inspections?.length || 0],
                       ['Notas', selectedCustomer.notes?.length || 0],
                     ]}
@@ -355,7 +363,7 @@ export default function AdminApp() {
           {tab === 'plans' && (
             <section className="space-y-3">
               <DataTable
-                columns={['Plano', 'Codigo', 'Preco', 'Fotos', 'Ativo', 'Compra', 'Versao', 'Acoes']}
+                columns={['Plano', 'Codigo', 'Preco em R$', 'Limite de fotos', 'Ativo', 'Compra', 'Versao', 'Acoes']}
                 rows={plans.map((plan) => [
                   plan.name,
                   plan.code || '-',
@@ -410,7 +418,7 @@ export default function AdminApp() {
           {tab === 'orders' && (
             <section className="space-y-3">
               <DataTable
-                columns={['Pedido', 'Cliente', 'Plano', 'Status', 'Valor', 'Pago', 'Acoes']}
+                columns={['Pedido', 'Cliente', 'Plano', 'Status', 'Valor do pagamento (R$)', 'Pago em', 'Acoes']}
                 rows={orders.map((order) => [
                   order.id,
                   order.user_id,
@@ -431,8 +439,8 @@ export default function AdminApp() {
                 <DataTable
                   columns={['Campo', 'Valor']}
                   rows={[
-                    ['Aprovado sem credito', selectedOrder.approvedWithoutCredit ? 'sim' : 'nao'],
-                    ['Creditos', selectedOrder.credits?.length || 0],
+                    ['Pagamento aprovado sem credito de uso', selectedOrder.approvedWithoutCredit ? 'sim' : 'nao'],
+                    ['Creditos de uso vinculados', selectedOrder.credits?.length || 0],
                     ['Eventos', selectedOrder.events?.length || 0],
                   ]}
                 />
@@ -442,29 +450,53 @@ export default function AdminApp() {
 
           {tab === 'credits' && (
             <section className="space-y-3">
-              <div className="flex gap-2 bg-white p-3">
+              <div className="flex flex-col gap-2 bg-white p-3 lg:flex-row">
                 <input className="h-9 flex-1 border px-3 text-sm" placeholder="ID do cliente" value={selectedCustomerId} onChange={(event) => setSelectedCustomerId(event.target.value)} />
                 <button className="h-9 rounded-md bg-slate-900 px-3 text-sm font-semibold text-white" onClick={() => loadTab('credits')}>Consultar</button>
                 <button className="h-9 rounded-md border px-3 text-sm font-semibold" onClick={() => {
-                  const amount = Number(window.prompt('Quantidade de fotos') || 0);
-                  const reason = askReason('Conceder credito');
-                  if (selectedCustomerId && amount > 0 && reason) void run(async () => { await adjustAdminCredits({ action: 'grant', customerId: selectedCustomerId, amount, reason }); await loadTab('credits'); }, 'Credito concedido.');
-                }}>Conceder</button>
+                  const usageUnits = Number(window.prompt('Novo limite de fotos por vistoria') || 0);
+                  const reason = askReason('Conceder limite manual de fotos');
+                  if (selectedCustomerId && usageUnits > 0 && reason) void run(async () => {
+                    await adjustAdminCredits({ action: 'grant', customerId: selectedCustomerId, creditTable: 'entitlements', usageUnits, reason });
+                    await loadTab('credits');
+                  }, 'Limite manual de fotos concedido.');
+                }}>Conceder fotos</button>
+                <select className="h-9 min-w-48 border px-2 text-sm" value={selectedReportPlanId} onChange={(event) => setSelectedReportPlanId(event.target.value)}>
+                  <option value="">Plano para credito de relatorio</option>
+                  {plans.filter((plan) => plan.active).map((plan) => <option key={plan.id} value={plan.id}>{plan.name} ({plan.analysisLimit} fotos)</option>)}
+                </select>
+                <button className="h-9 rounded-md border px-3 text-sm font-semibold" onClick={() => {
+                  const reason = askReason('Conceder credito de relatorio');
+                  if (selectedCustomerId && selectedReportPlanId && reason) void run(async () => {
+                    await adjustAdminCredits({ action: 'grant', customerId: selectedCustomerId, creditTable: 'report_credits', planId: selectedReportPlanId, usageUnits: 1, reason });
+                    await loadTab('credits');
+                  }, 'Credito de relatorio concedido.');
+                }}>Conceder relatorio</button>
               </div>
-              <div className="border border-slate-200 bg-white p-4">
-                <div className="text-xs font-bold uppercase text-slate-500">Saldo</div>
-                <div className="mt-2 text-2xl font-bold">{credits?.balance ?? 0}</div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="border border-slate-200 bg-white p-4">
+                  <div className="text-xs font-bold uppercase text-slate-500">Limite efetivo de fotos por vistoria</div>
+                  <div className="mt-2 text-2xl font-bold">{credits?.photoUsage?.effectiveLimitPerInspection ?? 0}</div>
+                </div>
+                <div className="border border-slate-200 bg-white p-4">
+                  <div className="text-xs font-bold uppercase text-slate-500">Creditos de relatorio disponiveis</div>
+                  <div className="mt-2 text-2xl font-bold">{credits?.reportUsage?.availableCredits ?? 0}</div>
+                </div>
               </div>
               <DataTable
-                columns={['Tipo', 'ID', 'Status', 'Limite', 'Usado', 'Acoes']}
+                columns={['Direito de uso', 'ID', 'Status', 'Limite de fotos', 'Fotos usadas', 'Acoes']}
                 rows={[
-                  ...(credits?.paymentCredits || []).map((credit: any) => ['payment_v1', credit.id, <StatusPill value={credit.status} />, credit.analysis_limit, credit.analysis_used, <button className="rounded-md border px-2 py-1 text-xs" onClick={() => {
+                  ...(credits?.photoUsage?.paymentCredits || []).map((credit: any) => ['Fotos adquiridas', credit.id, <StatusPill value={credit.status} />, credit.analysis_limit, credit.analysis_used, <button className="rounded-md border px-2 py-1 text-xs" onClick={() => {
                     const reason = askReason('Remover credito');
-                    if (reason) void run(async () => { await adjustAdminCredits({ action: 'remove', customerId: credit.user_id, amount: Math.max((credit.analysis_limit || 0) - (credit.analysis_used || 0), 1), creditTable: 'payment_v1_credits', creditId: credit.id, reason }); await loadTab('credits'); }, 'Credito removido.');
+                    if (reason) void run(async () => { await adjustAdminCredits({ action: 'remove', customerId: credit.user_id, usageUnits: Math.max((credit.analysis_limit || 0) - (credit.analysis_used || 0), 1), creditTable: 'payment_v1_credits', creditId: credit.id, reason }); await loadTab('credits'); }, 'Credito de uso removido.');
                   }}>Remover</button>]),
-                  ...(credits?.reportCredits || []).map((credit: any) => ['report', credit.id, <StatusPill value={credit.status} />, credit.analysis_limit, credit.analysis_used, <button className="rounded-md border px-2 py-1 text-xs" onClick={() => {
+                  ...(credits?.reportUsage?.reportCredits || []).map((credit: any) => ['Credito de relatorio', credit.id, <StatusPill value={credit.status} />, credit.analysis_limit, credit.analysis_used, <button className="rounded-md border px-2 py-1 text-xs" onClick={() => {
                     const reason = askReason('Remover credito');
-                    if (reason) void run(async () => { await adjustAdminCredits({ action: 'remove', customerId: credit.user_id, amount: Math.max((credit.analysis_limit || 0) - (credit.analysis_used || 0), 1), creditTable: 'report_credits', creditId: credit.id, reason }); await loadTab('credits'); }, 'Credito removido.');
+                    if (reason) void run(async () => { await adjustAdminCredits({ action: 'remove', customerId: credit.user_id, usageUnits: 1, creditTable: 'report_credits', creditId: credit.id, reason }); await loadTab('credits'); }, 'Credito de uso removido.');
+                  }}>Remover</button>]),
+                  ...(credits?.photoUsage?.manualPhotoLimits || []).map((credit: any) => ['Limite manual de fotos', credit.id, <StatusPill value={credit.status} />, credit.max_photos_per_inspection, '-', <button className="rounded-md border px-2 py-1 text-xs" onClick={() => {
+                    const reason = askReason('Remover limite manual de fotos');
+                    if (reason) void run(async () => { await adjustAdminCredits({ action: 'remove', customerId: credit.user_id, usageUnits: credit.max_photos_per_inspection || 1, creditTable: 'entitlements', creditId: credit.id, reason }); await loadTab('credits'); }, 'Limite manual removido.');
                   }}>Remover</button>]),
                 ]}
               />

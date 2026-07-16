@@ -104,7 +104,7 @@ const asPaymentCheckoutPlan = (row) => ({
   catalogId: row.id,
   name: row.name,
   description: row.description,
-  value: Number(row.price_cents) / 100,
+  priceCents: Number(row.price_cents),
   amountCents: Number(row.price_cents),
   currency: row.currency || 'BRL',
   analysisLimit: Number(row.analysis_limit),
@@ -132,7 +132,7 @@ export const createAdminStore = ({ env = process.env, fetchImpl = globalThis.fet
     previousValue = null,
     nextValue = null,
     reason = null,
-    result = 'success',
+    result = 'pending',
     correlationId = crypto.randomUUID(),
   }) => {
     const rows = await client.insert('admin_audit_log', {
@@ -150,6 +150,56 @@ export const createAdminStore = ({ env = process.env, fetchImpl = globalThis.fet
       correlation_id: correlationId,
     });
     return firstRow(rows);
+  };
+
+  const finalizeAudit = async ({ auditId, result, nextValue = undefined, failureCode = null }) => {
+    if (!auditId) {
+      throw new AdminError('Administrative audit attempt was not recorded.', {
+        debugCode: 'admin_audit_attempt_missing',
+        statusCode: 500,
+      });
+    }
+    const patch = {
+      result,
+      completed_at: nowIso(),
+      failure_code: failureCode,
+    };
+    if (nextValue !== undefined) patch.next_value = nextValue;
+    return firstRow(await client.patch('admin_audit_log', `id=eq.${encodeFilterValue(auditId)}&select=*`, patch));
+  };
+
+  const errorCode = (error) => String(error?.debugCode || error?.code || 'admin_mutation_failed').slice(0, 120);
+
+  const executeAuditedMutation = async ({ audit, mutate, nextValue = (value) => value }) => {
+    const attempt = await recordAudit({ ...audit, result: 'pending' });
+    let mutationCompleted = false;
+    try {
+      const value = await mutate();
+      mutationCompleted = true;
+      await finalizeAudit({
+        auditId: attempt.id,
+        result: 'success',
+        nextValue: nextValue(value),
+      });
+      return value;
+    } catch (error) {
+      if (!mutationCompleted) {
+        try {
+          await finalizeAudit({
+            auditId: attempt.id,
+            result: 'failed',
+            failureCode: errorCode(error),
+          });
+        } catch (auditError) {
+          throw new AdminError('Administrative action failed and its audit could not be finalized.', {
+            debugCode: 'admin_audit_finalize_failed',
+            statusCode: 500,
+            details: { mutation: errorCode(error), audit: errorCode(auditError) },
+          });
+        }
+      }
+      throw error;
+    }
   };
 
   const countRows = async (table, filter = '') => {
@@ -293,18 +343,19 @@ export const createAdminStore = ({ env = process.env, fetchImpl = globalThis.fet
       patch.deactivated_at = nowIso();
       patch.deactivation_reason = auditReason;
     }
-    await recordAudit({
-      admin,
-      authUser,
-      action: `customers.${normalizedStatus}`,
-      entityType: 'profiles',
-      entityId: customerId,
-      previousValue: previous,
-      nextValue: { ...previous, ...patch },
-      reason: auditReason,
+    return executeAuditedMutation({
+      audit: {
+        admin,
+        authUser,
+        action: `customers.${normalizedStatus}`,
+        entityType: 'profiles',
+        entityId: customerId,
+        previousValue: previous,
+        nextValue: { ...previous, ...patch },
+        reason: auditReason,
+      },
+      mutate: async () => firstRow(await client.patch('profiles', `id=eq.${encodeFilterValue(customerId)}&select=*`, patch)),
     });
-    const rows = await client.patch('profiles', `id=eq.${encodeFilterValue(customerId)}&select=*`, patch);
-    return firstRow(rows);
   };
 
   const addCustomerNote = async ({ customerId, note, reason, admin, authUser }) => {
@@ -323,18 +374,19 @@ export const createAdminStore = ({ env = process.env, fetchImpl = globalThis.fet
       created_by: admin?.id || null,
       updated_by: admin?.id || null,
     };
-    await recordAudit({
-      admin,
-      authUser,
-      action: 'customers.note.create',
-      entityType: 'admin_customer_notes',
-      entityId: customerId,
-      previousValue: null,
-      nextValue,
-      reason: auditReason,
+    return executeAuditedMutation({
+      audit: {
+        admin,
+        authUser,
+        action: 'customers.note.create',
+        entityType: 'admin_customer_notes',
+        entityId: customerId,
+        previousValue: null,
+        nextValue,
+        reason: auditReason,
+      },
+      mutate: async () => firstRow(await client.insert('admin_customer_notes', nextValue)),
     });
-    const rows = await client.insert('admin_customer_notes', nextValue);
-    return firstRow(rows);
   };
 
   const getPasswordResetRedirectOrigin = async () => {
@@ -359,35 +411,38 @@ export const createAdminStore = ({ env = process.env, fetchImpl = globalThis.fet
     };
     if (redirectOrigin) body.options = { redirect_to: redirectOrigin };
 
-    await recordAudit({
-      admin,
-      authUser,
-      action: 'customers.password_reset.send',
-      entityType: 'auth.users',
-      entityId: customerId || customerEmail,
-      previousValue: null,
-      nextValue: { email: customerEmail, redirectOrigin: redirectOrigin ? '[configured]' : null },
-      reason: auditReason,
-    });
-
-    const response = await fetchImpl(`${client.config.url}/auth/v1/admin/generate_link`, {
-      method: 'POST',
-      headers: {
-        apikey: client.config.serviceRoleKey,
-        authorization: `Bearer ${client.config.serviceRoleKey}`,
-        'content-type': 'application/json',
+    return executeAuditedMutation({
+      audit: {
+        admin,
+        authUser,
+        action: 'customers.password_reset.send',
+        entityType: 'auth.users',
+        entityId: customerId || customerEmail,
+        previousValue: null,
+        nextValue: { email: customerEmail, redirectOrigin: redirectOrigin ? '[configured]' : null },
+        reason: auditReason,
       },
-      body: JSON.stringify(body),
+      mutate: async () => {
+        const response = await fetchImpl(`${client.config.url}/auth/v1/admin/generate_link`, {
+          method: 'POST',
+          headers: {
+            apikey: client.config.serviceRoleKey,
+            authorization: `Bearer ${client.config.serviceRoleKey}`,
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify(body),
+        });
+        const responseBody = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new AdminError('Password reset link could not be generated.', {
+            debugCode: 'admin_password_reset_failed',
+            statusCode: response.status >= 400 && response.status < 500 ? 400 : 502,
+            details: responseBody,
+          });
+        }
+        return { sent: true, email: customerEmail };
+      },
     });
-    const responseBody = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new AdminError('Password reset link could not be generated.', {
-        debugCode: 'admin_password_reset_failed',
-        statusCode: response.status >= 400 && response.status < 500 ? 400 : 502,
-        details: responseBody,
-      });
-    }
-    return { sent: true, email: customerEmail };
   };
 
   const listPlans = async () => {
@@ -420,17 +475,19 @@ export const createAdminStore = ({ env = process.env, fetchImpl = globalThis.fet
         statusCode: 400,
       });
     }
-    await recordAudit({
-      admin,
-      authUser,
-      action: 'plans.create',
-      entityType: 'report_credit_plans',
-      entityId: plan.id,
-      previousValue: null,
-      nextValue: plan,
-      reason,
+    return executeAuditedMutation({
+      audit: {
+        admin,
+        authUser,
+        action: 'plans.create',
+        entityType: 'report_credit_plans',
+        entityId: plan.id,
+        previousValue: null,
+        nextValue: plan,
+        reason,
+      },
+      mutate: async () => firstRow(await client.insert('report_credit_plans', plan)),
     });
-    return firstRow(await client.insert('report_credit_plans', plan));
   };
 
   const updatePlan = async ({ planId, body, admin, authUser }) => {
@@ -460,17 +517,19 @@ export const createAdminStore = ({ env = process.env, fetchImpl = globalThis.fet
     if ('availableForPurchase' in body) patch.available_for_purchase = Boolean(body.availableForPurchase);
     if ('archived' in body) patch.archived_at = body.archived ? nowIso() : null;
 
-    await recordAudit({
-      admin,
-      authUser,
-      action: 'plans.update',
-      entityType: 'report_credit_plans',
-      entityId: planId,
-      previousValue: previous,
-      nextValue: { ...previous, ...patch },
-      reason,
+    return executeAuditedMutation({
+      audit: {
+        admin,
+        authUser,
+        action: 'plans.update',
+        entityType: 'report_credit_plans',
+        entityId: planId,
+        previousValue: previous,
+        nextValue: { ...previous, ...patch },
+        reason,
+      },
+      mutate: async () => firstRow(await client.patch('report_credit_plans', `id=eq.${encodeFilterValue(planId)}&select=*`, patch)),
     });
-    return firstRow(await client.patch('report_credit_plans', `id=eq.${encodeFilterValue(planId)}&select=*`, patch));
   };
 
   const getTrialSettings = async () => {
@@ -503,18 +562,22 @@ export const createAdminStore = ({ env = process.env, fetchImpl = globalThis.fet
       enabled: enabled === undefined ? previous.enabled : Boolean(enabled),
       photoLimit: photoLimit === undefined ? previous.photoLimit : toPositiveInt(photoLimit, 'photoLimit'),
     };
-    await recordAudit({
-      admin,
-      authUser,
-      action: 'trial.update',
-      entityType: 'app_settings',
-      entityId: 'trial',
-      previousValue: previous,
-      nextValue,
-      reason: auditReason,
+    return executeAuditedMutation({
+      audit: {
+        admin,
+        authUser,
+        action: 'trial.update',
+        entityType: 'app_settings',
+        entityId: 'trial',
+        previousValue: previous,
+        nextValue,
+        reason: auditReason,
+      },
+      mutate: async () => {
+        await Promise.all(patches);
+        return getTrialSettings();
+      },
     });
-    await Promise.all(patches);
-    return getTrialSettings();
   };
 
   const grantTrial = async ({ customerId, photoLimit, reason, admin, authUser }) => {
@@ -532,17 +595,19 @@ export const createAdminStore = ({ env = process.env, fetchImpl = globalThis.fet
       updated_at: nowIso(),
     };
     const previous = await getCustomer(customerId);
-    await recordAudit({
-      admin,
-      authUser,
-      action: 'trial.manual_grant',
-      entityType: 'entitlements',
-      entityId: customerId,
-      previousValue: { entitlements: previous.entitlements },
-      nextValue: entitlement,
-      reason: auditReason,
+    return executeAuditedMutation({
+      audit: {
+        admin,
+        authUser,
+        action: 'trial.manual_grant',
+        entityType: 'entitlements',
+        entityId: customerId,
+        previousValue: { entitlements: previous.entitlements },
+        nextValue: entitlement,
+        reason: auditReason,
+      },
+      mutate: async () => firstRow(await client.insert('entitlements', entitlement)),
     });
-    return firstRow(await client.insert('entitlements', entitlement));
   };
 
   const listOrders = async ({ status = '', limit = 100 } = {}) => {
@@ -581,48 +646,41 @@ export const createAdminStore = ({ env = process.env, fetchImpl = globalThis.fet
   const reprocessOrderEntitlement = async ({ orderId, reason, admin, authUser }) => {
     const auditReason = requireReason(reason);
     const previous = await getOrderBundle(orderId);
-    let result = { status: 'noop', credit: previous.credits[0] || null };
-    if (previous.order.status === 'paid' && previous.credits.length === 0) {
-      const credit = {
-        user_id: previous.order.user_id,
-        order_id: previous.order.id,
-        plan_code: previous.order.plan_code,
-        analysis_limit: previous.order.analysis_limit,
-        analysis_used: 0,
-        status: 'active',
-      };
-      await recordAudit({
+    return executeAuditedMutation({
+      audit: {
         admin,
         authUser,
         action: 'orders.entitlement.reprocess',
         entityType: 'payment_v1_orders',
         entityId: orderId,
         previousValue: previous,
-        nextValue: { credit },
+        nextValue: null,
         reason: auditReason,
-      });
-      result = {
-        status: 'created',
-        credit: firstRow(await client.insert('payment_v1_credits', credit)),
-      };
-    } else {
-      await recordAudit({
-        admin,
-        authUser,
-        action: 'orders.entitlement.reprocess',
-        entityType: 'payment_v1_orders',
-        entityId: orderId,
-        previousValue: previous,
-        nextValue: result,
-        reason: auditReason,
-      });
-    }
-    await client.patch('payment_v1_orders', `id=eq.${encodeFilterValue(orderId)}&select=*`, {
-      admin_last_reprocessed_at: nowIso(),
-      admin_last_reprocess_result: result,
-      admin_reprocess_count: Number(previous.order.admin_reprocess_count || 0) + 1,
+      },
+      mutate: async () => {
+        let result = { status: 'noop', credit: previous.credits[0] || null };
+        if (previous.order.status === 'paid' && previous.credits.length === 0) {
+          const credit = {
+            user_id: previous.order.user_id,
+            order_id: previous.order.id,
+            plan_code: previous.order.plan_code,
+            analysis_limit: previous.order.analysis_limit,
+            analysis_used: 0,
+            status: 'active',
+          };
+          result = {
+            status: 'created',
+            credit: firstRow(await client.insert('payment_v1_credits', credit)),
+          };
+        }
+        await client.patch('payment_v1_orders', `id=eq.${encodeFilterValue(orderId)}&select=*`, {
+          admin_last_reprocessed_at: nowIso(),
+          admin_last_reprocess_result: result,
+          admin_reprocess_count: Number(previous.order.admin_reprocess_count || 0) + 1,
+        });
+        return result;
+      },
     });
-    return result;
   };
 
   const getCreditSummary = async (customerId = '') => {
@@ -635,21 +693,25 @@ export const createAdminStore = ({ env = process.env, fetchImpl = globalThis.fet
     const activePaymentCredits = toArray(paymentCredits).filter((credit) => credit.status === 'active');
     const activeReportCredits = toArray(reportCredits).filter((credit) => ['available', 'assigned', 'in_progress'].includes(credit.status));
     const activeEntitlements = toArray(entitlements).filter((item) => item.status === 'active');
-    const balance = [
-      ...activePaymentCredits.map((credit) => Number(credit.analysis_limit || 0) - Number(credit.analysis_used || 0)),
-      ...activeReportCredits.map((credit) => Number(credit.analysis_limit || 0) - Number(credit.analysis_used || 0)),
-      ...activeEntitlements.map((item) => Number(item.max_photos_per_inspection || 0)),
-    ].reduce((sum, item) => sum + Math.max(item, 0), 0);
     return {
       customerId: customerId || null,
-      balance,
-      paymentCredits: toArray(paymentCredits),
-      reportCredits: toArray(reportCredits),
-      entitlements: toArray(entitlements),
+      photoUsage: {
+        effectiveLimitPerInspection: Math.max(
+          0,
+          ...activePaymentCredits.map((credit) => Number(credit.analysis_limit || 0)),
+          ...activeEntitlements.map((item) => Number(item.max_photos_per_inspection || 0)),
+        ),
+        paymentCredits: toArray(paymentCredits),
+        manualPhotoLimits: toArray(entitlements).filter((item) => item.plan_id === 'admin_usage'),
+      },
+      reportUsage: {
+        availableCredits: activeReportCredits.filter((credit) => credit.status === 'available').length,
+        reportCredits: toArray(reportCredits),
+      },
     };
   };
 
-  const adjustCredits = async ({ customerId, action, amount, creditTable, creditId, reason, admin, authUser }) => {
+  const adjustCredits = async ({ customerId, action, usageUnits, creditTable, creditId, planId, reason, admin, authUser }) => {
     const normalizedAction = String(action || '').trim();
     if (!['grant', 'remove'].includes(normalizedAction)) {
       throw new AdminError('Invalid credit action.', {
@@ -658,100 +720,45 @@ export const createAdminStore = ({ env = process.env, fetchImpl = globalThis.fet
       });
     }
     const auditReason = requireReason(reason);
-    const value = toPositiveInt(amount, 'amount');
-    const previousSummary = await getCreditSummary(customerId);
-    let nextEntity = null;
-
-    if (normalizedAction === 'grant') {
-      nextEntity = {
-        id: `admin-credit-${crypto.randomUUID()}`,
-        user_id: customerId,
-        plan_id: 'beta_paid_4990',
-        status: 'active',
-        source: 'manual_admin',
-        max_photos_per_inspection: value,
-        pdf_enabled: true,
-        created_at: nowIso(),
-        updated_at: nowIso(),
-      };
-      await recordAudit({
-        admin,
-        authUser,
-        action: 'credits.grant',
-        entityType: 'entitlements',
-        entityId: customerId,
-        previousValue: previousSummary,
-        nextValue: nextEntity,
-        reason: auditReason,
+    if (!customerId || !creditTable) {
+      throw new AdminError('Customer and usage credit type are required.', {
+        debugCode: 'admin_credit_target_required',
+        statusCode: 400,
       });
-      nextEntity = firstRow(await client.insert('entitlements', nextEntity));
-    } else {
-      if (!creditTable || !creditId) {
-        throw new AdminError('Credit table and credit id are required for removal.', {
-          debugCode: 'admin_credit_target_required',
-          statusCode: 400,
-        });
-      }
-      const encodedCreditId = encodeFilterValue(creditId);
-      await recordAudit({
-        admin,
-        authUser,
-        action: 'credits.remove',
-        entityType: creditTable,
-        entityId: creditId,
-        previousValue: previousSummary,
-        nextValue: {
-          creditTable,
-          creditId,
-          action: 'remove',
-          reason: auditReason,
-        },
-        reason: auditReason,
-      });
-      if (creditTable === 'payment_v1_credits') {
-        nextEntity = firstRow(await client.patch('payment_v1_credits', `id=eq.${encodedCreditId}&select=*`, {
-          status: 'revoked',
-          revoked_at: nowIso(),
-          revoked_reason: auditReason,
-          revoked_by_admin: admin?.id || null,
-        }));
-      } else if (creditTable === 'report_credits') {
-        nextEntity = firstRow(await client.patch('report_credits', `id=eq.${encodedCreditId}&select=*`, {
-          status: 'canceled',
-          revoked_at: nowIso(),
-          revoked_reason: auditReason,
-          revoked_by_admin: admin?.id || null,
-          updated_at: nowIso(),
-        }));
-      } else if (creditTable === 'entitlements') {
-        nextEntity = firstRow(await client.patch('entitlements', `id=eq.${encodedCreditId}&select=*`, {
-          status: 'expired',
-          updated_at: nowIso(),
-        }));
-      } else {
-        throw new AdminError('Invalid credit table.', {
-          debugCode: 'admin_invalid_credit_table',
-          statusCode: 400,
-        });
-      }
     }
-
-    const nextSummary = await getCreditSummary(customerId);
-    const adjustment = {
-      customer_id: customerId,
-      credit_table: normalizedAction === 'grant' ? 'entitlements' : creditTable,
-      credit_id: nextEntity?.id || creditId || null,
-      action: normalizedAction,
-      amount: value,
-      previous_balance: previousSummary.balance,
-      next_balance: nextSummary.balance,
-      reason: auditReason,
-      admin_user_id: admin?.id || null,
-    };
-    await client.insert('admin_credit_adjustments', adjustment);
+    if (normalizedAction === 'remove' && !creditId) {
+      throw new AdminError('Usage credit id is required for removal.', {
+        debugCode: 'admin_credit_target_required',
+        statusCode: 400,
+      });
+    }
+    const safeUsageUnits = normalizedAction === 'grant'
+      ? toPositiveInt(usageUnits, 'usageUnits')
+      : Math.max(Number(usageUnits) || 1, 1);
+    const result = await client.rpc('admin_adjust_usage_credit', {
+      p_customer_id: customerId,
+      p_action: normalizedAction,
+      p_credit_table: creditTable,
+      p_credit_id: creditId || null,
+      p_plan_id: planId || null,
+      p_usage_units: safeUsageUnits,
+      p_reason: auditReason,
+      p_admin_user_id: admin?.id || null,
+      p_admin_auth_user_id: authUser?.userId || admin?.user_id || null,
+      p_admin_email: admin?.email || authUser?.email || null,
+      p_admin_role: admin?.role || null,
+      p_correlation_id: crypto.randomUUID(),
+    });
+    const operation = Array.isArray(result) ? result[0] : result;
+    if (!operation?.success) {
+      throw new AdminError('Usage credit adjustment failed.', {
+        debugCode: operation?.failureCode || 'admin_credit_adjustment_failed',
+        statusCode: 400,
+      });
+    }
     return {
-      adjustment,
-      summary: nextSummary,
+      adjustment: operation.adjustment,
+      summary: await getCreditSummary(customerId),
     };
   };
 
@@ -805,17 +812,19 @@ export const createAdminStore = ({ env = process.env, fetchImpl = globalThis.fet
       created_by: admin?.id || null,
       updated_by: admin?.id || null,
     };
-    await recordAudit({
-      admin,
-      authUser,
-      action: 'admin_users.create',
-      entityType: 'admin_users',
-      entityId: email,
-      previousValue: null,
-      nextValue,
-      reason,
+    return executeAuditedMutation({
+      audit: {
+        admin,
+        authUser,
+        action: 'admin_users.create',
+        entityType: 'admin_users',
+        entityId: email,
+        previousValue: null,
+        nextValue,
+        reason,
+      },
+      mutate: async () => firstRow(await client.insert('admin_users', nextValue)),
     });
-    return firstRow(await client.insert('admin_users', nextValue));
   };
 
   const updateAdminUser = async ({ adminUserId, body, admin, authUser }) => {
@@ -836,17 +845,19 @@ export const createAdminStore = ({ env = process.env, fetchImpl = globalThis.fet
       patch.disabled_at = body.active ? null : nowIso();
     }
     if ('displayName' in body) patch.display_name = String(body.displayName || '').trim();
-    await recordAudit({
-      admin,
-      authUser,
-      action: 'admin_users.update',
-      entityType: 'admin_users',
-      entityId: adminUserId,
-      previousValue: previous,
-      nextValue: { ...previous, ...patch },
-      reason,
+    return executeAuditedMutation({
+      audit: {
+        admin,
+        authUser,
+        action: 'admin_users.update',
+        entityType: 'admin_users',
+        entityId: adminUserId,
+        previousValue: previous,
+        nextValue: { ...previous, ...patch },
+        reason,
+      },
+      mutate: async () => firstRow(await client.patch('admin_users', `id=eq.${encodeFilterValue(adminUserId)}&select=*`, patch)),
     });
-    return firstRow(await client.patch('admin_users', `id=eq.${encodeFilterValue(adminUserId)}&select=*`, patch));
   };
 
   const listAudit = async ({ entityType = '', entityId = '', limit = 100 } = {}) => {

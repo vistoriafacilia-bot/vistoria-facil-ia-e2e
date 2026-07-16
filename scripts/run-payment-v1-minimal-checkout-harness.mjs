@@ -24,7 +24,6 @@ const paymentPlanFixture = {
   code: 'report_50_beta',
   name: 'Relatório 50',
   description: 'Relatório beta',
-  value: 49.9,
   amountCents: 4990,
   analysisLimit: 50,
   snapshot: { code: 'report_50_beta', priceCents: 4990, analysisLimit: 50 },
@@ -47,7 +46,7 @@ const makeMockPaymentOrders = () => ({
       plan_code: plan.code,
       external_reference: externalReference,
       status: 'pending',
-      amount_cents: Math.round(plan.value * 100),
+      amount_cents: plan.amountCents,
       analysis_limit: plan.analysisLimit,
     };
     this.orders.push(order);
@@ -70,7 +69,7 @@ const plan50 = await plansModule.getPaymentV1Plan('report_50_beta', { store: pay
 test('paymentV1ModulesLoad', () => {
   assert.equal(typeof clientModule.createAsaasCheckout, 'function');
   assert.equal(typeof errorsModule.PaymentV1Error, 'function');
-  assert.equal(plan50.value, 49.9);
+  assert.equal(plan50.amountCents, 4990);
   assert.equal(typeof functionModule.createHandler, 'function');
   assert.equal(typeof functionModule.resolvePaymentV1ReturnCallback, 'function');
 });

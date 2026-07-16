@@ -96,6 +96,7 @@ export const createAdminRestClient = ({ env = process.env, fetchImpl = globalThi
   const select = (table, query = 'select=*') => request({ path: `${table}?${query}` });
   const insert = (table, body, query = 'select=*') => request({ path: `${table}?${query}`, method: 'POST', body });
   const patch = (table, query, body) => request({ path: `${table}?${query}`, method: 'PATCH', body });
+  const rpc = (name, body) => request({ path: `rpc/${name}`, method: 'POST', body });
 
   return {
     config,
@@ -104,5 +105,6 @@ export const createAdminRestClient = ({ env = process.env, fetchImpl = globalThi
     select,
     insert,
     patch,
+    rpc,
   };
 };

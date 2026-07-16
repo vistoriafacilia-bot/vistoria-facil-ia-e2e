@@ -79,7 +79,7 @@ export default function Navbar({ user, onNavigateHome, isAdminUser, showAdminMet
                 </span>
                 {entitlement && (
                   <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full w-max mt-1 ${entitlement.planId === 'beta_paid_4990' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'}`}>
-                    {PLAN_DEFINITIONS[entitlement.planId]?.name || entitlement.planId}
+                    {PLAN_DEFINITIONS[entitlement.planId as keyof typeof PLAN_DEFINITIONS]?.name || entitlement.planId}
                   </span>
                 )}
               </div>

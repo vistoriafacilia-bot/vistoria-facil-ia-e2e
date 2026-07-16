@@ -163,28 +163,25 @@ export const assertAdminPermission = (admin, permission) => {
   });
 };
 
-const parseBootstrapEmails = (env = process.env) => new Set(
+const parseBootstrapEmails = (env = process.env) => (
   String(env.ADMIN_BOOTSTRAP_EMAILS || '')
     .split(',')
     .map((email) => email.trim().toLowerCase())
-    .filter(Boolean),
+    .filter(Boolean)
 );
 
-const getBootstrapAdmin = ({ authUser, env }) => {
+export const getBootstrapOwnerEmail = (env = process.env) => parseBootstrapEmails(env)[0] || null;
+
+const getBootstrapCandidate = ({ authUser, env }) => {
   const email = String(authUser?.email || '').trim().toLowerCase();
-  if (!email || !parseBootstrapEmails(env).has(email)) return null;
+  if (!email || email !== getBootstrapOwnerEmail(env)) return null;
   return {
-    id: null,
-    user_id: authUser.userId,
+    userId: authUser.userId,
     email,
-    display_name: email,
-    role: 'owner',
-    active: true,
-    bootstrap: true,
   };
 };
 
-const findAdminUser = async ({ rest, authUser, env }) => {
+const findPersistedAdminUser = async ({ rest, authUser }) => {
   const rowsByUserId = await rest.select(
     'admin_users',
     `user_id=eq.${encodeFilterValue(authUser.userId)}&active=eq.true&limit=1&select=*`,
@@ -202,7 +199,33 @@ const findAdminUser = async ({ rest, authUser, env }) => {
     if (byEmail) return byEmail;
   }
 
-  return getBootstrapAdmin({ authUser, env });
+  return null;
+};
+
+const bootstrapFirstOwner = async ({ rest, authUser, env }) => {
+  const candidate = getBootstrapCandidate({ authUser, env });
+  if (!candidate) return null;
+
+  const persistedOwners = await rest.select(
+    'admin_users',
+    'role=eq.owner&limit=1&select=id,user_id,email,role,active',
+  );
+  if (Array.isArray(persistedOwners) && persistedOwners.length > 0) return null;
+
+  const response = await rest.rpc('admin_bootstrap_owner', {
+    p_user_id: candidate.userId,
+    p_email: candidate.email,
+    p_display_name: candidate.email,
+  });
+  const result = Array.isArray(response) ? response[0] : response;
+  if (!result?.success || !result?.adminUser) return null;
+  return result.adminUser;
+};
+
+const findAdminUser = async ({ rest, authUser, env }) => {
+  const persistedAdmin = await findPersistedAdminUser({ rest, authUser });
+  if (persistedAdmin) return persistedAdmin;
+  return bootstrapFirstOwner({ rest, authUser, env });
 };
 
 export const authenticateAdminRequest = async ({

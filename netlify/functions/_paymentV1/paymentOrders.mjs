@@ -9,11 +9,16 @@ const jsonHeaders = (config) => ({
 
 const nowIso = () => new Date().toISOString();
 
-export const amountCentsForPlan = (plan) => (
-  Number.isInteger(plan?.amountCents)
-    ? plan.amountCents
-    : Math.round(Number(plan?.value) * 100)
-);
+export const amountCentsForPlan = (plan) => {
+  const amountCents = Number(plan?.amountCents ?? plan?.priceCents);
+  if (!Number.isInteger(amountCents) || amountCents <= 0) {
+    throw new PaymentV1Error('Payment V1 plan price is invalid.', {
+      debugCode: 'plan_price_invalid',
+      statusCode: 500,
+    });
+  }
+  return amountCents;
+};
 
 export const buildPaymentV1ExternalReference = ({ planCode, now = Date.now, random = Math.random }) => {
   const suffix = Math.floor(random() * 1_000_000).toString().padStart(6, '0');
@@ -324,7 +329,7 @@ export const createPaymentOrderStore = ({ env = process.env, fetchImpl = globalT
     catalogId: row.id,
     name: row.name,
     description: row.description,
-    value: Number(row.price_cents) / 100,
+    priceCents: Number(row.price_cents),
     amountCents: Number(row.price_cents),
     currency: row.currency || 'BRL',
     analysisLimit: Number(row.analysis_limit),

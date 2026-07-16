@@ -18,7 +18,6 @@ const paymentPlanFixture = {
   code: 'report_50_beta',
   name: 'Relatorio 50',
   description: 'Relatorio beta',
-  value: 49.9,
   amountCents: 4990,
   analysisLimit: 50,
   snapshot: { code: 'report_50_beta', priceCents: 4990, analysisLimit: 50 },

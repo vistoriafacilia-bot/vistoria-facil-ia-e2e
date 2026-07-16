@@ -32,6 +32,17 @@ const makeStore = () => {
   const state = { orders: [], events: new Set(), credits: [] };
   return {
     state,
+    async getPaymentV1PlanByCode(planCode) {
+      if (planCode !== 'report_50_beta') return null;
+      return {
+        code: 'report_50_beta',
+        name: 'Relatorio 50',
+        description: 'Fixture de catalogo do banco',
+        amountCents: 4990,
+        analysisLimit: 50,
+        snapshot: { code: 'report_50_beta', priceCents: 4990, analysisLimit: 50 },
+      };
+    },
     async createPendingOrder({ plan, externalReference, userId }) {
       if (!userId) throw Object.assign(new Error('user_id required'), { debugCode: 'invalid_auth_token', statusCode: 401 });
       const order = {
@@ -367,7 +378,7 @@ test('noUnexpectedErrorInWebhook', async () => {
 test('asaasNetworkFailureHasSpecificDebugCode', async () => {
   await assert.rejects(
     () => asaasModule.createAsaasCheckout({
-      plan: { code: 'report_50_beta', name: 'Relatório 50', description: 'Relatório beta', value: 49.9 },
+      plan: { code: 'report_50_beta', name: 'Relatório 50', description: 'Relatório beta', amountCents: 4990 },
       externalReference: 'vf-test',
       env: {
         ASAAS_ENV: 'sandbox',

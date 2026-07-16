@@ -23,7 +23,7 @@ const makePlan = () => ({
   code: 'report_50_beta',
   name: 'Relatório 50',
   description: 'Relatório beta',
-  value: 49.9,
+  amountCents: 4990,
   analysisLimit: 50,
 });
 

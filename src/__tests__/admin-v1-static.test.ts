@@ -39,4 +39,27 @@ describe('Admin V1 static architecture', () => {
     expect(frontendSource).toContain('payment-v1-plans');
     expect(plansSource).not.toMatch(/49\.9|99\.9|149\.9|4990|9990|14990/);
   });
+
+  it('records administrative mutations with real outcomes and makes usage-credit changes transactional', () => {
+    const storeSource = read('netlify/functions/_admin/adminStore.mjs');
+    const migration = read('supabase/migrations/202607160900_admin_v1.sql');
+    expect(storeSource).toContain("result: 'pending'");
+    expect(storeSource).toContain("result: 'success'");
+    expect(storeSource).toContain("result: 'failed'");
+    expect(storeSource).toContain("client.rpc('admin_adjust_usage_credit'");
+    expect(migration).toContain('create or replace function public.admin_adjust_usage_credit');
+    expect(migration).toContain('previous_usage_units');
+    expect(migration).toContain('next_usage_units');
+  });
+
+  it('limits bootstrap access to the first owner and keeps prices distinct from usage credits', () => {
+    const authSource = read('netlify/functions/_admin/adminAuth.mjs');
+    const paymentSource = read('netlify/functions/_paymentV1/paymentOrders.mjs');
+    const adminAppSource = read('src/components/admin/AdminApp.tsx');
+    expect(authSource).toContain('getBootstrapOwnerEmail');
+    expect(authSource).toContain("rest.rpc('admin_bootstrap_owner'");
+    expect(paymentSource).not.toContain('plan?.value');
+    expect(adminAppSource).toContain('Valor do pagamento (R$)');
+    expect(adminAppSource).not.toContain('>Saldo<');
+  });
 });

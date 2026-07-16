@@ -20,9 +20,10 @@ export const createHandler = (options = {}) => createAdminHandler({
         credits: await store.adjustCredits({
           customerId: body.customerId,
           action,
-          amount: body.amount,
+          usageUnits: body.usageUnits,
           creditTable: body.creditTable,
           creditId: body.creditId,
+          planId: body.planId,
           reason: body.reason,
           admin: auth.admin,
           authUser: auth.authUser,

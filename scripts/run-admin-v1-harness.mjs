@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { AdminError } from '../netlify/functions/_admin/adminErrors.mjs';
-import { assertAdminPermission } from '../netlify/functions/_admin/adminAuth.mjs';
+import { assertAdminPermission, authenticateAdminRequest, getBootstrapOwnerEmail } from '../netlify/functions/_admin/adminAuth.mjs';
 import * as dashboardModule from '../netlify/functions/admin-dashboard.mjs';
 import * as customersModule from '../netlify/functions/admin-customers.mjs';
 import * as plansModule from '../netlify/functions/admin-plans.mjs';
@@ -187,19 +187,28 @@ const makeStore = () => {
     },
     async getCreditSummary(customerId = '') {
       const rows = customerId ? state.paymentCredits.filter((credit) => credit.user_id === customerId) : state.paymentCredits;
-      return { customerId: customerId || null, balance: rows.reduce((sum, credit) => sum + Math.max((credit.analysis_limit || 0) - (credit.analysis_used || 0), 0), 0), paymentCredits: rows, reportCredits: [], entitlements: state.entitlements };
+      const manualPhotoLimits = state.entitlements.filter((item) => item.user_id === customerId && item.plan_id === 'admin_usage');
+      return {
+        customerId: customerId || null,
+        photoUsage: {
+          effectiveLimitPerInspection: Math.max(0, ...rows.map((credit) => credit.analysis_limit || 0), ...manualPhotoLimits.map((item) => item.max_photos_per_inspection || 0)),
+          paymentCredits: rows,
+          manualPhotoLimits,
+        },
+        reportUsage: { availableCredits: 0, reportCredits: [] },
+      };
     },
-    async adjustCredits({ customerId, action, amount, creditId, creditTable, reason, admin }) {
+    async adjustCredits({ customerId, action, usageUnits, creditId, creditTable, reason, admin }) {
       const previous = await this.getCreditSummary(customerId);
       const auditReason = requireReason(reason);
-      audit({ admin, action: `credits.${action}`, entityType: creditTable || 'entitlements', entityId: creditId || customerId, previousValue: previous, nextValue: { action, amount }, reason: auditReason });
-      if (action === 'grant') state.paymentCredits.push({ id: `manual-credit-${state.paymentCredits.length + 1}`, user_id: customerId, status: 'active', analysis_limit: amount, analysis_used: 0 });
+      if (action === 'grant') state.entitlements.push({ id: `manual-credit-${state.entitlements.length + 1}`, user_id: customerId, plan_id: 'admin_usage', status: 'active', max_photos_per_inspection: usageUnits });
       if (action === 'remove') {
         const credit = state.paymentCredits.find((item) => item.id === creditId);
         if (credit) credit.status = 'revoked';
       }
       const next = await this.getCreditSummary(customerId);
-      state.adjustments.push({ previous_balance: previous.balance, next_balance: next.balance, reason: auditReason });
+      audit({ admin, action: `credits.${action}`, entityType: creditTable || 'entitlements', entityId: creditId || customerId, previousValue: previous, nextValue: next, reason: auditReason, result: 'success' });
+      state.adjustments.push({ previous_usage_units: previous.photoUsage.effectiveLimitPerInspection, next_usage_units: next.photoUsage.effectiveLimitPerInspection, reason: auditReason });
       return { adjustment: state.adjustments.at(-1), summary: next };
     },
     async listInspections() {
@@ -308,14 +317,15 @@ test('paidOrderWithoutCreditReprocessesIdempotently', async () => {
   assert.equal(store.state.paymentCredits.length, 1);
 });
 
-test('creditGrantAndRemovalRecordBalances', async () => {
+test('creditUsageGrantRecordsUsageUnitsWithoutFinancialBalance', async () => {
   const store = makeStore();
   const handler = makeHandler(creditsModule, store);
-  const grant = await handler(event({ method: 'POST', body: { action: 'grant', customerId: stateCustomerId(store), amount: 12, reason: 'ajuste suporte' } }));
+  const grant = await handler(event({ method: 'POST', body: { action: 'grant', customerId: stateCustomerId(store), creditTable: 'entitlements', usageUnits: 12, reason: 'ajuste suporte' } }));
   assert.equal(grant.statusCode, 200);
-  assert.equal(parseBody(grant).credits.summary.balance, 12);
-  assert.equal(store.state.adjustments.at(-1).previous_balance, 0);
-  assert.equal(store.state.adjustments.at(-1).next_balance, 12);
+  assert.equal(parseBody(grant).credits.summary.photoUsage.effectiveLimitPerInspection, 12);
+  assert.equal(store.state.adjustments.at(-1).previous_usage_units, 0);
+  assert.equal(store.state.adjustments.at(-1).next_usage_units, 12);
+  assert.equal(store.state.audit.at(-1).result, 'success');
 });
 
 test('inspectionsAreReadOnly', async () => {
@@ -353,6 +363,76 @@ test('adminMigrationIsAdditiveAndHasRequiredTables', () => {
     assert.match(sql, new RegExp(`create table if not exists public\\.${required}`));
   }
   assert.doesNotMatch(sql, /\bdrop\s+table\b|\bdelete\s+from\b|\btruncate\b|\balter\s+column\b.*\bdrop\b/);
+});
+
+test('adminAuditUsesPendingAttemptsAndAtomicUsageCreditProcedure', () => {
+  const storeSource = fs.readFileSync('netlify/functions/_admin/adminStore.mjs', 'utf8');
+  const migration = fs.readFileSync('supabase/migrations/202607160900_admin_v1.sql', 'utf8').toLowerCase();
+  assert.match(storeSource, /result: 'pending'/);
+  assert.match(storeSource, /result: 'success'/);
+  assert.match(storeSource, /result: 'failed'/);
+  assert.match(storeSource, /admin_adjust_usage_credit/);
+  assert.match(migration, /create or replace function public\.admin_adjust_usage_credit/);
+  assert.match(migration, /previous_usage_units/);
+  assert.match(migration, /next_usage_units/);
+  assert.match(migration, /admin_credit_adjustments/);
+});
+
+test('catalogPreservesSeededPlansAndCheckoutUsesOnlyEligibleDatabaseRows', () => {
+  const catalogSeed = fs.readFileSync('supabase/migrations/202606290001_report_credits.sql', 'utf8');
+  const paymentStoreSource = fs.readFileSync('netlify/functions/_paymentV1/paymentOrders.mjs', 'utf8');
+  const paymentPlanSource = fs.readFileSync('netlify/functions/_paymentV1/paymentPlans.mjs', 'utf8');
+  for (const [id, priceCents, photoLimit] of [
+    ['report_50_beta_4990', '4990', '50'],
+    ['report_100_9990', '9990', '100'],
+    ['report_150_14990', '14990', '150'],
+  ]) {
+    assert.match(catalogSeed, new RegExp(`'${id}'[^\\n]*${priceCents}[^\\n]*${photoLimit}`));
+  }
+  assert.match(paymentStoreSource, /active=eq\.true&visible=eq\.true&available_for_purchase=eq\.true/);
+  assert.match(paymentStoreSource, /plan_snapshot/);
+  assert.doesNotMatch(paymentStoreSource, /plan\?\.value/);
+  assert.doesNotMatch(paymentPlanSource, /4990|9990|14990/);
+});
+
+test('bootstrapAllowsOnlyConfiguredFirstOwnerAndThenUsesPersistedAdmin', async () => {
+  assert.equal(getBootstrapOwnerEmail({ ADMIN_BOOTSTRAP_EMAILS: 'owner@example.test,second@example.test' }), 'owner@example.test');
+  const authEvent = { headers: { authorization: 'Bearer bootstrap-token' } };
+  const authFetch = async () => ({
+    ok: true,
+    text: async () => JSON.stringify({ id: ownerAdmin.user_id, email: ownerAdmin.email }),
+  });
+  let bootstrapCalls = 0;
+  const emptyRest = {
+    select: async () => [],
+    rpc: async (name) => {
+      bootstrapCalls += 1;
+      assert.equal(name, 'admin_bootstrap_owner');
+      return { success: true, adminUser: ownerAdmin };
+    },
+  };
+  const bootstrapped = await authenticateAdminRequest({
+    event: authEvent,
+    env: { SUPABASE_URL: 'https://example.test', SUPABASE_SERVICE_ROLE_KEY: 'service-role', ADMIN_BOOTSTRAP_EMAILS: 'owner@example.test,second@example.test' },
+    fetchImpl: authFetch,
+    requiredPermission: 'dashboard.read',
+    adminStore: { rest: emptyRest },
+  });
+  assert.equal(bootstrapped.admin.role, 'owner');
+  assert.equal(bootstrapCalls, 1);
+
+  const persistedRest = {
+    select: async () => [ownerAdmin],
+    rpc: async () => { throw new Error('bootstrap must not run for a persisted owner'); },
+  };
+  const persisted = await authenticateAdminRequest({
+    event: authEvent,
+    env: { SUPABASE_URL: 'https://example.test', SUPABASE_SERVICE_ROLE_KEY: 'service-role' },
+    fetchImpl: authFetch,
+    requiredPermission: 'dashboard.read',
+    adminStore: { rest: persistedRest },
+  });
+  assert.equal(persisted.admin.id, ownerAdmin.id);
 });
 
 test('adminRuntimeHasNoHardcodedAdminEmailOrCommercialCatalog', () => {
