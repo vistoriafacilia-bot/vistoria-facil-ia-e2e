@@ -17,6 +17,7 @@ const debugStatusModule = await import('../netlify/functions/payment-v1-debug-st
 
 const USER_A = '00000000-0000-4000-8000-000000000001';
 const WEBHOOK_TOKEN = 'test_webhook_token';
+const APP_PUBLIC_ORIGIN = 'https://hmlg.vistoriafacil-ia.com.br';
 
 const paymentGateSource = fs.readFileSync('src/components/PaymentV1Gate.tsx', 'utf8');
 const paymentServiceSource = fs.readFileSync('src/lib/services/paymentV1Service.ts', 'utf8');
@@ -130,6 +131,7 @@ const parseBody = (response) => JSON.parse(response.body);
 const createCheckout = async (store, userId = USER_A) => {
   const handler = checkoutModule.createHandler({
     paymentOrders: store,
+    env: { APP_PUBLIC_ORIGIN },
     authenticateRequest: async () => ({ userId }),
     buildExternalReference: ({ planCode }) => `vf-payment-v1-${planCode}-realistic-${stateCounter(store)}`,
     asaasClient: {
@@ -143,7 +145,7 @@ const createCheckout = async (store, userId = USER_A) => {
       },
     },
   });
-  const response = await handler({ httpMethod: 'POST', body: JSON.stringify({ planCode: 'report_50_beta' }) });
+  const response = await handler({ httpMethod: 'POST', body: JSON.stringify({ planCode: 'report_50_beta', returnOrigin: APP_PUBLIC_ORIGIN }) });
   assert.equal(response.statusCode, 200);
   return parseBody(response);
 };

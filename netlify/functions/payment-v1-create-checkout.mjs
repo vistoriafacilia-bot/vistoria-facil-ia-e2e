@@ -61,13 +61,6 @@ const parseBody = (event) => {
   }
 };
 
-export const PAYMENT_V1_ALLOWED_RETURN_ORIGINS = new Set([
-  'https://vistoriafacil-ia.com.br',
-  'https://glittery-boba-2b3367.netlify.app',
-]);
-
-const PAYMENT_V1_DRAFT_RETURN_HOST_RE = /^[0-9a-f]{8,40}--glittery-boba-2b3367\.netlify\.app$/i;
-
 const throwInvalidReturnOrigin = () => {
   throw new PaymentV1Error('Invalid return origin.', {
     debugCode: 'invalid_return_origin',
@@ -75,38 +68,94 @@ const throwInvalidReturnOrigin = () => {
   });
 };
 
-const isAllowedPaymentV1ReturnUrl = (url) => (
-  url.protocol === 'https:'
-  && !url.username
-  && !url.password
-  && url.pathname === '/'
-  && !url.search
-  && !url.hash
-  && (
-    PAYMENT_V1_ALLOWED_RETURN_ORIGINS.has(url.origin)
-    || PAYMENT_V1_DRAFT_RETURN_HOST_RE.test(url.host)
-  )
-);
+const paymentV1ConfigError = (message, debugCode) => {
+  throw new PaymentV1Error(message, {
+    debugCode,
+    statusCode: 500,
+  });
+};
 
-export const resolvePaymentV1ReturnCallback = (returnOrigin) => {
-  if (returnOrigin === undefined || returnOrigin === null || returnOrigin === '') return null;
-  if (typeof returnOrigin !== 'string') throwInvalidReturnOrigin();
+const normalizeOriginValue = (value, { missingMessage, invalidMessage, missingDebugCode, invalidDebugCode, statusCode }) => {
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new PaymentV1Error(missingMessage, {
+      debugCode: missingDebugCode,
+      statusCode,
+    });
+  }
 
+  const trimmed = value.trim().replace(/\/$/, '');
   let url;
   try {
-    url = new URL(returnOrigin.trim());
+    url = new URL(trimmed);
   } catch {
+    throw new PaymentV1Error(invalidMessage, {
+      debugCode: invalidDebugCode,
+      statusCode,
+    });
+  }
+
+  if (
+    url.protocol !== 'https:'
+    || url.username
+    || url.password
+    || url.pathname !== '/'
+    || url.search
+    || url.hash
+  ) {
+    throw new PaymentV1Error(invalidMessage, {
+      debugCode: invalidDebugCode,
+      statusCode,
+    });
+  }
+
+  return url.origin;
+};
+
+export const resolvePaymentV1AppPublicOrigin = (env = process.env) => {
+  try {
+    return normalizeOriginValue(env.APP_PUBLIC_ORIGIN, {
+      missingMessage: 'APP_PUBLIC_ORIGIN is required.',
+      invalidMessage: 'APP_PUBLIC_ORIGIN must be a valid HTTPS origin.',
+      missingDebugCode: 'missing_app_public_origin',
+      invalidDebugCode: 'invalid_app_public_origin',
+      statusCode: 500,
+    });
+  } catch (error) {
+    if (error.debugCode === 'missing_app_public_origin' || error.debugCode === 'invalid_app_public_origin') throw error;
+    paymentV1ConfigError('APP_PUBLIC_ORIGIN must be a valid HTTPS origin.', 'invalid_app_public_origin');
+  }
+};
+
+const resolvePaymentV1RequestOrigin = (returnOrigin) => {
+  try {
+    return normalizeOriginValue(returnOrigin, {
+      missingMessage: 'Missing return origin.',
+      invalidMessage: 'Invalid return origin.',
+      missingDebugCode: 'missing_return_origin',
+      invalidDebugCode: 'invalid_return_origin',
+      statusCode: 400,
+    });
+  } catch (error) {
+    if (error.debugCode === 'missing_return_origin') throw error;
+    throwInvalidReturnOrigin();
+  }
+};
+
+export const buildPaymentV1ReturnCallback = (origin) => ({
+  successUrl: `${origin}/?payment=success`,
+  cancelUrl: `${origin}/?payment=cancel`,
+  expiredUrl: `${origin}/?payment=expired`,
+});
+
+export const resolvePaymentV1ReturnCallback = (returnOrigin, { env = process.env } = {}) => {
+  const configuredOrigin = resolvePaymentV1AppPublicOrigin(env);
+  const requestOrigin = resolvePaymentV1RequestOrigin(returnOrigin);
+
+  if (requestOrigin !== configuredOrigin) {
     throwInvalidReturnOrigin();
   }
 
-  if (!isAllowedPaymentV1ReturnUrl(url)) throwInvalidReturnOrigin();
-
-  const { origin } = url;
-  return {
-    successUrl: `${origin}/?payment=success`,
-    cancelUrl: `${origin}/?payment=cancel`,
-    expiredUrl: `${origin}/?payment=expired`,
-  };
+  return buildPaymentV1ReturnCallback(configuredOrigin);
 };
 
 export const createHandler = ({
@@ -151,7 +200,7 @@ export const createHandler = ({
         statusCode: 400,
       });
     }
-    const callback = resolvePaymentV1ReturnCallback(returnOrigin);
+    const callback = resolvePaymentV1ReturnCallback(returnOrigin, { env });
 
     const orderStore = paymentOrders || createPaymentOrderStore({ env });
     const externalReference = buildExternalReference({ planCode: plan.code });

@@ -11,6 +11,7 @@ const webhookModule = await import('../netlify/functions/payment-v1-asaas-webhoo
 const authModule = await import('../netlify/functions/_paymentV1/paymentAuth.mjs');
 
 const USER_ID = '00000000-0000-4000-8000-000000000001';
+const APP_PUBLIC_ORIGIN = 'https://hmlg.vistoriafacil-ia.com.br';
 const migrationSql = fs.readFileSync('supabase/migrations/202606291900_payment_v1.sql', 'utf8').toLowerCase();
 
 const makeStore = () => {
@@ -87,6 +88,7 @@ const webhookEvent = (payload, token = 'test_webhook_token') => ({
 const createCheckout = async (store, authUser = { userId: USER_ID }) => {
   const handler = checkoutModule.createHandler({
     paymentOrders: store,
+    env: { APP_PUBLIC_ORIGIN },
     authenticateRequest: async () => authUser,
     buildExternalReference: ({ planCode }) => `vf-payment-v1-${planCode}-fixed`,
     asaasClient: {
@@ -100,7 +102,7 @@ const createCheckout = async (store, authUser = { userId: USER_ID }) => {
       },
     },
   });
-  const response = await handler({ httpMethod: 'POST', body: JSON.stringify({ planCode: 'report_50_beta' }) });
+  const response = await handler({ httpMethod: 'POST', body: JSON.stringify({ planCode: 'report_50_beta', returnOrigin: APP_PUBLIC_ORIGIN }) });
   assert.equal(response.statusCode, 200);
   return JSON.parse(response.body);
 };

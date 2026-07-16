@@ -17,6 +17,7 @@ const authModule = await import('../netlify/functions/_paymentV1/paymentAuth.mjs
 
 const USER_A = '00000000-0000-4000-8000-000000000001';
 const USER_B = '00000000-0000-4000-8000-000000000002';
+const APP_PUBLIC_ORIGIN = 'https://hmlg.vistoriafacil-ia.com.br';
 const SUPABASE_ENV = {
   SUPABASE_URL: 'https://supabase.example.test',
   SUPABASE_SERVICE_ROLE_KEY: 'service_role_key_not_printed',
@@ -122,6 +123,7 @@ const makeSupabaseStatusStore = ({ credits = [], orders = [], failCredits = fals
 const createCheckout = async (store, userId = USER_A, planCode = 'report_50_beta') => {
   const handler = checkoutModule.createHandler({
     paymentOrders: store,
+    env: { APP_PUBLIC_ORIGIN },
     authenticateRequest: async () => ({ userId }),
     buildExternalReference: ({ planCode: code }) => `vf-payment-v1-${code}-${store.state.orders.length + 1}`,
     asaasClient: {
@@ -135,7 +137,7 @@ const createCheckout = async (store, userId = USER_A, planCode = 'report_50_beta
       },
     },
   });
-  const response = await handler({ httpMethod: 'POST', body: JSON.stringify({ planCode }) });
+  const response = await handler({ httpMethod: 'POST', body: JSON.stringify({ planCode, returnOrigin: APP_PUBLIC_ORIGIN }) });
   assert.equal(response.statusCode, 200);
   return JSON.parse(response.body);
 };

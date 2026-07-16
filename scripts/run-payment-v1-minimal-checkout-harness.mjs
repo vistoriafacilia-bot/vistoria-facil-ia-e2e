@@ -1,8 +1,12 @@
 ﻿import assert from 'node:assert/strict';
 
+const HMLG_ORIGIN = 'https://hmlg.vistoriafacil-ia.com.br';
+const PROD_ORIGIN = 'https://vistoriafacil-ia.com.br';
+
 const envFixture = {
   ASAAS_ENV: 'sandbox',
   ASAAS_API_KEY: 'test_api_key_not_printed',
+  APP_PUBLIC_ORIGIN: HMLG_ORIGIN,
   ASAAS_SUCCESS_URL: 'https://example.test/success',
   ASAAS_CANCEL_URL: 'https://example.test/cancel',
   ASAAS_EXPIRED_URL: 'https://example.test/expired',
@@ -54,41 +58,54 @@ test('paymentV1ModulesLoad', () => {
   assert.equal(typeof functionModule.resolvePaymentV1ReturnCallback, 'function');
 });
 
-test('productionReturnOriginAccepted', () => {
-  const callback = functionModule.resolvePaymentV1ReturnCallback('https://vistoriafacil-ia.com.br');
+test('hmlgAppPublicOriginBuildsReturnUrls', () => {
+  const callback = functionModule.resolvePaymentV1ReturnCallback(HMLG_ORIGIN, {
+    env: { APP_PUBLIC_ORIGIN: `${HMLG_ORIGIN}/` },
+  });
   assert.deepEqual(callback, {
-    successUrl: 'https://vistoriafacil-ia.com.br/?payment=success',
-    cancelUrl: 'https://vistoriafacil-ia.com.br/?payment=cancel',
-    expiredUrl: 'https://vistoriafacil-ia.com.br/?payment=expired',
+    successUrl: `${HMLG_ORIGIN}/?payment=success`,
+    cancelUrl: `${HMLG_ORIGIN}/?payment=cancel`,
+    expiredUrl: `${HMLG_ORIGIN}/?payment=expired`,
   });
 });
 
-test('mainNetlifyReturnOriginAccepted', () => {
-  const callback = functionModule.resolvePaymentV1ReturnCallback('https://glittery-boba-2b3367.netlify.app');
-  assert.equal(callback.successUrl, 'https://glittery-boba-2b3367.netlify.app/?payment=success');
+test('productionAppPublicOriginBuildsReturnUrls', () => {
+  const callback = functionModule.resolvePaymentV1ReturnCallback(PROD_ORIGIN, {
+    env: { APP_PUBLIC_ORIGIN: PROD_ORIGIN },
+  });
+  assert.deepEqual(callback, {
+    successUrl: `${PROD_ORIGIN}/?payment=success`,
+    cancelUrl: `${PROD_ORIGIN}/?payment=cancel`,
+    expiredUrl: `${PROD_ORIGIN}/?payment=expired`,
+  });
 });
 
-test('draftNetlifyReturnOriginAccepted', () => {
-  const callback = functionModule.resolvePaymentV1ReturnCallback('https://6a55231a670ff1e30df48d7f--glittery-boba-2b3367.netlify.app');
-  assert.equal(callback.successUrl, 'https://6a55231a670ff1e30df48d7f--glittery-boba-2b3367.netlify.app/?payment=success');
-});
-
-test('maliciousReturnOriginRejected', () => {
+test('missingAppPublicOriginFailsClosed', () => {
   assert.throws(
-    () => functionModule.resolvePaymentV1ReturnCallback('https://attacker.example.test'),
+    () => functionModule.resolvePaymentV1ReturnCallback(HMLG_ORIGIN, { env: {} }),
+    (error) => error.debugCode === 'missing_app_public_origin' && error.statusCode === 500
+  );
+});
+
+test('unknownReturnOriginRejected', () => {
+  assert.throws(
+    () => functionModule.resolvePaymentV1ReturnCallback('https://attacker.example.test', { env: { APP_PUBLIC_ORIGIN: HMLG_ORIGIN } }),
     (error) => error.debugCode === 'invalid_return_origin' && error.statusCode === 400
   );
 });
 
-test('similarInvalidNetlifyReturnOriginRejected', () => {
+test('invalidAppPublicOriginRejected', () => {
   assert.throws(
-    () => functionModule.resolvePaymentV1ReturnCallback('https://6a55231a670ff1e30df48d7f--glittery-boba-2b3367.netlify.app.evil.example'),
-    (error) => error.debugCode === 'invalid_return_origin' && error.statusCode === 400
+    () => functionModule.resolvePaymentV1ReturnCallback(HMLG_ORIGIN, { env: { APP_PUBLIC_ORIGIN: 'http://hmlg.vistoriafacil-ia.com.br' } }),
+    (error) => error.debugCode === 'invalid_app_public_origin' && error.statusCode === 500
   );
 });
 
-test('missingReturnOriginUsesEnvFallback', () => {
-  assert.equal(functionModule.resolvePaymentV1ReturnCallback(undefined), null);
+test('missingReturnOriginRejected', () => {
+  assert.throws(
+    () => functionModule.resolvePaymentV1ReturnCallback(undefined, { env: { APP_PUBLIC_ORIGIN: HMLG_ORIGIN } }),
+    (error) => error.debugCode === 'missing_return_origin' && error.statusCode === 400
+  );
 });
 
 test('sandboxEnvUsesSandboxBase', () => {
@@ -142,7 +159,7 @@ test('checkoutPayloadUsesEnvCallbackFallback', async () => {
 
 test('checkoutPayloadUsesValidatedReturnOriginCallback', async () => {
   let payload;
-  const callback = functionModule.resolvePaymentV1ReturnCallback('https://6a55231a670ff1e30df48d7f--glittery-boba-2b3367.netlify.app');
+  const callback = functionModule.resolvePaymentV1ReturnCallback(HMLG_ORIGIN, { env: envFixture });
   await clientModule.createAsaasCheckout({
     plan: plan50,
     env: {
@@ -216,6 +233,7 @@ test('functionReturnsCheckoutUrl', async () => {
   const paymentOrders = makeMockPaymentOrders();
   const handler = functionModule.createHandler({
     paymentOrders,
+    env: envFixture,
     authenticateRequest: async () => ({ userId: '00000000-0000-4000-8000-000000000001' }),
     asaasClient: {
       async createAsaasCheckout({ plan, externalReference }) {
@@ -225,7 +243,7 @@ test('functionReturnsCheckoutUrl', async () => {
       },
     },
   });
-  const response = await handler({ httpMethod: 'POST', body: JSON.stringify({ planCode: 'report_50_beta' }) });
+  const response = await handler({ httpMethod: 'POST', body: JSON.stringify({ planCode: 'report_50_beta', returnOrigin: HMLG_ORIGIN }) });
   const body = JSON.parse(response.body);
   assert.equal(response.statusCode, 200);
   assert.equal(body.checkoutUrl, 'https://sandbox.asaas.com/checkoutSession/show/chk_fn');
@@ -239,6 +257,7 @@ test('functionPassesValidatedReturnOriginCallbackToAsaas', async () => {
   let receivedCallback;
   const handler = functionModule.createHandler({
     paymentOrders,
+    env: envFixture,
     authenticateRequest: async () => ({ userId: '00000000-0000-4000-8000-000000000001' }),
     asaasClient: {
       async createAsaasCheckout({ plan, callback }) {
@@ -251,17 +270,18 @@ test('functionPassesValidatedReturnOriginCallbackToAsaas', async () => {
     httpMethod: 'POST',
     body: JSON.stringify({
       planCode: 'report_50_beta',
-      returnOrigin: 'https://6a55231a670ff1e30df48d7f--glittery-boba-2b3367.netlify.app',
+      returnOrigin: HMLG_ORIGIN,
     }),
   });
   assert.equal(response.statusCode, 200);
-  assert.equal(receivedCallback.successUrl, 'https://6a55231a670ff1e30df48d7f--glittery-boba-2b3367.netlify.app/?payment=success');
+  assert.equal(receivedCallback.successUrl, `${HMLG_ORIGIN}/?payment=success`);
 });
 
 test('functionRejectsInvalidReturnOriginBeforeOrderCreation', async () => {
   const paymentOrders = makeMockPaymentOrders();
   const handler = functionModule.createHandler({
     paymentOrders,
+    env: envFixture,
     authenticateRequest: async () => ({ userId: '00000000-0000-4000-8000-000000000001' }),
     asaasClient: {
       async createAsaasCheckout() {
