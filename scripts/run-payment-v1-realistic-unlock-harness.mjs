@@ -302,7 +302,9 @@ test('uiCanRefreshAndUnlockAfterCredit', () => {
   assert.match(paymentGateSource, /getPaymentV1DebugStatus/);
   assert.match(paymentGateSource, /Crédito ativo encontrado; relatório liberado/);
   assert.match(paymentGateSource, /Pagamento confirmado\. Relatório liberado\./);
-  assert.match(paymentGateSource, /onReady\(buildPaymentV1Entitlement/);
+  assert.match(paymentGateSource, /syncEntitlementIfAvailable/);
+  assert.match(paymentGateSource, /notifyReadyIfAllowed/);
+  assert.match(paymentGateSource, /onEntitlementSync\?\.\(paymentEntitlement\)/);
 });
 
 test('noGenericUnexpectedError', async () => {

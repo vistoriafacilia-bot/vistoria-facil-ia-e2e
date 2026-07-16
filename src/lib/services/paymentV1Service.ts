@@ -193,6 +193,11 @@ const getRequiredAccessToken = async () => {
 
 export const hasPaymentV1AuthSession = async () => Boolean(await getOptionalAccessToken());
 
+const getPaymentV1ReturnOrigin = () => {
+  if (typeof window === 'undefined') return undefined;
+  return window.location.origin;
+};
+
 const buildPaymentV1Error = (body: Partial<PaymentV1ErrorResponse>, fallbackMessage: string, fallbackDebugCode: string) => {
   const error = new Error(body.error || fallbackMessage) as Error & PaymentV1ErrorResponse;
   error.debugCode = body.debugCode || fallbackDebugCode;
@@ -210,7 +215,7 @@ export const createPaymentV1Checkout = async (planCode: PaymentV1PlanCode): Prom
       'content-type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify({ planCode }),
+    body: JSON.stringify({ planCode, returnOrigin: getPaymentV1ReturnOrigin() }),
   });
 
   const body = await response.json().catch(() => ({}));

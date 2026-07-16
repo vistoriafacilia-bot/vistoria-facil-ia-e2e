@@ -860,6 +860,10 @@ export default function InspectionWizard({
   const uploadBlockedByPrivacy = !privacyGuardAccepted;
   const reportFinalized = activeInspection?.status === 'pdf_gerado' || activeInspection?.status === 'finalizado';
   const uploadDisabled = photoLimitReached || uploading || uploadBlockedByPrivacy || reportFinalized;
+  const hasActivePaidCredit = entitlement?.status === 'active' && entitlement.planId === 'beta_paid_4990';
+  const reportBetaMessage = hasActivePaidCredit
+    ? `Relatório liberado. Você pode usar até ${photoLimit} análises neste relatório.`
+    : 'Plano gratuito ativo. Você pode usar até 10 análises neste relatório.';
 
   // Initial State: Prompt for inspection type
   if (!activeInspection) {
@@ -914,7 +918,7 @@ export default function InspectionWizard({
 
           <div className="bg-amber-50 rounded-xl p-3.5 border border-amber-100 text-xs text-amber-800 leading-relaxed space-y-2">
             <p className="font-semibold flex items-center gap-1.5">
-              <Info className="w-4 h-4" /> Importante (V0.4.0-rc2)
+              <Info className="w-4 h-4" /> Importante (V0.4.0-rc4)
             </p>
             <p>
               Ao iniciar, configuraremos uma checklist inicial com {DEFAULT_ROOMS.length} cômodos clássicos para você registrar fotos e analisar as condições de paredes, pisos, mobílias e instalações de forma rápida e segura.
@@ -1015,7 +1019,7 @@ export default function InspectionWizard({
             <div>
               <h3 className="text-sm font-semibold text-gray-900">Relatório beta</h3>
               <p className="text-sm text-gray-600">
-                Pagamento em reestruturação. Para liberar relatório beta, entre em contato.
+                {reportBetaMessage}
               </p>
             </div>
             <span className="text-xs font-medium text-gray-600 bg-gray-100 rounded-full px-3 py-1 self-start sm:self-auto">

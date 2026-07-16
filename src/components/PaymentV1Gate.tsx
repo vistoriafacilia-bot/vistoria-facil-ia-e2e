@@ -9,16 +9,20 @@ import {
   PAYMENT_V1_PLANS,
   reconcilePaymentV1,
 } from '../lib/services/paymentV1Service';
+import { buildPaymentV1Entitlement } from '../lib/paymentV1EntitlementBridge';
 import type {
-  PaymentV1CreditStatus,
   PaymentV1DebugStatusResponse,
   PaymentV1PlanCode,
   PaymentV1StatusResponse,
 } from '../lib/services/paymentV1Service';
 
+export const PAYMENT_RETURN_POLL_INTERVAL_MS = 2_000;
+export const PAYMENT_RETURN_POLL_TIMEOUT_MS = 30_000;
+
 interface PaymentV1GateProps {
   user?: AppUser;
   onReady: (entitlement: Entitlement) => void;
+  onEntitlementSync?: (entitlement: Entitlement) => void;
   autoContinueOnActiveEntitlement?: boolean;
 }
 
@@ -36,25 +40,6 @@ const isAuthSessionError = (error: any) => authDebugCodes.has(String(error?.debu
 const buildStatusWarning = (error: any) => {
   if (isAuthSessionError(error)) return loginAgainMessage;
   return `Não foi possível confirmar pagamentos anteriores agora. Os planos continuam disponíveis. debugCode=${error?.debugCode || 'payment_v1_status_failed'}`;
-};
-
-const buildPaymentV1Entitlement = (credit: PaymentV1CreditStatus, user?: AppUser): Entitlement => {
-  const now = new Date().toISOString();
-  return {
-    id: `payment-v1-${credit.id}`,
-    userId: user?.uid || user?.id || '',
-    planId: 'beta_paid_4990',
-    status: 'active',
-    source: 'manual_admin',
-    maxPhotosPerInspection: credit.analysisLimit,
-    pdfEnabled: true,
-    orderId: credit.orderId,
-    paymentId: credit.id,
-    preferenceId: null,
-    createdAt: credit.createdAt || now,
-    updatedAt: now,
-    expiresAt: null,
-  };
 };
 
 const buildDiagnosticMessage = (status: PaymentV1StatusResponse | null, debug?: PaymentV1DebugStatusResponse | null) => {
@@ -86,29 +71,62 @@ const mergeDebugIntoStatus = (status: PaymentV1StatusResponse, debug: PaymentV1D
   };
 };
 
-export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntitlement }: PaymentV1GateProps) {
+const hasPaymentSuccessReturn = () => {
+  if (typeof window === 'undefined') return false;
+  return new URLSearchParams(window.location.search).get('payment') === 'success';
+};
+
+const removePaymentSuccessReturnFromUrl = () => {
+  if (typeof window === 'undefined') return;
+  const url = new URL(window.location.href);
+  if (url.searchParams.get('payment') !== 'success') return;
+  url.searchParams.delete('payment');
+  const nextUrl = `${url.pathname}${url.search}${url.hash}` || '/';
+  window.history.replaceState(window.history.state, document.title, nextUrl);
+};
+
+export default function PaymentV1Gate({ user, onReady, onEntitlementSync, autoContinueOnActiveEntitlement }: PaymentV1GateProps) {
+  const [paymentReturnDetected] = useState(hasPaymentSuccessReturn);
   const [loadingPlan, setLoadingPlan] = useState<PaymentV1PlanCode | null>(null);
   const [statusLoading, setStatusLoading] = useState(false);
   const [debugLoading, setDebugLoading] = useState(false);
+  const [returnConfirming, setReturnConfirming] = useState(paymentReturnDetected);
   const [paymentStatus, setPaymentStatus] = useState<PaymentV1StatusResponse | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [statusWarning, setStatusWarning] = useState<string | null>(null);
   const [paymentDiagnostic, setPaymentDiagnostic] = useState<string | null>(null);
+  const [paymentReturnMessage, setPaymentReturnMessage] = useState<string | null>(() => (
+    paymentReturnDetected ? 'Confirmando pagamento...' : null
+  ));
+
+  const buildEntitlementFromStatus = useCallback((status: PaymentV1StatusResponse) => {
+    const firstCredit = status.activeCredits?.[0];
+    return firstCredit ? buildPaymentV1Entitlement(firstCredit, user) : null;
+  }, [user]);
+
+  const syncEntitlementIfAvailable = useCallback((status: PaymentV1StatusResponse) => {
+    const paymentEntitlement = buildEntitlementFromStatus(status);
+    if (paymentEntitlement) onEntitlementSync?.(paymentEntitlement);
+    return paymentEntitlement;
+  }, [buildEntitlementFromStatus, onEntitlementSync]);
 
   const notifyReadyIfAllowed = useCallback((status: PaymentV1StatusResponse) => {
-    const firstCredit = status.activeCredits?.[0];
-    if (!autoContinueOnActiveEntitlement || !firstCredit) return;
-    onReady(buildPaymentV1Entitlement(firstCredit, user));
-  }, [autoContinueOnActiveEntitlement, onReady, user]);
+    const paymentEntitlement = buildEntitlementFromStatus(status);
+    if (!autoContinueOnActiveEntitlement || !paymentEntitlement) return;
+    onReady(paymentEntitlement);
+  }, [autoContinueOnActiveEntitlement, buildEntitlementFromStatus, onReady]);
 
   const applyStatus = useCallback((status: PaymentV1StatusResponse) => {
     setPaymentStatus(status);
     setStatusWarning(null);
     if (status.hasActiveCredit) {
+      setReturnConfirming(false);
+      setPaymentReturnMessage(null);
+      syncEntitlementIfAvailable(status);
       setPaymentDiagnostic(buildDiagnosticMessage(status));
       notifyReadyIfAllowed(status);
     }
-  }, [notifyReadyIfAllowed]);
+  }, [notifyReadyIfAllowed, syncEntitlementIfAvailable]);
 
   const refreshPaymentStatus = useCallback(async () => {
     setStatusLoading(true);
@@ -144,18 +162,85 @@ export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntit
       setDebugLoading(true);
       const debugStatus = await getPaymentV1DebugStatus();
       const mergedStatus = mergeDebugIntoStatus(reconciledStatus, debugStatus);
-      setPaymentStatus(mergedStatus);
+      applyStatus(mergedStatus);
       setPaymentDiagnostic(buildDiagnosticMessage(mergedStatus, debugStatus));
-      if (mergedStatus.hasActiveCredit) notifyReadyIfAllowed(mergedStatus);
     } catch (error: any) {
       setStatusWarning(buildStatusWarning(error));
     } finally {
       setStatusLoading(false);
       setDebugLoading(false);
     }
-  }, [applyStatus, notifyReadyIfAllowed]);
+  }, [applyStatus]);
 
   useEffect(() => {
+    if (!paymentReturnDetected) return;
+
+    let active = true;
+    let pollTimer: number | null = null;
+
+    const waitForNextPoll = (delayMs: number) => new Promise<void>((resolve) => {
+      pollTimer = window.setTimeout(resolve, delayMs);
+    });
+
+    const finishSuccess = (status: PaymentV1StatusResponse) => {
+      applyStatus(status);
+      setReturnConfirming(false);
+      setPaymentReturnMessage(null);
+      setPaymentDiagnostic(buildDiagnosticMessage(status));
+      removePaymentSuccessReturnFromUrl();
+    };
+
+    void (async () => {
+      setReturnConfirming(true);
+      setStatusWarning(null);
+      setPaymentReturnMessage('Confirmando pagamento...');
+      const deadline = Date.now() + PAYMENT_RETURN_POLL_TIMEOUT_MS;
+
+      try {
+        while (active && Date.now() <= deadline) {
+          const status = await getPaymentV1Status();
+          if (!active) return;
+          if (status.hasActiveCredit) {
+            finishSuccess(status);
+            return;
+          }
+          applyStatus(status);
+
+          await reconcilePaymentV1();
+          if (!active) return;
+
+          const reconciledStatus = await getPaymentV1Status();
+          if (!active) return;
+          if (reconciledStatus.hasActiveCredit) {
+            finishSuccess(reconciledStatus);
+            return;
+          }
+          applyStatus(reconciledStatus);
+
+          const remainingMs = deadline - Date.now();
+          if (remainingMs <= 0) break;
+          await waitForNextPoll(Math.min(PAYMENT_RETURN_POLL_INTERVAL_MS, remainingMs));
+        }
+
+        if (active) {
+          setPaymentDiagnostic('Pedido pendente; aguardando confirmação do gateway');
+          setPaymentReturnMessage('Seu pagamento ainda está sendo processado. Aguarde alguns instantes.');
+        }
+      } catch (error: any) {
+        if (active) setStatusWarning(buildStatusWarning(error));
+      } finally {
+        if (active) setReturnConfirming(false);
+      }
+    })();
+
+    return () => {
+      active = false;
+      if (pollTimer !== null) window.clearTimeout(pollTimer);
+    };
+  }, [applyStatus, paymentReturnDetected]);
+
+  useEffect(() => {
+    if (paymentReturnDetected) return;
     let active = true;
     setStatusLoading(true);
     getPaymentV1Status()
@@ -173,7 +258,7 @@ export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntit
     return () => {
       active = false;
     };
-  }, [applyStatus]);
+  }, [applyStatus, paymentReturnDetected]);
 
   const handleCheckout = async (planCode: PaymentV1PlanCode) => {
     setLoadingPlan(planCode);
@@ -199,11 +284,11 @@ export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntit
   };
 
   const hasActiveCredit = Boolean(paymentStatus?.hasActiveCredit);
-  const hasPendingOrder = Boolean(paymentStatus?.pendingOrders?.length);
   const statusText = hasActiveCredit
     ? 'Pagamento confirmado. Relatório liberado.'
     : 'Pagamento em confirmação.';
-  const verifyingPayment = statusLoading || debugLoading;
+  const verifyingPayment = statusLoading || debugLoading || returnConfirming;
+  const showPaymentReturnMessage = Boolean(paymentReturnMessage && !hasActiveCredit);
 
   return (
     <div className="bg-white border border-slate-200 rounded-xl shadow-sm p-5 space-y-5">
@@ -230,7 +315,7 @@ export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntit
         </button>
       </div>
 
-      {(hasActiveCredit || hasPendingOrder) && (
+      {(hasActiveCredit || paymentReturnDetected) && (
         <div className={`border rounded-lg px-3 py-2 text-sm flex items-start justify-between gap-3 ${
           hasActiveCredit
             ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
@@ -247,12 +332,21 @@ export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntit
           <button
             type="button"
             onClick={refreshPaymentStatus}
-            disabled={statusLoading}
+            disabled={statusLoading || returnConfirming}
             className="shrink-0 text-xs font-semibold hover:underline disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-1"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${statusLoading ? 'animate-spin' : ''}`} />
             Atualizar
           </button>
+        </div>
+      )}
+
+      {showPaymentReturnMessage && (
+        <div className={`border rounded-lg px-3 py-2 text-sm flex items-start gap-2 ${
+          'bg-amber-50 border-amber-200 text-amber-800'
+        }`}>
+          <Loader2 className="w-4 h-4 mt-0.5 shrink-0" />
+          <span>{paymentReturnMessage}</span>
         </div>
       )}
 
@@ -277,7 +371,7 @@ export default function PaymentV1Gate({ user, onReady, autoContinueOnActiveEntit
           <button
             type="button"
             onClick={refreshPaymentStatus}
-            disabled={statusLoading}
+            disabled={statusLoading || returnConfirming}
             className="shrink-0 font-semibold hover:underline disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-1"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${statusLoading ? 'animate-spin' : ''}`} />

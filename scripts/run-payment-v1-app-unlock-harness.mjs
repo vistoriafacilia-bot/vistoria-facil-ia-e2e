@@ -24,6 +24,7 @@ const SUPABASE_ENV = {
 
 const paymentServiceSource = fs.readFileSync('src/lib/services/paymentV1Service.ts', 'utf8');
 const paymentGateSource = fs.readFileSync('src/components/PaymentV1Gate.tsx', 'utf8');
+const authServiceSource = fs.readFileSync('src/lib/services/authService.ts', 'utf8');
 
 const jsonResponse = (status, body) => ({
   ok: status >= 200 && status < 300,
@@ -181,6 +182,11 @@ test('checkoutRequestSendsAuthorizationBearer', () => {
   assert.match(paymentServiceSource, /Authorization:\s*`Bearer \$\{accessToken\}`/);
 });
 
+test('checkoutRequestSendsCurrentBrowserOrigin', () => {
+  assert.match(paymentServiceSource, /window\.location\.origin/);
+  assert.match(paymentServiceSource, /returnOrigin:\s*getPaymentV1ReturnOrigin\(\)/);
+});
+
 test('frontendDoesNotSendEmptyBearer', () => {
   assert.match(paymentServiceSource, /normalizeAccessToken/);
   assert.match(paymentServiceSource, /missing_auth_token/);
@@ -195,6 +201,12 @@ test('missingSessionDoesNotCallStatusAsAuthenticated', () => {
 
 test('missingSessionDoesNotCallProtectedBackend', () => {
   assert.match(paymentServiceSource, /return \{\s*\.\.\.EMPTY_PAYMENT_V1_STATUS,[\s\S]*authRequired:\s*true/);
+});
+
+test('authBootstrapMissingSessionIsControlled', () => {
+  assert.match(authServiceSource, /handleAuthBootstrapError/);
+  assert.match(authServiceSource, /callback\(null\)/);
+  assert.match(authServiceSource, /\.catch\(\(\)\s*=>\s*handleAuthBootstrapError\(callback\)\)/);
 });
 
 test('missingSessionBlocksCheckoutWithFriendlyMessage', () => {

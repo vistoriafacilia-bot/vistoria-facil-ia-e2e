@@ -61,6 +61,54 @@ const parseBody = (event) => {
   }
 };
 
+export const PAYMENT_V1_ALLOWED_RETURN_ORIGINS = new Set([
+  'https://vistoriafacil-ia.com.br',
+  'https://glittery-boba-2b3367.netlify.app',
+]);
+
+const PAYMENT_V1_DRAFT_RETURN_HOST_RE = /^[0-9a-f]{8,40}--glittery-boba-2b3367\.netlify\.app$/i;
+
+const throwInvalidReturnOrigin = () => {
+  throw new PaymentV1Error('Invalid return origin.', {
+    debugCode: 'invalid_return_origin',
+    statusCode: 400,
+  });
+};
+
+const isAllowedPaymentV1ReturnUrl = (url) => (
+  url.protocol === 'https:'
+  && !url.username
+  && !url.password
+  && url.pathname === '/'
+  && !url.search
+  && !url.hash
+  && (
+    PAYMENT_V1_ALLOWED_RETURN_ORIGINS.has(url.origin)
+    || PAYMENT_V1_DRAFT_RETURN_HOST_RE.test(url.host)
+  )
+);
+
+export const resolvePaymentV1ReturnCallback = (returnOrigin) => {
+  if (returnOrigin === undefined || returnOrigin === null || returnOrigin === '') return null;
+  if (typeof returnOrigin !== 'string') throwInvalidReturnOrigin();
+
+  let url;
+  try {
+    url = new URL(returnOrigin.trim());
+  } catch {
+    throwInvalidReturnOrigin();
+  }
+
+  if (!isAllowedPaymentV1ReturnUrl(url)) throwInvalidReturnOrigin();
+
+  const { origin } = url;
+  return {
+    successUrl: `${origin}/?payment=success`,
+    cancelUrl: `${origin}/?payment=cancel`,
+    expiredUrl: `${origin}/?payment=expired`,
+  };
+};
+
 export const createHandler = ({
   asaasClient = { createAsaasCheckout },
   paymentOrders = null,
@@ -88,7 +136,7 @@ export const createHandler = ({
     }
     logContext.userId = authUser.userId;
 
-    const { planCode } = parseBody(event);
+    const { planCode, returnOrigin } = parseBody(event);
     if (!planCode) {
       throw new PaymentV1Error('Missing planCode.', {
         debugCode: 'missing_plan_code',
@@ -103,6 +151,7 @@ export const createHandler = ({
         statusCode: 400,
       });
     }
+    const callback = resolvePaymentV1ReturnCallback(returnOrigin);
 
     const orderStore = paymentOrders || createPaymentOrderStore({ env });
     const externalReference = buildExternalReference({ planCode: plan.code });
@@ -111,7 +160,7 @@ export const createHandler = ({
     const order = await orderStore.createPendingOrder({ plan, externalReference, userId: authUser.userId });
     logContext.orderId = order.id;
     safeLog('info', { requestId, stage: 'asaas_checkout_start', debugCode: 'checkout_asaas_start', userId: authUser.userId, orderId: order.id, externalReference });
-    const checkout = await asaasClient.createAsaasCheckout({ plan, externalReference, env });
+    const checkout = await asaasClient.createAsaasCheckout({ plan, externalReference, env, callback });
     logContext.checkoutId = checkout.checkoutId;
     await orderStore.updateOrderCheckout({
       orderId: order.id,
