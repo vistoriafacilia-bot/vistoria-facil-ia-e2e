@@ -1,0 +1,14 @@
+{
+  "product": "Vistoria Fácil IA",
+  "environment": "production",
+  "production_url": "https://vistoriafacil-ia.com.br",
+  "netlify_site": "glittery-boba-2b3367",
+  "branch": "main",
+  "commit": "d6a78d77a64db40c95d410b37892dcfe4fd00cf4",
+  "commit_short": "d6a78d7",
+  "published_at_known": "2026-07-15",
+  "protected_source_path": "C:\\vf-prod\\vistoria-facil-prod-current",
+  "published_artifact_path": "C:\\vf-prod\\releases\\prod-2026-07-15-d6a78d7\\netlify-deploy.zip",
+  "evidence_source": "Netlify visual production evidence and preserved local artifact recorded for DEVOPS_RELEASE_METHOD_01",
+  "status": "protected_production_baseline"
+}

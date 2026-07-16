@@ -1,0 +1,24 @@
+# Checklist de Release
+
+- Branch correta.
+- Worktree limpo.
+- Código commitado.
+- Diff revisado.
+- Testes unitários executados.
+- Testes integrados executados.
+- E2E executado.
+- Regressão executada.
+- Migrations identificadas.
+- Compatibilidade de banco validada.
+- Variáveis identificadas sem revelar valores.
+- HMLG publicada.
+- HMLG aprovada.
+- Commit candidato congelado.
+- Promoção para `main` preparada.
+- Deploy PROD executado.
+- Conferência commit x deploy realizada.
+- Tag criada.
+- Manifesto criado.
+- Smoke test executado.
+- Monitoramento acompanhado.
+- Rollback disponível.
