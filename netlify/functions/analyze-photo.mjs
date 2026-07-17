@@ -26,8 +26,16 @@ function sanitizeError(error) {
     .slice(0, 500);
 }
 
+function normalizeEnvMode(value) {
+  const raw = String(value || '').trim();
+  if ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))) {
+    return raw.slice(1, -1).trim();
+  }
+  return raw;
+}
+
 function resolveAiExecutionMode(value) {
-  const mode = String(value || '').trim().toLowerCase();
+  const mode = normalizeEnvMode(value).toLowerCase();
   if (!mode) {
     return {
       ok: false,

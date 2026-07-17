@@ -77,6 +77,29 @@ describe('analyze-photo Netlify function AI execution mode', () => {
     expect(fetchMock.mock.calls[0][0]).toBe('https://api.openai.com/v1/responses');
   });
 
+  it('quoted real mode copied from env files still reaches OpenAI fetch', async () => {
+    process.env.AI_EXECUTION_MODE = '"real"';
+    process.env.OPENAI_API_KEY = 'sk-real-mocked';
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => jsonResponse(200, {
+      output_text: JSON.stringify({
+        descricao_objetiva: 'Piso ceramico',
+        avarias_visiveis: [],
+        observacao_sugerida: 'Piso ceramico visivel sem avarias relevantes neste enquadramento.',
+        condicao_sugerida: 'OK',
+        confianca: 'alta',
+        requer_revisao_humana: false,
+      }),
+      usage: { total_tokens: 36 },
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await handler(event());
+
+    expect(response.statusCode).toBe(200);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe('https://api.openai.com/v1/responses');
+  });
+
   it('missing or invalid AI_EXECUTION_MODE fails closed', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);

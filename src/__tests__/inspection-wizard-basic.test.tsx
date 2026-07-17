@@ -1,9 +1,9 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import InspectionWizard from '../components/InspectionWizard';
-import { Property, Inspection, Room, Entitlement } from '../types';
-import { localTestUser, localUpsert } from '../lib/supabaseLocalStore';
+import { Property, Inspection, Room, Entitlement, Photo } from '../types';
+import { localList, localTestUser, localUpsert } from '../lib/supabaseLocalStore';
 
 describe('InspectionWizard Component Basic Tests', () => {
   const mockProperty: Property = {
@@ -60,6 +60,8 @@ describe('InspectionWizard Component Basic Tests', () => {
   };
 
   beforeEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
     window.localStorage.clear();
     vi.clearAllMocks();
     const persistedRoom: Room = {
@@ -73,6 +75,11 @@ describe('InspectionWizard Component Basic Tests', () => {
       updatedAt: new Date().toISOString(),
     };
     localUpsert('rooms', persistedRoom);
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it('renders the wizard with loaded rooms successfully', async () => {
@@ -180,5 +187,106 @@ describe('InspectionWizard Component Basic Tests', () => {
     expect(screen.queryByText(/Pagamento em reestrutura..o/i)).not.toBeInTheDocument();
     expect(screen.getByText(/Plano gratuito ativo\. Voc. pode usar at. 10 an.lises neste relat.rio\./i)).toBeInTheDocument();
     expect(screen.getByText('0/10 análises')).toBeInTheDocument();
+  });
+
+  it('persists the initial AI analysis response after a valid photo upload', async () => {
+    const compressedDataUrl = 'data:image/jpeg;base64,dmFsaWQtcGhvdG8=';
+    const originalCreateElement = document.createElement.bind(document);
+    vi.spyOn(document, 'createElement').mockImplementation(((tagName: string, options?: ElementCreationOptions) => {
+      if (tagName.toLowerCase() === 'canvas') {
+        return {
+          width: 0,
+          height: 0,
+          getContext: () => ({ drawImage: vi.fn() }),
+          toDataURL: () => compressedDataUrl,
+        } as unknown as HTMLCanvasElement;
+      }
+      return originalCreateElement(tagName, options);
+    }) as typeof document.createElement);
+
+    class MockImage {
+      width = 800;
+      height = 600;
+      onload: (() => void) | null = null;
+      onerror: ((error: unknown) => void) | null = null;
+
+      set src(_value: string) {
+        window.setTimeout(() => this.onload?.(), 0);
+      }
+    }
+
+    vi.stubGlobal('Image', MockImage);
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, _init?: RequestInit) => {
+      const url = String(input);
+      if (url.startsWith('data:image/')) {
+        return {
+          blob: vi.fn(async () => new Blob(['photo-bytes'], { type: 'image/jpeg' })),
+        };
+      }
+      if (url === '/.netlify/functions/analyze-photo') {
+        return {
+          ok: true,
+          json: vi.fn(async () => ({
+            descricao_objetiva: 'Parede da sala',
+            avarias_visiveis: ['Sem avarias relevantes'],
+            observacao_sugerida: 'Parede da sala sem avarias relevantes neste enquadramento.',
+            condicao_sugerida: 'OK',
+            confianca: 'alta',
+            requer_revisao_humana: false,
+            model: 'gpt-4.1-mini',
+            usage: { total_tokens: 48 },
+            elapsed_ms: 1200,
+          })),
+        };
+      }
+      throw new Error(`Unexpected fetch call: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(
+      <InspectionWizard
+        property={mockProperty}
+        inspection={mockInspection}
+        onBack={vi.fn()}
+        onInspectionCreated={vi.fn()}
+        onProceedToReport={vi.fn()}
+        entitlement={freeEntitlement}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Sala')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId('privacy-ai-upload-checkbox'));
+
+    const fileInput = screen.getByTestId('privacy-gallery-file-input') as HTMLInputElement;
+    await waitFor(() => {
+      expect(fileInput).not.toBeDisabled();
+    });
+
+    fireEvent.change(fileInput, {
+      target: {
+        files: [new File(['fake-image'], 'sala.jpg', { type: 'image/jpeg' })],
+      },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('photo-ai-completed-photo-0001')).toBeInTheDocument();
+    });
+
+    const analyzeCall = fetchMock.mock.calls.find(([url]) => String(url) === '/.netlify/functions/analyze-photo');
+    expect(analyzeCall).toBeTruthy();
+    expect(JSON.parse(String((analyzeCall?.[1] as RequestInit).body))).toEqual({
+      imageBase64: compressedDataUrl,
+      roomName: 'Sala',
+    });
+
+    const persistedPhoto = localList<Photo>('photos').find(photo => photo.id === 'photo-0001');
+    expect(persistedPhoto?.analysisStatus).toBe('completed');
+    expect(persistedPhoto?.fallbackApplied).toBe(false);
+    expect(persistedPhoto?.description).toBe('Parede da sala sem avarias relevantes neste enquadramento.');
+    expect(persistedPhoto?.aiAnalysis?.descricao_neutra).toBe('Parede da sala sem avarias relevantes neste enquadramento.');
   });
 });
