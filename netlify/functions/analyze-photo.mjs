@@ -1,5 +1,6 @@
 const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses';
 const DEFAULT_MODEL = 'gpt-4.1-mini';
+const AI_EXECUTION_MODES = new Set(['disabled', 'real']);
 
 const headers = {
   'Content-Type': 'application/json',
@@ -19,7 +20,58 @@ function sanitizeError(error) {
   if (/key|token|authorization|secret|password/i.test(message)) {
     return 'OpenAI request failed with a sensitive error.';
   }
-  return message.slice(0, 500);
+  return message
+    .replace(/data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=_-]+/g, '[redacted-image]')
+    .replace(/[A-Za-z0-9+/=_-]{120,}/g, '[redacted-long-value]')
+    .slice(0, 500);
+}
+
+function resolveAiExecutionMode(value) {
+  const mode = String(value || '').trim().toLowerCase();
+  if (!mode) {
+    return {
+      ok: false,
+      statusCode: 503,
+      body: {
+        error: 'ai_execution_mode_missing',
+        message: 'AI_EXECUTION_MODE must be set to disabled or real.',
+      },
+    };
+  }
+  if (!AI_EXECUTION_MODES.has(mode)) {
+    return {
+      ok: false,
+      statusCode: 503,
+      body: {
+        error: 'ai_execution_mode_invalid',
+        message: 'AI_EXECUTION_MODE must be disabled or real.',
+        mode,
+      },
+    };
+  }
+  return { ok: true, mode };
+}
+
+function openAiRequestId(response, data) {
+  return response?.headers?.get?.('x-request-id')
+    || response?.headers?.get?.('request-id')
+    || data?.error?.request_id
+    || data?.request_id
+    || null;
+}
+
+function logOpenAiFailure({ status, data, model, requestId, apiKeyPresent, aiExecutionMode }) {
+  const error = data?.error || {};
+  console.error('analyze-photo.openai_failure', {
+    status,
+    errorCode: error?.code || null,
+    errorType: error?.type || null,
+    errorMessage: sanitizeError(error?.message || error || `OpenAI HTTP ${status}`),
+    model,
+    requestId,
+    openaiApiKeyPresent: Boolean(apiKeyPresent),
+    aiExecutionMode,
+  });
 }
 
 function normalizeDataUrl(imageBase64) {
@@ -61,9 +113,23 @@ export async function handler(event) {
   if (event.httpMethod === 'OPTIONS') return json(204, {});
   if (event.httpMethod !== 'POST') return json(405, { error: 'method_not_allowed' });
 
+  const aiMode = resolveAiExecutionMode(process.env.AI_EXECUTION_MODE);
+  if (!aiMode.ok) return json(aiMode.statusCode, aiMode.body);
+  if (aiMode.mode === 'disabled') {
+    return json(503, {
+      error: 'ai_execution_disabled',
+      message: 'AI execution is disabled for this environment.',
+      mode: aiMode.mode,
+    });
+  }
+
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    return json(503, { error: 'openai_api_key_missing' });
+    return json(503, {
+      error: 'openai_api_key_missing',
+      message: 'OPENAI_API_KEY must be configured when AI_EXECUTION_MODE is real.',
+      mode: aiMode.mode,
+    });
   }
 
   let payload;
@@ -164,12 +230,22 @@ export async function handler(event) {
     });
 
     const data = await response.json().catch(() => ({}));
+    const requestId = openAiRequestId(response, data);
     if (!response.ok) {
       const message = data?.error?.message || data?.error || `OpenAI HTTP ${response.status}`;
+      logOpenAiFailure({
+        status: response.status,
+        data,
+        model,
+        requestId,
+        apiKeyPresent: Boolean(apiKey),
+        aiExecutionMode: aiMode.mode,
+      });
       return json(response.status === 401 ? 503 : response.status, {
         error: 'openai_request_failed',
         status: response.status,
         message: sanitizeError(message),
+        request_id: requestId,
       });
     }
 
