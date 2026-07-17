@@ -1,15 +1,19 @@
 const OPENAI_RESPONSES_URL = 'https://api.openai.com/v1/responses';
 const DEFAULT_MODEL = 'gpt-4.1-mini';
+const AI_EXECUTION_MODES = new Set(['disabled', 'real']);
 
 const headers = {
   'Content-Type': 'application/json',
   'Cache-Control': 'no-store',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, X-Request-Id',
 };
 
-function json(statusCode, body) {
+function json(statusCode, body, requestId = null) {
   return {
     statusCode,
-    headers,
+    headers: requestId ? { ...headers, 'X-Request-Id': requestId } : headers,
     body: JSON.stringify(body),
   };
 }
@@ -19,7 +23,107 @@ function sanitizeError(error) {
   if (/key|token|authorization|secret|password/i.test(message)) {
     return 'OpenAI request failed with a sensitive error.';
   }
-  return message.slice(0, 500);
+  return message
+    .replace(/data:image\/[a-zA-Z0-9.+-]+;base64,[A-Za-z0-9+/=_-]+/g, '[redacted-image]')
+    .replace(/[A-Za-z0-9+/=_-]{120,}/g, '[redacted-long-value]')
+    .slice(0, 500);
+}
+
+function normalizeEnvMode(value) {
+  const raw = String(value || '').trim();
+  if ((raw.startsWith('"') && raw.endsWith('"')) || (raw.startsWith("'") && raw.endsWith("'"))) {
+    return raw.slice(1, -1).trim();
+  }
+  return raw;
+}
+
+function eventHeader(event, name) {
+  const headers = event?.headers || {};
+  const lowerName = name.toLowerCase();
+  for (const [key, value] of Object.entries(headers)) {
+    if (key.toLowerCase() === lowerName) return value;
+  }
+  return null;
+}
+
+function createRequestId(event) {
+  return String(
+    eventHeader(event, 'x-request-id')
+    || eventHeader(event, 'x-nf-request-id')
+    || globalThis.crypto?.randomUUID?.()
+    || `req_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
+  );
+}
+
+function logPrefetchExit({ code, stage, requestId, method, aiExecutionMode = null, apiKeyPresent = null }) {
+  console.info('analyze-photo.prefetch_exit', {
+    code,
+    stage,
+    requestId,
+    method,
+    aiExecutionMode,
+    openaiApiKeyPresent: apiKeyPresent,
+  });
+}
+
+function prefetchExit(statusCode, body, context) {
+  logPrefetchExit({
+    code: body.error,
+    stage: context.stage,
+    requestId: context.requestId,
+    method: context.method,
+    aiExecutionMode: context.aiExecutionMode,
+    apiKeyPresent: context.apiKeyPresent,
+  });
+  return json(statusCode, { ...body, request_id: context.requestId }, context.requestId);
+}
+
+function resolveAiExecutionMode(value) {
+  const mode = normalizeEnvMode(value).toLowerCase();
+  if (!mode) {
+    return {
+      ok: false,
+      statusCode: 503,
+      body: {
+        error: 'ai_execution_mode_missing',
+        message: 'AI_EXECUTION_MODE must be set to disabled or real.',
+      },
+    };
+  }
+  if (!AI_EXECUTION_MODES.has(mode)) {
+    return {
+      ok: false,
+      statusCode: 503,
+      body: {
+        error: 'ai_execution_mode_invalid',
+        message: 'AI_EXECUTION_MODE must be disabled or real.',
+        mode,
+      },
+    };
+  }
+  return { ok: true, mode };
+}
+
+function openAiRequestId(response, data) {
+  return response?.headers?.get?.('x-request-id')
+    || response?.headers?.get?.('request-id')
+    || data?.error?.request_id
+    || data?.request_id
+    || null;
+}
+
+function logOpenAiFailure({ status, data, model, requestId, apiKeyPresent, aiExecutionMode }) {
+  const error = data?.error || {};
+  console.error('analyze-photo.openai_failure', {
+    status,
+    errorCode: error?.code || null,
+    errorType: error?.type || null,
+    errorMessage: sanitizeError(error?.message || error || `OpenAI HTTP ${status}`),
+    model,
+    requestId,
+    openaiApiKeyPresent: Boolean(apiKeyPresent),
+    aiExecutionMode,
+  });
 }
 
 function normalizeDataUrl(imageBase64) {
@@ -58,25 +162,81 @@ function parseAiJson(text) {
 }
 
 export async function handler(event) {
-  if (event.httpMethod === 'OPTIONS') return json(204, {});
-  if (event.httpMethod !== 'POST') return json(405, { error: 'method_not_allowed' });
+  const requestId = createRequestId(event);
+  const method = event.httpMethod || 'UNKNOWN';
+  const context = { requestId, method };
+
+  if (method === 'OPTIONS') {
+    return prefetchExit(204, { error: 'cors_preflight' }, { ...context, stage: 'cors_preflight' });
+  }
+  if (method !== 'POST') {
+    return prefetchExit(405, { error: 'method_not_allowed' }, { ...context, stage: 'method_validation' });
+  }
+
+  const aiMode = resolveAiExecutionMode(process.env.AI_EXECUTION_MODE);
+  if (!aiMode.ok) {
+    return prefetchExit(aiMode.statusCode, aiMode.body, {
+      ...context,
+      stage: 'ai_execution_mode_validation',
+      aiExecutionMode: null,
+    });
+  }
+  if (aiMode.mode === 'disabled') {
+    return prefetchExit(503, {
+      error: 'ai_execution_disabled',
+      message: 'AI execution is disabled for this environment.',
+      mode: aiMode.mode,
+    }, {
+      ...context,
+      stage: 'ai_execution_mode_validation',
+      aiExecutionMode: aiMode.mode,
+    });
+  }
 
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    return json(503, { error: 'openai_api_key_missing' });
+    return prefetchExit(503, {
+      error: 'openai_api_key_missing',
+      message: 'OPENAI_API_KEY must be configured when AI_EXECUTION_MODE is real.',
+      mode: aiMode.mode,
+    }, {
+      ...context,
+      stage: 'openai_key_validation',
+      aiExecutionMode: aiMode.mode,
+      apiKeyPresent: false,
+    });
   }
 
   let payload;
   try {
     payload = JSON.parse(event.body || '{}');
   } catch {
-    return json(400, { error: 'invalid_json' });
+    return prefetchExit(400, { error: 'invalid_json' }, {
+      ...context,
+      stage: 'json_parse',
+      aiExecutionMode: aiMode.mode,
+      apiKeyPresent: true,
+    });
   }
 
   const imageUrl = normalizeDataUrl(payload.imageBase64);
   const roomName = String(payload.roomName || 'comodo nao informado').slice(0, 80);
-  if (!imageUrl) return json(400, { error: 'image_required' });
-  if (imageUrl.length > 4_500_000) return json(413, { error: 'image_too_large' });
+  if (!imageUrl) {
+    return prefetchExit(400, { error: 'image_required' }, {
+      ...context,
+      stage: 'payload_validation',
+      aiExecutionMode: aiMode.mode,
+      apiKeyPresent: true,
+    });
+  }
+  if (imageUrl.length > 4_500_000) {
+    return prefetchExit(413, { error: 'image_too_large' }, {
+      ...context,
+      stage: 'payload_validation',
+      aiExecutionMode: aiMode.mode,
+      apiKeyPresent: true,
+    });
+  }
 
   const model = process.env.OPENAI_VISION_MODEL || DEFAULT_MODEL;
   const startedAt = Date.now();
@@ -164,12 +324,22 @@ export async function handler(event) {
     });
 
     const data = await response.json().catch(() => ({}));
+    const requestId = openAiRequestId(response, data);
     if (!response.ok) {
       const message = data?.error?.message || data?.error || `OpenAI HTTP ${response.status}`;
+      logOpenAiFailure({
+        status: response.status,
+        data,
+        model,
+        requestId,
+        apiKeyPresent: Boolean(apiKey),
+        aiExecutionMode: aiMode.mode,
+      });
       return json(response.status === 401 ? 503 : response.status, {
         error: 'openai_request_failed',
         status: response.status,
         message: sanitizeError(message),
+        request_id: requestId,
       });
     }
 
