@@ -1,8 +1,10 @@
 import {StrictMode} from 'react';
 import {createRoot} from 'react-dom/client';
+import { isTechnicalDiagnosticsEnabled } from './lib/diagnostics';
 
 // Global error registry and diagnostics setup
 const globalErrors: any[] = [];
+const technicalDiagnosticsEnabled = isTechnicalDiagnosticsEnabled();
 
 function isIgnoredError(message: string, filename?: string, lineno?: number, colno?: number, stack?: string | null): boolean {
   const msg = (message || '').toLowerCase();
@@ -43,6 +45,11 @@ function escapeHtml(str: string) {
 }
 
 function updateDiagnosticsPanel() {
+  if (!technicalDiagnosticsEnabled) {
+    document.getElementById('tech-diagnostics-panel')?.remove();
+    return;
+  }
+
   const activeErrors = globalErrors.filter(err => !isIgnoredError(err.message, err.filename, err.lineno, err.colno, err.stack || err.reason));
 
   let panel = document.getElementById('tech-diagnostics-panel');
@@ -103,6 +110,8 @@ function updateDiagnosticsPanel() {
 
 // 1. window.onerror capturing
 window.onerror = function (message, filename, lineno, colno, error) {
+  if (!technicalDiagnosticsEnabled) return false;
+
   globalErrors.push({
     message: String(message),
     filename: filename || '',
@@ -116,6 +125,8 @@ window.onerror = function (message, filename, lineno, colno, error) {
 
 // 2. window.addEventListener("error") for resources or other script compilation problems
 window.addEventListener('error', (event) => {
+  if (!technicalDiagnosticsEnabled) return;
+
   // Prevent duplicate registering of errors already captured by window.onerror
   if (event.error) return; 
   
@@ -131,6 +142,8 @@ window.addEventListener('error', (event) => {
 
 // 3. window.addEventListener("unhandledrejection")
 window.addEventListener('unhandledrejection', (event) => {
+  if (!technicalDiagnosticsEnabled) return;
+
   const reason = event.reason;
   globalErrors.push({
     message: `Rejeição de Promise não tratada: ${reason instanceof Error ? reason.message : String(reason)}`,

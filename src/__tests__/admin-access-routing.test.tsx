@@ -54,6 +54,16 @@ describe('Admin access routing', () => {
     expect(window.location.pathname).toBe('/admin');
   });
 
+  it('shows the public login screen without a session', async () => {
+    window.history.replaceState({}, '', '/');
+
+    render(<App />);
+
+    expect(await screen.findByTestId('public-email-auth-form')).toBeInTheDocument();
+    expect(screen.queryByTestId('admin-app')).not.toBeInTheDocument();
+    expect(window.location.pathname).toBe('/');
+  });
+
   it('returns to /admin after a successful login', async () => {
     render(<App />);
 

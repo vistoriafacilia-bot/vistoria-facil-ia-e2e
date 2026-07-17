@@ -1,5 +1,6 @@
 import React, { ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { isTechnicalDiagnosticsEnabled } from '../lib/diagnostics';
 
 interface Props {
   children: ReactNode;
@@ -24,8 +25,13 @@ export default class ErrorBoundary extends React.Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Uncaught error caught by ErrorBoundary:', error, errorInfo);
-    this.setState({ errorInfo });
+    if (isTechnicalDiagnosticsEnabled()) {
+      console.error('Uncaught error caught by ErrorBoundary:', error, errorInfo);
+      this.setState({ errorInfo });
+      return;
+    }
+
+    console.error('Uncaught error caught by ErrorBoundary.');
   }
 
   private handleReload = () => {
@@ -57,7 +63,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
             </div>
 
             {/* Error Detail (collapsible/expandable for power users) */}
-            {this.state.error && (
+            {isTechnicalDiagnosticsEnabled() && this.state.error && (
               <details className="text-left bg-slate-50 rounded-xl border border-slate-200 p-3 text-xs font-mono text-slate-600 max-h-40 overflow-auto">
                 <summary className="cursor-pointer font-semibold text-slate-700 select-none">
                   Detalhes do erro para suporte
