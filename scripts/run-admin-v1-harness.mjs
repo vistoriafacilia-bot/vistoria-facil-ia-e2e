@@ -54,6 +54,13 @@ const makeStore = () => {
       id: '00000000-0000-4000-8000-000000000001',
       name: 'Cliente Teste',
       email: 'cliente@example.test',
+      phone: '11987654321',
+      admin_status: 'active',
+      last_login_at: now(),
+    }, {
+      id: '00000000-0000-4000-8000-000000000002',
+      name: 'Cliente Antigo',
+      email: 'legacy@example.test',
       admin_status: 'active',
       last_login_at: now(),
     }],
@@ -274,6 +281,21 @@ test('customerMutationRequiresReasonAndAudits', async () => {
   const rejected = await handler(event({ method: 'POST', body: { action: 'set_status', customerId: stateCustomerId(store), status: 'active' } }));
   assert.equal(rejected.statusCode, 400);
   assert.equal(parseBody(rejected).debugCode, 'admin_reason_required');
+});
+
+test('customerPhoneIsVisibleInAdminReadAndLegacyCustomerStillWorks', async () => {
+  const store = makeStore();
+  const handler = makeHandler(customersModule, store);
+  const listResponse = await handler(event());
+  const listBody = parseBody(listResponse);
+  assert.equal(listResponse.statusCode, 200);
+  assert.equal(listBody.customers[0].phone, '11987654321');
+  assert.equal(listBody.customers[1].phone, undefined);
+
+  const detailResponse = await handler(event({ query: { id: stateCustomerId(store) } }));
+  const detailBody = parseBody(detailResponse);
+  assert.equal(detailResponse.statusCode, 200);
+  assert.equal(detailBody.customer.customer.phone, '11987654321');
 });
 
 test('plansComeFromStoreAndPreserveVersionedAudit', async () => {

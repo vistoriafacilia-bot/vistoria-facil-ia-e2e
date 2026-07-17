@@ -27,6 +27,7 @@ export interface AppUser {
   id: string;
   email?: string | null;
   displayName?: string | null;
+  phone?: string | null;
   photoURL?: string | null;
 }
 

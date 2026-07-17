@@ -52,6 +52,17 @@ describe('Admin V1 static architecture', () => {
     expect(migration).toContain('next_usage_units');
   });
 
+  it('shows customer phone only through Admin customer reads', () => {
+    const adminAppSource = read('src/components/admin/AdminApp.tsx');
+    const adminServiceSource = read('src/lib/services/adminService.ts');
+    const adminStoreSource = read('netlify/functions/_admin/adminStore.mjs');
+
+    expect(adminAppSource).toContain("'Celular'");
+    expect(adminServiceSource).toContain('phone?: string | null');
+    expect(adminStoreSource).toContain('select=id,name,email,phone');
+    expect(adminStoreSource).toContain('phone.ilike');
+  });
+
   it('limits bootstrap access to the first owner and keeps prices distinct from usage credits', () => {
     const authSource = read('netlify/functions/_admin/adminAuth.mjs');
     const paymentSource = read('netlify/functions/_paymentV1/paymentOrders.mjs');

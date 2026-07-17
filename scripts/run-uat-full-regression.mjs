@@ -624,6 +624,8 @@ function renderReport(result, rows) {
 async function runPublicAuthChecks({ browser, admin, provisioned, rows, runtime, result }) {
   const signupEmail = `vfe2efull${RUN_ID.replace(/\D/g, '')}@gmail.com`;
   const signupPassword = `FullSignup-${RUN_ID}!`;
+  const signupFullName = 'Cliente Full Regression';
+  const signupPhone = '11987654321';
   let signupCleanup = null;
 
   const context = await browser.newContext();
@@ -670,6 +672,8 @@ async function runPublicAuthChecks({ browser, admin, provisioned, rows, runtime,
 
     runtime.phase = 'public_signup';
     await page.getByRole('button', { name: /Criar conta/i }).first().click();
+    await page.getByLabel(/Nome completo/i).fill(signupFullName);
+    await page.getByLabel(/Celular/i).fill(signupPhone);
     await page.getByLabel(/^E-mail$/i).fill(signupEmail);
     await page.getByLabel(/^Senha$/i).fill(signupPassword);
     await page.getByLabel(/Confirmar senha/i).fill(signupPassword);

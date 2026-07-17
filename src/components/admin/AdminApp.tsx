@@ -45,6 +45,7 @@ import {
   type AdminDashboard,
   type AdminPlan,
 } from '../../lib/services/adminService';
+import { formatBrazilianMobilePhone } from '../../lib/validation';
 
 type AdminTab = 'dashboard' | 'customers' | 'plans' | 'trial' | 'orders' | 'credits' | 'inspections' | 'admins' | 'audit';
 
@@ -335,10 +336,11 @@ export default function AdminApp() {
                 <button type="button" onClick={() => loadTab('customers')} className="h-9 rounded-md bg-slate-900 px-3 text-sm font-semibold text-white">Buscar</button>
               </div>
               <DataTable
-                columns={['Cliente', 'E-mail', 'Status', 'Login', 'Acoes']}
+                columns={['Cliente', 'E-mail', 'Celular', 'Status', 'Login', 'Acoes']}
                 rows={customers.map((customer) => [
                   customer.name || customer.id,
                   customer.email || '-',
+                  formatBrazilianMobilePhone(customer.phone) || '-',
                   <StatusPill value={customer.admin_status || 'active'} />,
                   dateTime(customer.last_login_at),
                   <div className="flex flex-wrap gap-1">
@@ -371,6 +373,14 @@ export default function AdminApp() {
                       }, 'Observacao registrada.');
                     }}><MessageSquare className="inline h-3 w-3" /> Nota</button>
                   </div>
+                  <DataTable
+                    columns={['Campo', 'Valor']}
+                    rows={[
+                      ['Nome', selectedCustomer.customer?.name || '-'],
+                      ['E-mail', selectedCustomer.customer?.email || '-'],
+                      ['Celular', formatBrazilianMobilePhone(selectedCustomer.customer?.phone) || '-'],
+                    ]}
+                  />
                   <DataTable
                     columns={['Grupo', 'Total']}
                     rows={[

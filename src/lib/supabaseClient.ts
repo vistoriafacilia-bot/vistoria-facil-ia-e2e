@@ -49,6 +49,7 @@ export function toAppUser(user: any | null | undefined): AppUser | null {
     id: user.id,
     email: user.email || metadata.email || null,
     displayName: metadata.full_name || metadata.name || user.email || 'Vistoriador',
+    phone: metadata.phone || null,
     photoURL: metadata.avatar_url || metadata.picture || null,
   };
 }

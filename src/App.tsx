@@ -19,6 +19,13 @@ import { getPaymentV1Status } from './lib/services/paymentV1Service';
 import { listPhotos } from './lib/services/photoService';
 import { listReports } from './lib/services/reportService';
 import { listRooms } from './lib/services/roomService';
+import {
+  formatBrazilianMobilePhone,
+  isValidBrazilianMobilePhone,
+  isValidFullName,
+  normalizeBrazilianMobilePhone,
+  normalizeFullName,
+} from './lib/validation';
 
 type HistoryInspection = Inspection & {
   roomCount?: number;
@@ -45,6 +52,8 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const isGoogleAuthEnabled = import.meta.env.VITE_ENABLE_GOOGLE_AUTH === 'true';
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [emailAuthFullName, setEmailAuthFullName] = useState('');
+  const [emailAuthPhone, setEmailAuthPhone] = useState('');
   const [emailAuthEmail, setEmailAuthEmail] = useState('');
   const [emailAuthPassword, setEmailAuthPassword] = useState('');
   const [emailAuthConfirmPassword, setEmailAuthConfirmPassword] = useState('');
@@ -223,6 +232,24 @@ export default function App() {
     try {
       const email = emailAuthEmail.trim();
       if (authMode === 'signup') {
+        const fullName = normalizeFullName(emailAuthFullName);
+        const phone = normalizeBrazilianMobilePhone(emailAuthPhone);
+        if (!fullName) {
+          setEmailAuthError('Informe seu nome completo.');
+          return;
+        }
+        if (!isValidFullName(fullName)) {
+          setEmailAuthError('Informe nome e sobrenome para criar sua conta.');
+          return;
+        }
+        if (!phone) {
+          setEmailAuthError('Informe seu celular com DDD.');
+          return;
+        }
+        if (!isValidBrazilianMobilePhone(phone)) {
+          setEmailAuthError('Informe um celular brasileiro valido com DDD e 11 digitos.');
+          return;
+        }
         if (emailAuthPassword.length < 6) {
           setEmailAuthError('A senha precisa ter pelo menos 6 caracteres.');
           return;
@@ -232,10 +259,12 @@ export default function App() {
           return;
         }
 
-        const result = await signUpWithEmailPassword(email, emailAuthPassword);
+        const result = await signUpWithEmailPassword(email, emailAuthPassword, { fullName, phone });
         if (result.needsEmailConfirmation) {
           setEmailAuthMessage('Conta criada. Verifique seu e-mail para confirmar o acesso.');
           setAuthMode('login');
+          setEmailAuthFullName('');
+          setEmailAuthPhone('');
           setEmailAuthPassword('');
           setEmailAuthConfirmPassword('');
         } else {
@@ -294,6 +323,8 @@ export default function App() {
     setAuthMode(mode);
     setEmailAuthError(null);
     setEmailAuthMessage(null);
+    setEmailAuthFullName('');
+    setEmailAuthPhone('');
     setEmailAuthPassword('');
     setEmailAuthConfirmPassword('');
   };
@@ -395,6 +426,41 @@ export default function App() {
                     : 'Crie uma conta para salvar imoveis, vistorias e relatorios.'}
                 </p>
               </div>
+              {authMode === 'signup' && (
+                <>
+                  <div className="space-y-1.5">
+                    <label htmlFor="email-auth-full-name" className="block text-[11px] font-semibold text-slate-300">
+                      Nome completo
+                    </label>
+                    <input
+                      id="email-auth-full-name"
+                      type="text"
+                      autoComplete="name"
+                      aria-required="true"
+                      value={emailAuthFullName}
+                      onChange={(event) => setEmailAuthFullName(event.target.value)}
+                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label htmlFor="email-auth-phone" className="block text-[11px] font-semibold text-slate-300">
+                      Celular
+                    </label>
+                    <input
+                      id="email-auth-phone"
+                      type="tel"
+                      inputMode="numeric"
+                      autoComplete="tel"
+                      aria-required="true"
+                      placeholder="(11) 98765-4321"
+                      maxLength={15}
+                      value={emailAuthPhone}
+                      onChange={(event) => setEmailAuthPhone(formatBrazilianMobilePhone(event.target.value))}
+                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400"
+                    />
+                  </div>
+                </>
+              )}
               <div className="space-y-1.5">
                 <label htmlFor="email-auth-email" className="block text-[11px] font-semibold text-slate-300">
                   E-mail
@@ -416,7 +482,7 @@ export default function App() {
                 <input
                   id="email-auth-password"
                   type="password"
-                  autoComplete="current-password"
+                  autoComplete={authMode === 'signup' ? 'new-password' : 'current-password'}
                   required
                   value={emailAuthPassword}
                   onChange={(event) => setEmailAuthPassword(event.target.value)}
