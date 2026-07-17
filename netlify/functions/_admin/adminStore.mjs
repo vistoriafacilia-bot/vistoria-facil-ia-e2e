@@ -265,11 +265,11 @@ export const createAdminStore = ({ env = process.env, fetchImpl = globalThis.fet
     const safeLimit = Math.min(Math.max(Number(limit) || 50, 1), 100);
     const term = String(search || '').trim();
     const searchQuery = term
-      ? `or=(email.ilike.*${encodeFilterValue(term)}*,name.ilike.*${encodeFilterValue(term)}*)&`
+      ? `or=(email.ilike.*${encodeFilterValue(term)}*,name.ilike.*${encodeFilterValue(term)}*,phone.ilike.*${encodeFilterValue(term)}*)&`
       : '';
     const rows = await client.select(
       'profiles',
-      `${searchQuery}order=last_login_at.desc&limit=${safeLimit}&select=id,name,email,plan,created_at,last_login_at,admin_status,blocked_at,blocked_reason,deactivated_at,deactivation_reason`,
+      `${searchQuery}order=last_login_at.desc&limit=${safeLimit}&select=id,name,email,phone,plan,created_at,last_login_at,admin_status,blocked_at,blocked_reason,deactivated_at,deactivation_reason`,
     );
     return toArray(rows);
   };

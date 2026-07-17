@@ -1,6 +1,23 @@
 import { AppUser } from '../../types';
 import { isLocalE2EMode, requireSupabaseConfigured, supabase, throwIfSupabaseError, toAppUser } from '../supabaseClient';
 import { localTestUser, localUpsert } from '../supabaseLocalStore';
+import {
+  isValidBrazilianMobilePhone,
+  isValidFullName,
+  normalizeBrazilianMobilePhone,
+  normalizeFullName,
+} from '../validation';
+
+export interface SignUpProfileInput {
+  fullName: string;
+  phone: string;
+}
+
+type SignUpMetadata = {
+  full_name?: string;
+  name?: string;
+  phone?: string;
+};
 
 const handleAuthBootstrapError = (callback: (user: AppUser | null) => void) => {
   callback(null);
@@ -54,14 +71,37 @@ export async function loginWithEmailPassword(email: string, password: string): P
   return user;
 }
 
-export async function signUpWithEmailPassword(email: string, password: string): Promise<{ user: AppUser | null; needsEmailConfirmation: boolean }> {
-  if (isLocalE2EMode()) return { user: localTestUser, needsEmailConfirmation: false };
+const createSignUpMetadata = (profile: SignUpProfileInput): SignUpMetadata => {
+  const fullName = normalizeFullName(profile.fullName);
+  const phone = normalizeBrazilianMobilePhone(profile.phone);
+  if (!isValidFullName(fullName)) throw new Error('Nome completo invalido.');
+  if (!isValidBrazilianMobilePhone(phone)) throw new Error('Celular invalido.');
+  return {
+    full_name: fullName,
+    name: fullName,
+    phone,
+  };
+};
+
+export async function signUpWithEmailPassword(email: string, password: string, profile: SignUpProfileInput): Promise<{ user: AppUser | null; needsEmailConfirmation: boolean }> {
+  const metadata = createSignUpMetadata(profile);
+  if (isLocalE2EMode()) {
+    return {
+      user: {
+        ...localTestUser,
+        displayName: metadata.full_name || localTestUser.displayName,
+        phone: metadata.phone || localTestUser.phone,
+      },
+      needsEmailConfirmation: false,
+    };
+  }
   requireSupabaseConfigured();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
       emailRedirectTo: window.location.origin,
+      ...(Object.keys(metadata).length ? { data: metadata } : {}),
     },
   });
   throwIfSupabaseError(error, 'Supabase Email/Password signup');
@@ -98,13 +138,17 @@ export async function logout() {
 
 export async function upsertProfile(user: AppUser) {
   const now = new Date().toISOString();
+  const phone = user.phone && isValidBrazilianMobilePhone(user.phone)
+    ? normalizeBrazilianMobilePhone(user.phone)
+    : '';
   const profile = {
     id: user.uid,
     uid: user.uid,
-    name: user.displayName || 'Vistoriador',
+    name: normalizeFullName(user.displayName) || 'Vistoriador',
     email: user.email || '',
     lastLoginAt: now,
     plan: 'gratuito',
+    ...(phone ? { phone } : {}),
   };
 
   if (isLocalE2EMode()) {
@@ -113,12 +157,14 @@ export async function upsertProfile(user: AppUser) {
   }
 
   requireSupabaseConfigured();
-  const { error } = await supabase.from('profiles').upsert({
+  const payload = {
     id: user.uid,
     name: profile.name,
     email: profile.email,
     last_login_at: now,
     plan: 'gratuito',
-  }, { onConflict: 'id' });
+    ...(phone ? { phone } : {}),
+  };
+  const { error } = await supabase.from('profiles').upsert(payload, { onConflict: 'id' });
   throwIfSupabaseError(error, 'Supabase profile upsert');
 }

@@ -33,6 +33,7 @@ export interface AdminCustomer {
   id: string;
   name?: string;
   email?: string;
+  phone?: string | null;
   plan?: string;
   admin_status?: string;
   blocked_at?: string | null;
