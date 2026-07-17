@@ -4,6 +4,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import InspectionWizard from '../components/InspectionWizard';
 import { Property, Inspection, Room, Entitlement, Photo } from '../types';
 import { localList, localTestUser, localUpsert } from '../lib/supabaseLocalStore';
+// @ts-ignore Netlify functions are authored as plain ESM JavaScript.
+import { handler as analyzePhotoHandler } from '../../netlify/functions/analyze-photo.mjs';
 
 describe('InspectionWizard Component Basic Tests', () => {
   const mockProperty: Property = {
@@ -59,6 +61,8 @@ describe('InspectionWizard Component Basic Tests', () => {
     updatedAt: new Date().toISOString(),
   };
 
+  const originalEnv = { ...process.env };
+
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
@@ -80,6 +84,7 @@ describe('InspectionWizard Component Basic Tests', () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+    process.env = { ...originalEnv };
   });
 
   it('renders the wizard with loaded rooms successfully', async () => {
@@ -287,6 +292,147 @@ describe('InspectionWizard Component Basic Tests', () => {
     expect(persistedPhoto?.analysisStatus).toBe('completed');
     expect(persistedPhoto?.fallbackApplied).toBe(false);
     expect(persistedPhoto?.description).toBe('Parede da sala sem avarias relevantes neste enquadramento.');
+    expect(persistedPhoto?.aiAnalysis?.descricao_neutra).toBe('Parede da sala sem avarias relevantes neste enquadramento.');
+  });
+
+  it('accepts the real frontend payload through the analyze-photo function in real mode', async () => {
+    process.env = {
+      ...originalEnv,
+      AI_EXECUTION_MODE: 'real',
+      OPENAI_API_KEY: 'sk-mocked-key',
+      OPENAI_VISION_MODEL: 'gpt-4.1-mini',
+    };
+
+    const compressedDataUrl = 'data:image/jpeg;base64,dmFsaWQtcGhvdG8=';
+    const originalCreateElement = document.createElement.bind(document);
+    vi.spyOn(document, 'createElement').mockImplementation(((tagName: string, options?: ElementCreationOptions) => {
+      if (tagName.toLowerCase() === 'canvas') {
+        return {
+          width: 0,
+          height: 0,
+          getContext: () => ({ drawImage: vi.fn() }),
+          toDataURL: () => compressedDataUrl,
+        } as unknown as HTMLCanvasElement;
+      }
+      return originalCreateElement(tagName, options);
+    }) as typeof document.createElement);
+
+    class MockImage {
+      width = 800;
+      height = 600;
+      onload: (() => void) | null = null;
+      onerror: ((error: unknown) => void) | null = null;
+
+      set src(_value: string) {
+        window.setTimeout(() => this.onload?.(), 0);
+      }
+    }
+
+    vi.stubGlobal('Image', MockImage);
+
+    const openAiFetch = vi.fn(async (_url: RequestInfo | URL, _init?: RequestInit) => ({
+      ok: true,
+      status: 200,
+      headers: {
+        get: (name: string) => name.toLowerCase() === 'x-request-id' ? 'req_mock_success' : null,
+      },
+      json: vi.fn(async () => ({
+        output_text: JSON.stringify({
+          descricao_objetiva: 'Parede da sala',
+          avarias_visiveis: ['Sem avarias relevantes'],
+          observacao_sugerida: 'Parede da sala sem avarias relevantes neste enquadramento.',
+          condicao_sugerida: 'OK',
+          confianca: 'alta',
+          requer_revisao_humana: false,
+        }),
+        usage: { total_tokens: 48 },
+      })),
+    }));
+
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.startsWith('data:image/')) {
+        return {
+          blob: vi.fn(async () => new Blob(['photo-bytes'], { type: 'image/jpeg' })),
+        };
+      }
+
+      if (url === '/.netlify/functions/analyze-photo') {
+        const preflight = await analyzePhotoHandler({
+          httpMethod: 'OPTIONS',
+          headers: {
+            origin: 'http://localhost:5173',
+            'access-control-request-method': 'POST',
+            'access-control-request-headers': 'content-type',
+          },
+          body: '',
+        });
+        if (!preflight.headers?.['Access-Control-Allow-Origin']) {
+          return {
+            ok: false,
+            status: 0,
+            json: vi.fn(async () => ({ error: 'cors_preflight_failed' })),
+          };
+        }
+
+        const previousFetch = globalThis.fetch;
+        vi.stubGlobal('fetch', openAiFetch);
+        try {
+          const functionResponse = await analyzePhotoHandler({
+            httpMethod: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: String(init?.body || ''),
+          });
+          return {
+            ok: functionResponse.statusCode >= 200 && functionResponse.statusCode < 300,
+            status: functionResponse.statusCode,
+            json: vi.fn(async () => JSON.parse(functionResponse.body)),
+          };
+        } finally {
+          vi.stubGlobal('fetch', previousFetch);
+        }
+      }
+
+      throw new Error(`Unexpected fetch call: ${url}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    render(
+      <InspectionWizard
+        property={mockProperty}
+        inspection={mockInspection}
+        onBack={vi.fn()}
+        onInspectionCreated={vi.fn()}
+        onProceedToReport={vi.fn()}
+        entitlement={freeEntitlement}
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Sala')).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByTestId('privacy-ai-upload-checkbox'));
+    fireEvent.change(screen.getByTestId('privacy-gallery-file-input'), {
+      target: {
+        files: [new File(['fake-image'], 'sala.jpg', { type: 'image/jpeg' })],
+      },
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('photo-ai-completed-photo-0001')).toBeInTheDocument();
+    });
+
+    const frontendCall = fetchMock.mock.calls.find(([url]) => String(url) === '/.netlify/functions/analyze-photo');
+    expect(JSON.parse(String((frontendCall?.[1] as RequestInit).body))).toEqual({
+      imageBase64: compressedDataUrl,
+      roomName: 'Sala',
+    });
+    expect(openAiFetch).toHaveBeenCalledTimes(1);
+
+    const persistedPhoto = localList<Photo>('photos').find(photo => photo.id === 'photo-0001');
+    expect(persistedPhoto?.analysisStatus).toBe('completed');
+    expect(persistedPhoto?.fallbackApplied).toBe(false);
     expect(persistedPhoto?.aiAnalysis?.descricao_neutra).toBe('Parede da sala sem avarias relevantes neste enquadramento.');
   });
 });
