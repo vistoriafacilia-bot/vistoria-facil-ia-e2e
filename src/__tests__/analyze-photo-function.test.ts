@@ -52,6 +52,27 @@ describe('analyze-photo Netlify function AI execution mode', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('returns CORS preflight headers before the OpenAI fetch', async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await handler({
+      httpMethod: 'OPTIONS',
+      headers: {
+        origin: 'http://localhost:5173',
+        'access-control-request-method': 'POST',
+        'access-control-request-headers': 'content-type',
+      },
+      body: '',
+    });
+
+    expect(response.statusCode).toBe(204);
+    expect(response.headers['Access-Control-Allow-Origin']).toBe('*');
+    expect(response.headers['Access-Control-Allow-Methods']).toContain('POST');
+    expect(response.headers['Access-Control-Allow-Headers']).toContain('Content-Type');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('real calls OpenAI with mocked fetch', async () => {
     process.env.AI_EXECUTION_MODE = 'real';
     process.env.OPENAI_API_KEY = 'sk-real-mocked';
@@ -113,6 +134,31 @@ describe('analyze-photo Netlify function AI execution mode', () => {
     expect(invalid.statusCode).toBe(503);
     expect(parsedBody(invalid).error).toBe('ai_execution_mode_invalid');
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('pre-fetch validation logs a safe technical code without payload details', async () => {
+    process.env.AI_EXECUTION_MODE = 'real';
+    process.env.OPENAI_API_KEY = 'sk-secret-value-must-not-appear';
+    const fetchMock = vi.fn();
+    const consoleInfo = vi.spyOn(console, 'info').mockImplementation(() => undefined);
+    vi.stubGlobal('fetch', fetchMock);
+
+    const response = await handler(event({ imageBase64: '' }));
+    const body = parsedBody(response);
+    const logText = JSON.stringify(consoleInfo.mock.calls);
+
+    expect(response.statusCode).toBe(400);
+    expect(body.error).toBe('image_required');
+    expect(body.request_id).toBeTruthy();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(logText).toContain('image_required');
+    expect(logText).toContain('payload_validation');
+    expect(logText).toContain('requestId');
+    expect(logText).not.toContain('sk-secret-value-must-not-appear');
+    expect(logText).not.toContain('data:image');
+    expect(logText).not.toContain('ZmFrZS1pbWFnZQ');
+    expect(logText).not.toContain('Voce e um assistente');
+    expect(logText).not.toContain('Analise a imagem');
   });
 
   it('OpenAI error creates sanitized observability log', async () => {

@@ -5,12 +5,15 @@ const AI_EXECUTION_MODES = new Set(['disabled', 'real']);
 const headers = {
   'Content-Type': 'application/json',
   'Cache-Control': 'no-store',
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, X-Request-Id',
 };
 
-function json(statusCode, body) {
+function json(statusCode, body, requestId = null) {
   return {
     statusCode,
-    headers,
+    headers: requestId ? { ...headers, 'X-Request-Id': requestId } : headers,
     body: JSON.stringify(body),
   };
 }
@@ -32,6 +35,47 @@ function normalizeEnvMode(value) {
     return raw.slice(1, -1).trim();
   }
   return raw;
+}
+
+function eventHeader(event, name) {
+  const headers = event?.headers || {};
+  const lowerName = name.toLowerCase();
+  for (const [key, value] of Object.entries(headers)) {
+    if (key.toLowerCase() === lowerName) return value;
+  }
+  return null;
+}
+
+function createRequestId(event) {
+  return String(
+    eventHeader(event, 'x-request-id')
+    || eventHeader(event, 'x-nf-request-id')
+    || globalThis.crypto?.randomUUID?.()
+    || `req_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
+  );
+}
+
+function logPrefetchExit({ code, stage, requestId, method, aiExecutionMode = null, apiKeyPresent = null }) {
+  console.info('analyze-photo.prefetch_exit', {
+    code,
+    stage,
+    requestId,
+    method,
+    aiExecutionMode,
+    openaiApiKeyPresent: apiKeyPresent,
+  });
+}
+
+function prefetchExit(statusCode, body, context) {
+  logPrefetchExit({
+    code: body.error,
+    stage: context.stage,
+    requestId: context.requestId,
+    method: context.method,
+    aiExecutionMode: context.aiExecutionMode,
+    apiKeyPresent: context.apiKeyPresent,
+  });
+  return json(statusCode, { ...body, request_id: context.requestId }, context.requestId);
 }
 
 function resolveAiExecutionMode(value) {
@@ -118,25 +162,48 @@ function parseAiJson(text) {
 }
 
 export async function handler(event) {
-  if (event.httpMethod === 'OPTIONS') return json(204, {});
-  if (event.httpMethod !== 'POST') return json(405, { error: 'method_not_allowed' });
+  const requestId = createRequestId(event);
+  const method = event.httpMethod || 'UNKNOWN';
+  const context = { requestId, method };
+
+  if (method === 'OPTIONS') {
+    return prefetchExit(204, { error: 'cors_preflight' }, { ...context, stage: 'cors_preflight' });
+  }
+  if (method !== 'POST') {
+    return prefetchExit(405, { error: 'method_not_allowed' }, { ...context, stage: 'method_validation' });
+  }
 
   const aiMode = resolveAiExecutionMode(process.env.AI_EXECUTION_MODE);
-  if (!aiMode.ok) return json(aiMode.statusCode, aiMode.body);
+  if (!aiMode.ok) {
+    return prefetchExit(aiMode.statusCode, aiMode.body, {
+      ...context,
+      stage: 'ai_execution_mode_validation',
+      aiExecutionMode: null,
+    });
+  }
   if (aiMode.mode === 'disabled') {
-    return json(503, {
+    return prefetchExit(503, {
       error: 'ai_execution_disabled',
       message: 'AI execution is disabled for this environment.',
       mode: aiMode.mode,
+    }, {
+      ...context,
+      stage: 'ai_execution_mode_validation',
+      aiExecutionMode: aiMode.mode,
     });
   }
 
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    return json(503, {
+    return prefetchExit(503, {
       error: 'openai_api_key_missing',
       message: 'OPENAI_API_KEY must be configured when AI_EXECUTION_MODE is real.',
       mode: aiMode.mode,
+    }, {
+      ...context,
+      stage: 'openai_key_validation',
+      aiExecutionMode: aiMode.mode,
+      apiKeyPresent: false,
     });
   }
 
@@ -144,13 +211,32 @@ export async function handler(event) {
   try {
     payload = JSON.parse(event.body || '{}');
   } catch {
-    return json(400, { error: 'invalid_json' });
+    return prefetchExit(400, { error: 'invalid_json' }, {
+      ...context,
+      stage: 'json_parse',
+      aiExecutionMode: aiMode.mode,
+      apiKeyPresent: true,
+    });
   }
 
   const imageUrl = normalizeDataUrl(payload.imageBase64);
   const roomName = String(payload.roomName || 'comodo nao informado').slice(0, 80);
-  if (!imageUrl) return json(400, { error: 'image_required' });
-  if (imageUrl.length > 4_500_000) return json(413, { error: 'image_too_large' });
+  if (!imageUrl) {
+    return prefetchExit(400, { error: 'image_required' }, {
+      ...context,
+      stage: 'payload_validation',
+      aiExecutionMode: aiMode.mode,
+      apiKeyPresent: true,
+    });
+  }
+  if (imageUrl.length > 4_500_000) {
+    return prefetchExit(413, { error: 'image_too_large' }, {
+      ...context,
+      stage: 'payload_validation',
+      aiExecutionMode: aiMode.mode,
+      apiKeyPresent: true,
+    });
+  }
 
   const model = process.env.OPENAI_VISION_MODEL || DEFAULT_MODEL;
   const startedAt = Date.now();
