@@ -8,6 +8,8 @@ const BUCKET = 'inspection-photos';
 const RUN_ID = `uat_signup_${Date.now()}`;
 const SIGNUP_EMAIL = `e2e-public-signup-${RUN_ID}@vistoriafacilia.com`;
 const MISSING_EMAIL = `e2e-public-missing-${RUN_ID}@vistoriafacilia.test`;
+const SIGNUP_FULL_NAME = 'Cliente Publico Signup';
+const SIGNUP_PHONE = '11987654321';
 const SIGNUP_PASSWORD = `SignupUat-${RUN_ID}!`;
 const ONE_PIXEL_JPEG = Buffer.from(
   '/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////2wBDAf//////////////////////////////////////////////////////////////////////////////////////wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAX/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAH/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oACAEBAAEFAqf/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oACAEDAQE/ASP/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oACAECAQE/ASP/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oACAEBAAY/Aqf/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oACAEBAAE/IV//2gAMAwEAAgADAAAAEP/EABQRAQAAAAAAAAAAAAAAAAAAABD/2gAIAQMBAT8QH//EABQRAQAAAAAAAAAAAAAAAAAAABD/2gAIAQIBAT8QH//EABQQAQAAAAAAAAAAAAAAAAAAABD/2gAIAQEAAT8QH//Z',
@@ -448,6 +450,8 @@ async function main() {
 
     runtime.phase = 'signup';
     await page.getByRole('button', { name: /Criar conta/i }).first().click();
+    await page.getByLabel(/Nome completo/i).fill(SIGNUP_FULL_NAME);
+    await page.getByLabel(/Celular/i).fill(SIGNUP_PHONE);
     await page.getByLabel(/^E-mail$/i).fill(SIGNUP_EMAIL);
     await page.getByLabel(/^Senha$/i).fill(SIGNUP_PASSWORD);
     await page.getByLabel(/Confirmar senha/i).fill(SIGNUP_PASSWORD);

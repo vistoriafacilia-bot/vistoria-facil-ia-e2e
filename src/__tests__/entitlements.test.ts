@@ -49,6 +49,24 @@ describe('entitlement rules', () => {
     expect(selectBestActiveEntitlement([baseEntitlement, paid])?.planId).toBe('beta_paid_4990');
   });
 
+  it('selects a higher manual photo limit without treating it as a commercial plan', () => {
+    const paid: Entitlement = {
+      ...baseEntitlement,
+      id: 'user_beta_paid_4990',
+      planId: 'beta_paid_4990',
+      source: 'mercado_pago',
+      maxPhotosPerInspection: 50,
+    };
+    const manualUsage: Entitlement = {
+      ...baseEntitlement,
+      id: 'admin-usage-1',
+      planId: 'admin_usage',
+      source: 'manual_admin',
+      maxPhotosPerInspection: 80,
+    };
+    expect(selectBestActiveEntitlement([paid, manualUsage])?.planId).toBe('admin_usage');
+  });
+
   it('ignores expired entitlements', () => {
     const expired: Entitlement = {
       ...baseEntitlement,

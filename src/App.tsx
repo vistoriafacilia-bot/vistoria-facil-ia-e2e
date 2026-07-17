@@ -6,27 +6,54 @@ import InspectionWizard from './components/InspectionWizard';
 import ReportPdfGenerator from './components/ReportPdfGenerator';
 import DashboardMetrics from './components/DashboardMetrics';
 import PaymentV1Gate from './components/PaymentV1Gate';
+import AdminApp from './components/admin/AdminApp';
 import { ClipboardList, Plus, History, Trash2, FileText, Play, ChevronLeft, ArrowRight, ShieldCheck, Sparkles, Building2 } from 'lucide-react';
 import { APP_VERSION } from './lib/appVersion';
 import { getOrCreateUserEntitlement } from './lib/entitlements';
+import { resolvePaymentV1Entitlement } from './lib/paymentV1EntitlementBridge';
 import { isEmptyInspectionDraft } from './lib/inspectionLifecycle';
 import { safeCreateAuditEvent } from './lib/auditEvents';
 import { loginWithEmailPassword, loginWithGoogle, onAuthStateChanged, resetPasswordForEmail, signUpWithEmailPassword, upsertProfile } from './lib/services/authService';
 import { deleteInspection, listInspections } from './lib/services/inspectionService';
+import { getPaymentV1Status } from './lib/services/paymentV1Service';
 import { listPhotos } from './lib/services/photoService';
 import { listReports } from './lib/services/reportService';
 import { listRooms } from './lib/services/roomService';
+import {
+  formatBrazilianMobilePhone,
+  isValidBrazilianMobilePhone,
+  isValidFullName,
+  normalizeBrazilianMobilePhone,
+  normalizeFullName,
+} from './lib/validation';
 
 type HistoryInspection = Inspection & {
   roomCount?: number;
   photoCount?: number;
 };
 
+type AppView = 'properties' | 'inspections_history' | 'inspection_wizard' | 'pdf_generator' | 'plans';
+
+const getInitialAppView = (): AppView => {
+  if (typeof window === 'undefined') return 'properties';
+  return new URLSearchParams(window.location.search).get('payment') === 'success'
+    ? 'plans'
+    : 'properties';
+};
+
+const isAdminRoute = () => (
+  typeof window !== 'undefined'
+  && window.location.pathname.replace(/\/+$/, '') === '/admin'
+);
+
 export default function App() {
+  const adminRoute = isAdminRoute();
   const [user, setUser] = useState<AppUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const isGoogleAuthEnabled = import.meta.env.VITE_ENABLE_GOOGLE_AUTH === 'true';
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [emailAuthFullName, setEmailAuthFullName] = useState('');
+  const [emailAuthPhone, setEmailAuthPhone] = useState('');
   const [emailAuthEmail, setEmailAuthEmail] = useState('');
   const [emailAuthPassword, setEmailAuthPassword] = useState('');
   const [emailAuthConfirmPassword, setEmailAuthConfirmPassword] = useState('');
@@ -40,7 +67,7 @@ export default function App() {
 
   // Routing states
   // 'properties' | 'inspections_history' | 'inspection_wizard' | 'pdf_generator' | 'plans'
-  const [currentView, setCurrentView] = useState<'properties' | 'inspections_history' | 'inspection_wizard' | 'pdf_generator' | 'plans'>('properties');
+  const [currentView, setCurrentView] = useState<AppView>(getInitialAppView);
   
   // Selected Contexts
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
@@ -50,14 +77,14 @@ export default function App() {
 
   // Admin and Metrics Control
   const [showAdminMetrics, setShowAdminMetrics] = useState(false);
-  const isAdminUser = user?.email === 'vistoriafacil.ia@gmail.com';
+  const isAdminUser = false;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(async (currentUser) => {
       setUser(currentUser);
       setAuthLoading(false);
 
-      if (currentUser) {
+      if (currentUser && !adminRoute) {
         try {
           await upsertProfile(currentUser);
         } catch (err) {
@@ -73,25 +100,46 @@ export default function App() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [adminRoute]);
 
   // Sync active user entitlement
   useEffect(() => {
-    if (user) {
-      setEntitlementLoading(true);
-      getOrCreateUserEntitlement(user.uid)
-        .then(ent => {
-          setEntitlement(ent);
-          setEntitlementLoading(false);
-        })
-        .catch(err => {
-          console.error('Error fetching entitlement:', err);
-          setEntitlementLoading(false);
-        });
-    } else {
+    let active = true;
+
+    if (adminRoute || !user) {
       setEntitlement(null);
+      setEntitlementLoading(false);
+      return () => {
+        active = false;
+      };
     }
-  }, [user]);
+
+    setEntitlementLoading(true);
+
+    void (async () => {
+      try {
+        const baseEntitlement = await getOrCreateUserEntitlement(user.uid);
+        let effectiveEntitlement = baseEntitlement;
+
+        try {
+          const paymentStatus = await getPaymentV1Status();
+          effectiveEntitlement = resolvePaymentV1Entitlement(baseEntitlement, user, paymentStatus);
+        } catch (error) {
+          console.warn('Payment V1 entitlement status unavailable; using base entitlement.', error);
+        }
+
+        if (active) setEntitlement(effectiveEntitlement);
+      } catch (error) {
+        if (active) console.error('Error fetching entitlement:', error);
+      } finally {
+        if (active) setEntitlementLoading(false);
+      }
+    })();
+
+    return () => {
+      active = false;
+    };
+  }, [adminRoute, user]);
 
   const loadPropertyInspections = async (property: Property): Promise<HistoryInspection[]> => {
     if (!user) return [];
@@ -184,6 +232,24 @@ export default function App() {
     try {
       const email = emailAuthEmail.trim();
       if (authMode === 'signup') {
+        const fullName = normalizeFullName(emailAuthFullName);
+        const phone = normalizeBrazilianMobilePhone(emailAuthPhone);
+        if (!fullName) {
+          setEmailAuthError('Informe seu nome completo.');
+          return;
+        }
+        if (!isValidFullName(fullName)) {
+          setEmailAuthError('Informe nome e sobrenome para criar sua conta.');
+          return;
+        }
+        if (!phone) {
+          setEmailAuthError('Informe seu celular com DDD.');
+          return;
+        }
+        if (!isValidBrazilianMobilePhone(phone)) {
+          setEmailAuthError('Informe um celular brasileiro valido com DDD e 11 digitos.');
+          return;
+        }
         if (emailAuthPassword.length < 6) {
           setEmailAuthError('A senha precisa ter pelo menos 6 caracteres.');
           return;
@@ -193,10 +259,12 @@ export default function App() {
           return;
         }
 
-        const result = await signUpWithEmailPassword(email, emailAuthPassword);
+        const result = await signUpWithEmailPassword(email, emailAuthPassword, { fullName, phone });
         if (result.needsEmailConfirmation) {
           setEmailAuthMessage('Conta criada. Verifique seu e-mail para confirmar o acesso.');
           setAuthMode('login');
+          setEmailAuthFullName('');
+          setEmailAuthPhone('');
           setEmailAuthPassword('');
           setEmailAuthConfirmPassword('');
         } else {
@@ -255,6 +323,8 @@ export default function App() {
     setAuthMode(mode);
     setEmailAuthError(null);
     setEmailAuthMessage(null);
+    setEmailAuthFullName('');
+    setEmailAuthPhone('');
     setEmailAuthPassword('');
     setEmailAuthConfirmPassword('');
   };
@@ -356,6 +426,41 @@ export default function App() {
                     : 'Crie uma conta para salvar imoveis, vistorias e relatorios.'}
                 </p>
               </div>
+              {authMode === 'signup' && (
+                <>
+                  <div className="space-y-1.5">
+                    <label htmlFor="email-auth-full-name" className="block text-[11px] font-semibold text-slate-300">
+                      Nome completo
+                    </label>
+                    <input
+                      id="email-auth-full-name"
+                      type="text"
+                      autoComplete="name"
+                      aria-required="true"
+                      value={emailAuthFullName}
+                      onChange={(event) => setEmailAuthFullName(event.target.value)}
+                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label htmlFor="email-auth-phone" className="block text-[11px] font-semibold text-slate-300">
+                      Celular
+                    </label>
+                    <input
+                      id="email-auth-phone"
+                      type="tel"
+                      inputMode="numeric"
+                      autoComplete="tel"
+                      aria-required="true"
+                      placeholder="(11) 98765-4321"
+                      maxLength={15}
+                      value={emailAuthPhone}
+                      onChange={(event) => setEmailAuthPhone(formatBrazilianMobilePhone(event.target.value))}
+                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5 text-sm text-white outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400"
+                    />
+                  </div>
+                </>
+              )}
               <div className="space-y-1.5">
                 <label htmlFor="email-auth-email" className="block text-[11px] font-semibold text-slate-300">
                   E-mail
@@ -377,7 +482,7 @@ export default function App() {
                 <input
                   id="email-auth-password"
                   type="password"
-                  autoComplete="current-password"
+                  autoComplete={authMode === 'signup' ? 'new-password' : 'current-password'}
                   required
                   value={emailAuthPassword}
                   onChange={(event) => setEmailAuthPassword(event.target.value)}
@@ -449,6 +554,10 @@ export default function App() {
 
       </div>
     );
+  }
+
+  if (adminRoute) {
+    return <AdminApp />;
   }
 
   const activeDraftInspection = inspections.find((inspection) => (
@@ -727,6 +836,7 @@ export default function App() {
               <PaymentV1Gate 
                 user={user}
                 autoContinueOnActiveEntitlement={false}
+                onEntitlementSync={setEntitlement}
                 onReady={(updatedEnt) => {
                   setEntitlement(updatedEnt);
                   setCurrentView('properties');

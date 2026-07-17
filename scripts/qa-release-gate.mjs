@@ -143,9 +143,9 @@ if (exists('vite.config.ts')) {
 
 if (exists('src/lib/appVersion.ts')) {
   const appVersion = read('src/lib/appVersion.ts');
-  appVersion.includes('V0.4.0-rc2')
-    ? pass('APP_VERSION centralizada em V0.4.0-rc2.')
-    : fail('APP_VERSION esperada V0.4.0-rc2 não encontrada.');
+  appVersion.includes('V0.4.0-rc4')
+    ? pass('APP_VERSION centralizada em V0.4.0-rc4.')
+    : fail('APP_VERSION esperada V0.4.0-rc4 não encontrada.');
 }
 
 if (warnings.length) {

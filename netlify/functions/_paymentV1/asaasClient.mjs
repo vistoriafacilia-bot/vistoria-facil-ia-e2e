@@ -10,6 +10,27 @@ export const ASAAS_CHECKOUT_BASE_URLS = {
   production: 'https://asaas.com/checkoutSession/show',
 };
 
+export const LEGACY_ASAAS_CALLBACK_URL_KEYS = [
+  'ASAAS_SUCCESS_URL',
+  'ASAAS_CANCEL_URL',
+  'ASAAS_EXPIRED_URL',
+];
+
+const resolveLegacyAsaasCallback = (env) => {
+  const missingLegacyKey = LEGACY_ASAAS_CALLBACK_URL_KEYS.find((key) => !env[key]);
+  if (missingLegacyKey) {
+    throw new PaymentV1Error('Legacy ASAAS callback URLs are required when no Payment V1 callback is provided.', {
+      debugCode: 'missing_callback_url',
+      statusCode: 500,
+    });
+  }
+  return {
+    successUrl: env.ASAAS_SUCCESS_URL,
+    cancelUrl: env.ASAAS_CANCEL_URL,
+    expiredUrl: env.ASAAS_EXPIRED_URL,
+  };
+};
+
 export const resolveAsaasConfig = (env = process.env, { requireCallback = true } = {}) => {
   const asaasEnv = String(env.ASAAS_ENV || '').trim().toLowerCase();
   if (!Object.prototype.hasOwnProperty.call(ASAAS_BASE_URLS, asaasEnv)) {
@@ -24,22 +45,13 @@ export const resolveAsaasConfig = (env = process.env, { requireCallback = true }
       statusCode: 500,
     });
   }
-  if (requireCallback && (!env.ASAAS_SUCCESS_URL || !env.ASAAS_CANCEL_URL || !env.ASAAS_EXPIRED_URL)) {
-    throw new PaymentV1Error('ASAAS callback URLs are required.', {
-      debugCode: 'missing_callback_url',
-      statusCode: 500,
-    });
-  }
+  const callback = requireCallback ? resolveLegacyAsaasCallback(env) : null;
   return {
     asaasEnv,
     baseUrl: ASAAS_BASE_URLS[asaasEnv],
     checkoutBaseUrl: ASAAS_CHECKOUT_BASE_URLS[asaasEnv],
     apiKey: env.ASAAS_API_KEY,
-    callback: {
-      successUrl: env.ASAAS_SUCCESS_URL,
-      cancelUrl: env.ASAAS_CANCEL_URL,
-      expiredUrl: env.ASAAS_EXPIRED_URL,
-    },
+    callback,
   };
 };
 
@@ -49,16 +61,16 @@ export const buildCheckoutFallbackUrl = (asaasEnv, checkoutId) => {
   return base ? `${base}/${encodeURIComponent(checkoutId)}` : null;
 };
 
-export const buildAsaasCheckoutPayload = ({ plan, config, externalReference, now = Date.now }) => ({
+export const buildAsaasCheckoutPayload = ({ plan, config, externalReference, callback = config.callback, now = Date.now }) => ({
   billingTypes: ['PIX', 'CREDIT_CARD'],
   chargeTypes: ['DETACHED'],
   externalReference: externalReference || `vf-payment-v1-${plan.code}-${now()}`,
-  callback: config.callback,
+  callback,
   items: [
     {
       name: plan.name,
       description: plan.description,
-      value: plan.value,
+      value: Number(plan.amountCents ?? plan.priceCents) / 100,
       quantity: 1,
     },
   ],
@@ -257,7 +269,7 @@ export const getAsaasPaymentConfirmation = async ({ checkoutId, externalReferenc
   };
 };
 
-export const createAsaasCheckout = async ({ plan, externalReference, env = process.env, fetchImpl = globalThis.fetch, now = Date.now } = {}) => {
+export const createAsaasCheckout = async ({ plan, externalReference, env = process.env, fetchImpl = globalThis.fetch, now = Date.now, callback = null } = {}) => {
   if (!plan) {
     throw new PaymentV1Error('Invalid Payment V1 plan.', {
       debugCode: 'payment_v1_invalid_plan',
@@ -271,8 +283,8 @@ export const createAsaasCheckout = async ({ plan, externalReference, env = proce
     });
   }
 
-  const config = resolveAsaasConfig(env);
-  const payload = buildAsaasCheckoutPayload({ plan, config, externalReference, now });
+  const config = resolveAsaasConfig(env, { requireCallback: !callback });
+  const payload = buildAsaasCheckoutPayload({ plan, config, externalReference, callback: callback || config.callback, now });
   let response;
   try {
     response = await fetchImpl(`${config.baseUrl}/checkouts`, {

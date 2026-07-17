@@ -17,6 +17,7 @@ const authModule = await import('../netlify/functions/_paymentV1/paymentAuth.mjs
 
 const USER_A = '00000000-0000-4000-8000-000000000001';
 const USER_B = '00000000-0000-4000-8000-000000000002';
+const APP_PUBLIC_ORIGIN = 'https://hmlg.vistoriafacil-ia.com.br';
 const SUPABASE_ENV = {
   SUPABASE_URL: 'https://supabase.example.test',
   SUPABASE_SERVICE_ROLE_KEY: 'service_role_key_not_printed',
@@ -24,6 +25,7 @@ const SUPABASE_ENV = {
 
 const paymentServiceSource = fs.readFileSync('src/lib/services/paymentV1Service.ts', 'utf8');
 const paymentGateSource = fs.readFileSync('src/components/PaymentV1Gate.tsx', 'utf8');
+const authServiceSource = fs.readFileSync('src/lib/services/authService.ts', 'utf8');
 
 const jsonResponse = (status, body) => ({
   ok: status >= 200 && status < 300,
@@ -35,6 +37,17 @@ const makeStore = () => {
   const state = { orders: [], events: new Set(), credits: [] };
   return {
     state,
+    async getPaymentV1PlanByCode(planCode) {
+      if (planCode !== 'report_50_beta') return null;
+      return {
+        code: 'report_50_beta',
+        name: 'Relatorio 50',
+        description: 'Fixture de catalogo do banco',
+        amountCents: 4990,
+        analysisLimit: 50,
+        snapshot: { code: 'report_50_beta', priceCents: 4990, analysisLimit: 50 },
+      };
+    },
     async createPendingOrder({ plan, externalReference, userId }) {
       if (!userId) throw Object.assign(new Error('user_id required'), { debugCode: 'invalid_auth_token', statusCode: 401 });
       const order = {
@@ -121,6 +134,7 @@ const makeSupabaseStatusStore = ({ credits = [], orders = [], failCredits = fals
 const createCheckout = async (store, userId = USER_A, planCode = 'report_50_beta') => {
   const handler = checkoutModule.createHandler({
     paymentOrders: store,
+    env: { APP_PUBLIC_ORIGIN },
     authenticateRequest: async () => ({ userId }),
     buildExternalReference: ({ planCode: code }) => `vf-payment-v1-${code}-${store.state.orders.length + 1}`,
     asaasClient: {
@@ -134,7 +148,7 @@ const createCheckout = async (store, userId = USER_A, planCode = 'report_50_beta
       },
     },
   });
-  const response = await handler({ httpMethod: 'POST', body: JSON.stringify({ planCode }) });
+  const response = await handler({ httpMethod: 'POST', body: JSON.stringify({ planCode, returnOrigin: APP_PUBLIC_ORIGIN }) });
   assert.equal(response.statusCode, 200);
   return JSON.parse(response.body);
 };
@@ -181,6 +195,11 @@ test('checkoutRequestSendsAuthorizationBearer', () => {
   assert.match(paymentServiceSource, /Authorization:\s*`Bearer \$\{accessToken\}`/);
 });
 
+test('checkoutRequestSendsCurrentBrowserOrigin', () => {
+  assert.match(paymentServiceSource, /window\.location\.origin/);
+  assert.match(paymentServiceSource, /returnOrigin:\s*getPaymentV1ReturnOrigin\(\)/);
+});
+
 test('frontendDoesNotSendEmptyBearer', () => {
   assert.match(paymentServiceSource, /normalizeAccessToken/);
   assert.match(paymentServiceSource, /missing_auth_token/);
@@ -195,6 +214,12 @@ test('missingSessionDoesNotCallStatusAsAuthenticated', () => {
 
 test('missingSessionDoesNotCallProtectedBackend', () => {
   assert.match(paymentServiceSource, /return \{\s*\.\.\.EMPTY_PAYMENT_V1_STATUS,[\s\S]*authRequired:\s*true/);
+});
+
+test('authBootstrapMissingSessionIsControlled', () => {
+  assert.match(authServiceSource, /handleAuthBootstrapError/);
+  assert.match(authServiceSource, /callback\(null\)/);
+  assert.match(authServiceSource, /\.catch\(\(\)\s*=>\s*handleAuthBootstrapError\(callback\)\)/);
 });
 
 test('missingSessionBlocksCheckoutWithFriendlyMessage', () => {

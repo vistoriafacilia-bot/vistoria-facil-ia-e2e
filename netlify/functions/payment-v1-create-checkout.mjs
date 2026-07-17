@@ -61,6 +61,103 @@ const parseBody = (event) => {
   }
 };
 
+const throwInvalidReturnOrigin = () => {
+  throw new PaymentV1Error('Invalid return origin.', {
+    debugCode: 'invalid_return_origin',
+    statusCode: 400,
+  });
+};
+
+const paymentV1ConfigError = (message, debugCode) => {
+  throw new PaymentV1Error(message, {
+    debugCode,
+    statusCode: 500,
+  });
+};
+
+const normalizeOriginValue = (value, { missingMessage, invalidMessage, missingDebugCode, invalidDebugCode, statusCode }) => {
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new PaymentV1Error(missingMessage, {
+      debugCode: missingDebugCode,
+      statusCode,
+    });
+  }
+
+  const trimmed = value.trim().replace(/\/$/, '');
+  let url;
+  try {
+    url = new URL(trimmed);
+  } catch {
+    throw new PaymentV1Error(invalidMessage, {
+      debugCode: invalidDebugCode,
+      statusCode,
+    });
+  }
+
+  if (
+    url.protocol !== 'https:'
+    || url.username
+    || url.password
+    || url.pathname !== '/'
+    || url.search
+    || url.hash
+  ) {
+    throw new PaymentV1Error(invalidMessage, {
+      debugCode: invalidDebugCode,
+      statusCode,
+    });
+  }
+
+  return url.origin;
+};
+
+export const resolvePaymentV1AppPublicOrigin = (env = process.env) => {
+  try {
+    return normalizeOriginValue(env.APP_PUBLIC_ORIGIN, {
+      missingMessage: 'APP_PUBLIC_ORIGIN is required.',
+      invalidMessage: 'APP_PUBLIC_ORIGIN must be a valid HTTPS origin.',
+      missingDebugCode: 'missing_app_public_origin',
+      invalidDebugCode: 'invalid_app_public_origin',
+      statusCode: 500,
+    });
+  } catch (error) {
+    if (error.debugCode === 'missing_app_public_origin' || error.debugCode === 'invalid_app_public_origin') throw error;
+    paymentV1ConfigError('APP_PUBLIC_ORIGIN must be a valid HTTPS origin.', 'invalid_app_public_origin');
+  }
+};
+
+const resolvePaymentV1RequestOrigin = (returnOrigin) => {
+  try {
+    return normalizeOriginValue(returnOrigin, {
+      missingMessage: 'Missing return origin.',
+      invalidMessage: 'Invalid return origin.',
+      missingDebugCode: 'missing_return_origin',
+      invalidDebugCode: 'invalid_return_origin',
+      statusCode: 400,
+    });
+  } catch (error) {
+    if (error.debugCode === 'missing_return_origin') throw error;
+    throwInvalidReturnOrigin();
+  }
+};
+
+export const buildPaymentV1ReturnCallback = (origin) => ({
+  successUrl: `${origin}/?payment=success`,
+  cancelUrl: `${origin}/?payment=cancel`,
+  expiredUrl: `${origin}/?payment=expired`,
+});
+
+export const resolvePaymentV1ReturnCallback = (returnOrigin, { env = process.env } = {}) => {
+  const configuredOrigin = resolvePaymentV1AppPublicOrigin(env);
+  const requestOrigin = resolvePaymentV1RequestOrigin(returnOrigin);
+
+  if (requestOrigin !== configuredOrigin) {
+    throwInvalidReturnOrigin();
+  }
+
+  return buildPaymentV1ReturnCallback(configuredOrigin);
+};
+
 export const createHandler = ({
   asaasClient = { createAsaasCheckout },
   paymentOrders = null,
@@ -88,7 +185,7 @@ export const createHandler = ({
     }
     logContext.userId = authUser.userId;
 
-    const { planCode } = parseBody(event);
+    const { planCode, returnOrigin } = parseBody(event);
     if (!planCode) {
       throw new PaymentV1Error('Missing planCode.', {
         debugCode: 'missing_plan_code',
@@ -96,22 +193,23 @@ export const createHandler = ({
       });
     }
 
-    const plan = getPaymentV1Plan(planCode);
+    const orderStore = paymentOrders || createPaymentOrderStore({ env });
+    const plan = await getPaymentV1Plan(planCode, { store: orderStore, env });
     if (!plan) {
       throw new PaymentV1Error('Invalid Payment V1 plan.', {
         debugCode: 'plan_not_found',
         statusCode: 400,
       });
     }
+    const callback = resolvePaymentV1ReturnCallback(returnOrigin, { env });
 
-    const orderStore = paymentOrders || createPaymentOrderStore({ env });
     const externalReference = buildExternalReference({ planCode: plan.code });
     logContext.externalReference = externalReference;
     safeLog('info', { requestId, stage: 'order_create_start', debugCode: 'checkout_order_create_start', userId: authUser.userId, externalReference });
     const order = await orderStore.createPendingOrder({ plan, externalReference, userId: authUser.userId });
     logContext.orderId = order.id;
     safeLog('info', { requestId, stage: 'asaas_checkout_start', debugCode: 'checkout_asaas_start', userId: authUser.userId, orderId: order.id, externalReference });
-    const checkout = await asaasClient.createAsaasCheckout({ plan, externalReference, env });
+    const checkout = await asaasClient.createAsaasCheckout({ plan, externalReference, env, callback });
     logContext.checkoutId = checkout.checkoutId;
     await orderStore.updateOrderCheckout({
       orderId: order.id,

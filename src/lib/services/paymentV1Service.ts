@@ -1,14 +1,16 @@
 import { getCurrentAccessToken } from './authService';
 import { supabase } from '../supabaseClient';
 
-export type PaymentV1PlanCode = 'report_50_beta' | 'report_100' | 'report_150';
+export type PaymentV1PlanCode = string;
 
 export interface PaymentV1PlanOption {
   code: PaymentV1PlanCode;
   name: string;
   description: string;
-  priceLabel: string;
+  priceCents: number;
+  currency: string;
   analysisLimit: number;
+  badge?: string;
 }
 
 export interface PaymentV1CheckoutResponse {
@@ -99,29 +101,7 @@ export interface PaymentV1ErrorResponse {
   asaasStatus?: number;
 }
 
-export const PAYMENT_V1_PLANS: PaymentV1PlanOption[] = [
-  {
-    code: 'report_50_beta',
-    name: 'Relatório 50',
-    description: 'Relatório beta com até 50 análises',
-    priceLabel: 'R$ 49,90',
-    analysisLimit: 50,
-  },
-  {
-    code: 'report_100',
-    name: 'Relatório 100',
-    description: 'Relatório beta com até 100 análises',
-    priceLabel: 'R$ 99,90',
-    analysisLimit: 100,
-  },
-  {
-    code: 'report_150',
-    name: 'Relatório 150',
-    description: 'Relatório beta com até 150 análises',
-    priceLabel: 'R$ 149,90',
-    analysisLimit: 150,
-  },
-];
+export const PAYMENT_V1_PLANS: PaymentV1PlanOption[] = [];
 
 const EMPTY_PAYMENT_V1_STATUS: PaymentV1StatusResponse = {
   hasActiveCredit: false,
@@ -193,6 +173,44 @@ const getRequiredAccessToken = async () => {
 
 export const hasPaymentV1AuthSession = async () => Boolean(await getOptionalAccessToken());
 
+export const formatPaymentV1PlanPrice = (plan: Pick<PaymentV1PlanOption, 'priceCents' | 'currency'>) => {
+  if (plan.priceCents === 0) return 'Gratuito';
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: plan.currency || 'BRL',
+  }).format(plan.priceCents / 100);
+};
+
+export const listPaymentV1Plans = async (): Promise<PaymentV1PlanOption[]> => {
+  const response = await fetch('/.netlify/functions/payment-v1-plans', {
+    method: 'GET',
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw buildPaymentV1Error(body, 'Nao foi possivel carregar os planos.', 'payment_v1_frontend_plans_failed');
+  }
+  if (!Array.isArray(body.plans)) {
+    const error = new Error('Resposta de planos incompleta.') as Error & PaymentV1ErrorResponse;
+    error.debugCode = 'payment_v1_frontend_invalid_plans_response';
+    error.requestId = body.requestId;
+    throw error;
+  }
+  return body.plans.map((plan: any) => ({
+    code: String(plan.code || ''),
+    name: String(plan.name || ''),
+    description: String(plan.description || ''),
+    priceCents: Number(plan.priceCents || 0),
+    currency: String(plan.currency || 'BRL'),
+    analysisLimit: Number(plan.analysisLimit || 0),
+    badge: plan.badge ? String(plan.badge) : undefined,
+  })).filter((plan: PaymentV1PlanOption) => plan.code && plan.name && plan.analysisLimit > 0);
+};
+
+const getPaymentV1ReturnOrigin = () => {
+  if (typeof window === 'undefined') return undefined;
+  return window.location.origin;
+};
+
 const buildPaymentV1Error = (body: Partial<PaymentV1ErrorResponse>, fallbackMessage: string, fallbackDebugCode: string) => {
   const error = new Error(body.error || fallbackMessage) as Error & PaymentV1ErrorResponse;
   error.debugCode = body.debugCode || fallbackDebugCode;
@@ -210,7 +228,7 @@ export const createPaymentV1Checkout = async (planCode: PaymentV1PlanCode): Prom
       'content-type': 'application/json',
       Authorization: `Bearer ${accessToken}`,
     },
-    body: JSON.stringify({ planCode }),
+    body: JSON.stringify({ planCode, returnOrigin: getPaymentV1ReturnOrigin() }),
   });
 
   const body = await response.json().catch(() => ({}));

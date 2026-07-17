@@ -9,6 +9,7 @@ export const isEntitlementActive = (entitlement?: Entitlement | null, now = new 
 };
 
 export const getEntitlementPriority = (entitlement: Entitlement) => {
+  if (entitlement.planId === 'admin_usage') return 30;
   if (entitlement.planId === PAID_BETA_PLAN_ID) return 20;
   if (entitlement.planId === FREE_PLAN_ID) return 10;
   return 0;
@@ -17,12 +18,15 @@ export const getEntitlementPriority = (entitlement: Entitlement) => {
 export const selectBestActiveEntitlement = (entitlements: Entitlement[], now = new Date()) => {
   return entitlements
     .filter(entitlement => isEntitlementActive(entitlement, now))
-    .sort((a, b) => getEntitlementPriority(b) - getEntitlementPriority(a))[0] || null;
+    .sort((a, b) => (
+      getPhotoLimitForEntitlement(b) - getPhotoLimitForEntitlement(a)
+      || getEntitlementPriority(b) - getEntitlementPriority(a)
+    ))[0] || null;
 };
 
 export const getPhotoLimitForEntitlement = (entitlement?: Entitlement | null) => {
   if (!entitlement) return PLAN_DEFINITIONS.free_10.maxPhotosPerInspection;
-  return entitlement.maxPhotosPerInspection || PLAN_DEFINITIONS[entitlement.planId]?.maxPhotosPerInspection || 10;
+  return entitlement.maxPhotosPerInspection || PLAN_DEFINITIONS[entitlement.planId as keyof typeof PLAN_DEFINITIONS]?.maxPhotosPerInspection || 10;
 };
 
 export const canGeneratePdf = (entitlement?: Entitlement | null) => {

@@ -16,11 +16,23 @@ const debugStatusModule = await import('../netlify/functions/payment-v1-debug-st
 
 const USER_A = '00000000-0000-4000-8000-000000000001';
 const USER_B = '00000000-0000-4000-8000-000000000002';
+const APP_PUBLIC_ORIGIN = 'https://hmlg.vistoriafacil-ia.com.br';
 
 const makeStore = () => {
   const state = { orders: [], events: [], credits: [] };
   return {
     state,
+    async getPaymentV1PlanByCode(planCode) {
+      if (planCode !== 'report_50_beta') return null;
+      return {
+        code: 'report_50_beta',
+        name: 'Relatorio 50',
+        description: 'Fixture de catalogo do banco',
+        amountCents: 4990,
+        analysisLimit: 50,
+        snapshot: { code: 'report_50_beta', priceCents: 4990, analysisLimit: 50 },
+      };
+    },
     async createPendingOrder({ plan, externalReference, userId }) {
       const order = {
         id: `order_${state.orders.length + 1}`,
@@ -147,6 +159,7 @@ const captureLogs = async (fn) => {
 const createCheckout = async (store, userId = USER_A) => {
   const handler = checkoutModule.createHandler({
     paymentOrders: store,
+    env: { APP_PUBLIC_ORIGIN },
     authenticateRequest: async () => ({ userId }),
     buildExternalReference: ({ planCode }) => `vf-payment-v1-${planCode}-${store.state.orders.length + 1}`,
     asaasClient: {
@@ -160,7 +173,7 @@ const createCheckout = async (store, userId = USER_A) => {
       },
     },
   });
-  const response = await handler({ httpMethod: 'POST', body: JSON.stringify({ planCode: 'report_50_beta' }) });
+  const response = await handler({ httpMethod: 'POST', body: JSON.stringify({ planCode: 'report_50_beta', returnOrigin: APP_PUBLIC_ORIGIN }) });
   assert.equal(response.statusCode, 200);
   return parseBody(response);
 };

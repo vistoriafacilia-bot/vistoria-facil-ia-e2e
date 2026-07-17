@@ -74,9 +74,14 @@ export async function getOrCreateSupabaseEntitlement(userId: string): Promise<En
   const best = (await listEntitlements(userId))
     .filter(entitlement => entitlement.status === 'active' && (!entitlement.expiresAt || new Date(entitlement.expiresAt).getTime() > Date.now()))
     .sort((a, b) => {
-      const priorityA = a.planId === 'beta_paid_4990' ? 20 : 10;
-      const priorityB = b.planId === 'beta_paid_4990' ? 20 : 10;
-      return priorityB - priorityA;
+      const limitDifference = b.maxPhotosPerInspection - a.maxPhotosPerInspection;
+      if (limitDifference !== 0) return limitDifference;
+      const priority = (planId: string) => {
+        if (planId === 'admin_usage') return 30;
+        if (planId === 'beta_paid_4990') return 20;
+        return 10;
+      };
+      return priority(b.planId) - priority(a.planId);
     })[0];
   if (best) return best;
   const free = createFreeEntitlement(userId);

@@ -17,6 +17,7 @@ const debugStatusModule = await import('../netlify/functions/payment-v1-debug-st
 
 const USER_A = '00000000-0000-4000-8000-000000000001';
 const WEBHOOK_TOKEN = 'test_webhook_token';
+const APP_PUBLIC_ORIGIN = 'https://hmlg.vistoriafacil-ia.com.br';
 
 const paymentGateSource = fs.readFileSync('src/components/PaymentV1Gate.tsx', 'utf8');
 const paymentServiceSource = fs.readFileSync('src/lib/services/paymentV1Service.ts', 'utf8');
@@ -25,6 +26,17 @@ const makeStore = () => {
   const state = { orders: [], events: [], credits: [] };
   return {
     state,
+    async getPaymentV1PlanByCode(planCode) {
+      if (planCode !== 'report_50_beta') return null;
+      return {
+        code: 'report_50_beta',
+        name: 'Relatorio 50',
+        description: 'Fixture de catalogo do banco',
+        amountCents: 4990,
+        analysisLimit: 50,
+        snapshot: { code: 'report_50_beta', priceCents: 4990, analysisLimit: 50 },
+      };
+    },
     async createPendingOrder({ plan, externalReference, userId }) {
       if (!userId) throw Object.assign(new Error('user_id required'), { debugCode: 'invalid_auth_token', statusCode: 401 });
       const order = {
@@ -130,6 +142,7 @@ const parseBody = (response) => JSON.parse(response.body);
 const createCheckout = async (store, userId = USER_A) => {
   const handler = checkoutModule.createHandler({
     paymentOrders: store,
+    env: { APP_PUBLIC_ORIGIN },
     authenticateRequest: async () => ({ userId }),
     buildExternalReference: ({ planCode }) => `vf-payment-v1-${planCode}-realistic-${stateCounter(store)}`,
     asaasClient: {
@@ -143,7 +156,7 @@ const createCheckout = async (store, userId = USER_A) => {
       },
     },
   });
-  const response = await handler({ httpMethod: 'POST', body: JSON.stringify({ planCode: 'report_50_beta' }) });
+  const response = await handler({ httpMethod: 'POST', body: JSON.stringify({ planCode: 'report_50_beta', returnOrigin: APP_PUBLIC_ORIGIN }) });
   assert.equal(response.statusCode, 200);
   return parseBody(response);
 };
@@ -302,7 +315,9 @@ test('uiCanRefreshAndUnlockAfterCredit', () => {
   assert.match(paymentGateSource, /getPaymentV1DebugStatus/);
   assert.match(paymentGateSource, /Crédito ativo encontrado; relatório liberado/);
   assert.match(paymentGateSource, /Pagamento confirmado\. Relatório liberado\./);
-  assert.match(paymentGateSource, /onReady\(buildPaymentV1Entitlement/);
+  assert.match(paymentGateSource, /syncEntitlementIfAvailable/);
+  assert.match(paymentGateSource, /notifyReadyIfAllowed/);
+  assert.match(paymentGateSource, /onEntitlementSync\?\.\(paymentEntitlement\)/);
 });
 
 test('noGenericUnexpectedError', async () => {

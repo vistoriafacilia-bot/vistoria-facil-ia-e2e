@@ -1,8 +1,12 @@
 ﻿import assert from 'node:assert/strict';
 
+const HMLG_ORIGIN = 'https://hmlg.vistoriafacil-ia.com.br';
+const PROD_ORIGIN = 'https://vistoriafacil-ia.com.br';
+
 const envFixture = {
   ASAAS_ENV: 'sandbox',
   ASAAS_API_KEY: 'test_api_key_not_printed',
+  APP_PUBLIC_ORIGIN: HMLG_ORIGIN,
   ASAAS_SUCCESS_URL: 'https://example.test/success',
   ASAAS_CANCEL_URL: 'https://example.test/cancel',
   ASAAS_EXPIRED_URL: 'https://example.test/expired',
@@ -16,8 +20,24 @@ const jsonResponse = (status, body) => ({
   text: async () => JSON.stringify(body),
 });
 
+const paymentPlanFixture = {
+  code: 'report_50_beta',
+  name: 'Relatório 50',
+  description: 'Relatório beta',
+  amountCents: 4990,
+  analysisLimit: 50,
+  snapshot: { code: 'report_50_beta', priceCents: 4990, analysisLimit: 50 },
+};
+
+const paymentPlanStore = {
+  async getPaymentV1PlanByCode(planCode) {
+    return planCode === paymentPlanFixture.code ? paymentPlanFixture : null;
+  },
+};
+
 const makeMockPaymentOrders = () => ({
   orders: [],
+  getPaymentV1PlanByCode: paymentPlanStore.getPaymentV1PlanByCode,
   async createPendingOrder({ plan, externalReference, userId }) {
     if (!userId) throw Object.assign(new Error('user required'), { debugCode: 'invalid_auth_token', statusCode: 401 });
     const order = {
@@ -26,7 +46,7 @@ const makeMockPaymentOrders = () => ({
       plan_code: plan.code,
       external_reference: externalReference,
       status: 'pending',
-      amount_cents: Math.round(plan.value * 100),
+      amount_cents: plan.amountCents,
       analysis_limit: plan.analysisLimit,
     };
     this.orders.push(order);
@@ -44,13 +64,64 @@ const clientModule = await import('../netlify/functions/_paymentV1/asaasClient.m
 const errorsModule = await import('../netlify/functions/_paymentV1/paymentErrors.mjs');
 const functionModule = await import('../netlify/functions/payment-v1-create-checkout.mjs');
 
-const plan50 = plansModule.getPaymentV1Plan('report_50_beta');
+const plan50 = await plansModule.getPaymentV1Plan('report_50_beta', { store: paymentPlanStore });
 
 test('paymentV1ModulesLoad', () => {
   assert.equal(typeof clientModule.createAsaasCheckout, 'function');
   assert.equal(typeof errorsModule.PaymentV1Error, 'function');
-  assert.equal(plan50.value, 49.9);
+  assert.equal(plan50.amountCents, 4990);
   assert.equal(typeof functionModule.createHandler, 'function');
+  assert.equal(typeof functionModule.resolvePaymentV1ReturnCallback, 'function');
+});
+
+test('hmlgAppPublicOriginBuildsReturnUrls', () => {
+  const callback = functionModule.resolvePaymentV1ReturnCallback(HMLG_ORIGIN, {
+    env: { APP_PUBLIC_ORIGIN: `${HMLG_ORIGIN}/` },
+  });
+  assert.deepEqual(callback, {
+    successUrl: `${HMLG_ORIGIN}/?payment=success`,
+    cancelUrl: `${HMLG_ORIGIN}/?payment=cancel`,
+    expiredUrl: `${HMLG_ORIGIN}/?payment=expired`,
+  });
+});
+
+test('productionAppPublicOriginBuildsReturnUrls', () => {
+  const callback = functionModule.resolvePaymentV1ReturnCallback(PROD_ORIGIN, {
+    env: { APP_PUBLIC_ORIGIN: PROD_ORIGIN },
+  });
+  assert.deepEqual(callback, {
+    successUrl: `${PROD_ORIGIN}/?payment=success`,
+    cancelUrl: `${PROD_ORIGIN}/?payment=cancel`,
+    expiredUrl: `${PROD_ORIGIN}/?payment=expired`,
+  });
+});
+
+test('missingAppPublicOriginFailsClosed', () => {
+  assert.throws(
+    () => functionModule.resolvePaymentV1ReturnCallback(HMLG_ORIGIN, { env: {} }),
+    (error) => error.debugCode === 'missing_app_public_origin' && error.statusCode === 500
+  );
+});
+
+test('unknownReturnOriginRejected', () => {
+  assert.throws(
+    () => functionModule.resolvePaymentV1ReturnCallback('https://attacker.example.test', { env: { APP_PUBLIC_ORIGIN: HMLG_ORIGIN } }),
+    (error) => error.debugCode === 'invalid_return_origin' && error.statusCode === 400
+  );
+});
+
+test('invalidAppPublicOriginRejected', () => {
+  assert.throws(
+    () => functionModule.resolvePaymentV1ReturnCallback(HMLG_ORIGIN, { env: { APP_PUBLIC_ORIGIN: 'http://hmlg.vistoriafacil-ia.com.br' } }),
+    (error) => error.debugCode === 'invalid_app_public_origin' && error.statusCode === 500
+  );
+});
+
+test('missingReturnOriginRejected', () => {
+  assert.throws(
+    () => functionModule.resolvePaymentV1ReturnCallback(undefined, { env: { APP_PUBLIC_ORIGIN: HMLG_ORIGIN } }),
+    (error) => error.debugCode === 'missing_return_origin' && error.statusCode === 400
+  );
 });
 
 test('sandboxEnvUsesSandboxBase', () => {
@@ -83,6 +154,41 @@ test('checkoutPayloadHasPixAndCreditCard', async () => {
     },
   });
   assert.deepEqual(payload.billingTypes, ['PIX', 'CREDIT_CARD']);
+});
+
+test('checkoutPayloadUsesEnvCallbackFallback', async () => {
+  let payload;
+  await clientModule.createAsaasCheckout({
+    plan: plan50,
+    env: envFixture,
+    fetchImpl: async (_url, options) => {
+      payload = JSON.parse(options.body);
+      return jsonResponse(200, { id: 'chk_123', link: 'https://sandbox.asaas.com/checkoutSession/show/chk_123' });
+    },
+  });
+  assert.deepEqual(payload.callback, {
+    successUrl: envFixture.ASAAS_SUCCESS_URL,
+    cancelUrl: envFixture.ASAAS_CANCEL_URL,
+    expiredUrl: envFixture.ASAAS_EXPIRED_URL,
+  });
+});
+
+test('checkoutPayloadUsesValidatedReturnOriginCallback', async () => {
+  let payload;
+  const callback = functionModule.resolvePaymentV1ReturnCallback(HMLG_ORIGIN, { env: envFixture });
+  await clientModule.createAsaasCheckout({
+    plan: plan50,
+    env: {
+      ASAAS_ENV: 'sandbox',
+      ASAAS_API_KEY: 'test_api_key_not_printed',
+    },
+    callback,
+    fetchImpl: async (_url, options) => {
+      payload = JSON.parse(options.body);
+      return jsonResponse(200, { id: 'chk_123', link: 'https://sandbox.asaas.com/checkoutSession/show/chk_123' });
+    },
+  });
+  assert.deepEqual(payload.callback, callback);
 });
 
 test('checkoutPayloadHasDetached', async () => {
@@ -143,6 +249,7 @@ test('functionReturnsCheckoutUrl', async () => {
   const paymentOrders = makeMockPaymentOrders();
   const handler = functionModule.createHandler({
     paymentOrders,
+    env: envFixture,
     authenticateRequest: async () => ({ userId: '00000000-0000-4000-8000-000000000001' }),
     asaasClient: {
       async createAsaasCheckout({ plan, externalReference }) {
@@ -152,13 +259,60 @@ test('functionReturnsCheckoutUrl', async () => {
       },
     },
   });
-  const response = await handler({ httpMethod: 'POST', body: JSON.stringify({ planCode: 'report_50_beta' }) });
+  const response = await handler({ httpMethod: 'POST', body: JSON.stringify({ planCode: 'report_50_beta', returnOrigin: HMLG_ORIGIN }) });
   const body = JSON.parse(response.body);
   assert.equal(response.statusCode, 200);
   assert.equal(body.checkoutUrl, 'https://sandbox.asaas.com/checkoutSession/show/chk_fn');
   assert.equal(body.checkoutId, 'chk_fn');
   assert.equal(body.orderId, 'order_1');
   assert.equal(body.planCode, 'report_50_beta');
+});
+
+test('functionPassesValidatedReturnOriginCallbackToAsaas', async () => {
+  const paymentOrders = makeMockPaymentOrders();
+  let receivedCallback;
+  const handler = functionModule.createHandler({
+    paymentOrders,
+    env: envFixture,
+    authenticateRequest: async () => ({ userId: '00000000-0000-4000-8000-000000000001' }),
+    asaasClient: {
+      async createAsaasCheckout({ plan, callback }) {
+        receivedCallback = callback;
+        return { checkoutUrl: 'https://sandbox.asaas.com/checkoutSession/show/chk_fn', checkoutId: 'chk_fn', planCode: plan.code };
+      },
+    },
+  });
+  const response = await handler({
+    httpMethod: 'POST',
+    body: JSON.stringify({
+      planCode: 'report_50_beta',
+      returnOrigin: HMLG_ORIGIN,
+    }),
+  });
+  assert.equal(response.statusCode, 200);
+  assert.equal(receivedCallback.successUrl, `${HMLG_ORIGIN}/?payment=success`);
+});
+
+test('functionRejectsInvalidReturnOriginBeforeOrderCreation', async () => {
+  const paymentOrders = makeMockPaymentOrders();
+  const handler = functionModule.createHandler({
+    paymentOrders,
+    env: envFixture,
+    authenticateRequest: async () => ({ userId: '00000000-0000-4000-8000-000000000001' }),
+    asaasClient: {
+      async createAsaasCheckout() {
+        throw new Error('asaas should not be called');
+      },
+    },
+  });
+  const response = await handler({
+    httpMethod: 'POST',
+    body: JSON.stringify({ planCode: 'report_50_beta', returnOrigin: 'https://attacker.example.test' }),
+  });
+  const body = JSON.parse(response.body);
+  assert.equal(response.statusCode, 400);
+  assert.equal(body.debugCode, 'invalid_return_origin');
+  assert.equal(paymentOrders.orders.length, 0);
 });
 
 test('noGenericErrorWithoutDebugCode', async () => {

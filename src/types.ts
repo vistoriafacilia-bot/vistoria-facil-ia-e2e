@@ -27,6 +27,7 @@ export interface AppUser {
   id: string;
   email?: string | null;
   displayName?: string | null;
+  phone?: string | null;
   photoURL?: string | null;
 }
 
@@ -111,6 +112,7 @@ export interface SystemMetrics {
 }
 
 export type EntitlementPlan = 'free_10' | 'beta_paid_4990';
+export type EntitlementPlanId = EntitlementPlan | 'admin_usage';
 
 export interface PlanDefinition {
   id: EntitlementPlan;
@@ -127,7 +129,7 @@ export interface PlanDefinition {
 export interface Entitlement {
   id: string;
   userId: string;
-  planId: EntitlementPlan;
+  planId: EntitlementPlanId;
   status: 'active' | 'pending' | 'expired';
   source: 'free_self_service' | 'mercado_pago' | 'manual_admin';
   maxPhotosPerInspection: number;

@@ -18,6 +18,7 @@ const statusModule = await import('../netlify/functions/payment-v1-status.mjs');
 const asaasModule = await import('../netlify/functions/_paymentV1/asaasClient.mjs');
 
 const USER_ID = '00000000-0000-4000-8000-000000000001';
+const APP_PUBLIC_ORIGIN = 'https://hmlg.vistoriafacil-ia.com.br';
 const SUPABASE_ENV = {
   SUPABASE_URL: 'https://supabase.example.test',
   SUPABASE_SERVICE_ROLE_KEY: 'service_role_key_not_printed',
@@ -31,6 +32,17 @@ const makeStore = () => {
   const state = { orders: [], events: new Set(), credits: [] };
   return {
     state,
+    async getPaymentV1PlanByCode(planCode) {
+      if (planCode !== 'report_50_beta') return null;
+      return {
+        code: 'report_50_beta',
+        name: 'Relatorio 50',
+        description: 'Fixture de catalogo do banco',
+        amountCents: 4990,
+        analysisLimit: 50,
+        snapshot: { code: 'report_50_beta', priceCents: 4990, analysisLimit: 50 },
+      };
+    },
     async createPendingOrder({ plan, externalReference, userId }) {
       if (!userId) throw Object.assign(new Error('user_id required'), { debugCode: 'invalid_auth_token', statusCode: 401 });
       const order = {
@@ -103,6 +115,7 @@ const makeStore = () => {
 const createCheckout = async (store, { userId = USER_ID, asaasClient = null } = {}) => {
   const handler = checkoutModule.createHandler({
     paymentOrders: store,
+    env: { APP_PUBLIC_ORIGIN },
     authenticateRequest: async () => ({ userId }),
     buildExternalReference: ({ planCode }) => `vf-payment-v1-${planCode}-fixed-${store.state.orders.length + 1}`,
     asaasClient: asaasClient || {
@@ -116,7 +129,7 @@ const createCheckout = async (store, { userId = USER_ID, asaasClient = null } = 
       },
     },
   });
-  const response = await handler({ httpMethod: 'POST', body: JSON.stringify({ planCode: 'report_50_beta' }) });
+  const response = await handler({ httpMethod: 'POST', body: JSON.stringify({ planCode: 'report_50_beta', returnOrigin: APP_PUBLIC_ORIGIN }) });
   return { response, body: JSON.parse(response.body) };
 };
 
@@ -315,6 +328,21 @@ test('returnRefreshShowsUnlocked', () => {
   assert.match(paymentGateSource, /Pagamento confirmado\. Relatório liberado\./);
 });
 
+test('paymentSuccessReturnAutoConfirmsAndCleansUrl', () => {
+  assert.match(paymentGateSource, /PAYMENT_RETURN_POLL_INTERVAL_MS/);
+  assert.match(paymentGateSource, /PAYMENT_RETURN_POLL_TIMEOUT_MS = 30_000/);
+  assert.match(paymentGateSource, /new URLSearchParams\(window\.location\.search\)\.get\('payment'\) === 'success'/);
+  assert.match(paymentGateSource, /window\.history\.replaceState/);
+  assert.match(paymentGateSource, /url\.searchParams\.delete\('payment'\)/);
+  assert.match(paymentGateSource, /while \(active && Date\.now\(\) <= deadline\)/);
+  assert.match(paymentGateSource, /await reconcilePaymentV1\(\)/);
+  assert.match(paymentGateSource, /setPaymentReturnMessage\('Confirmando pagamento\.\.\.'\)/);
+  assert.match(paymentGateSource, /setPaymentReturnMessage\(null\)/);
+  assert.match(paymentGateSource, /showPaymentReturnMessage/);
+  assert.match(paymentGateSource, /setPaymentReturnMessage\('Seu pagamento ainda está sendo processado\. Aguarde alguns instantes\.'\)/);
+  assert.match(paymentGateSource, /setReturnConfirming\(false\)/);
+});
+
 test('noUnexpectedErrorInCheckout', async () => {
   const store = makeStore();
   const { body } = await createCheckout(store, {
@@ -350,7 +378,7 @@ test('noUnexpectedErrorInWebhook', async () => {
 test('asaasNetworkFailureHasSpecificDebugCode', async () => {
   await assert.rejects(
     () => asaasModule.createAsaasCheckout({
-      plan: { code: 'report_50_beta', name: 'Relatório 50', description: 'Relatório beta', value: 49.9 },
+      plan: { code: 'report_50_beta', name: 'Relatório 50', description: 'Relatório beta', amountCents: 4990 },
       externalReference: 'vf-test',
       env: {
         ASAAS_ENV: 'sandbox',
